@@ -24,10 +24,10 @@ O projeto resolve o problema de fragmentação na rotina dos instrutores, que ut
 
 ### 🚀 Funcionalidades do MVP
 - ✅ **Gestão de Agenda**: Definição e bloqueio de horários disponíveis pelo instrutor.
-- ✅ **Agendamento Autônomo**: Alunos podem visualizar horários livres e reservar aulas diretamente[cite: 1].
-- ✅ **Controle Financeiro**: Contratação de pacotes e gestão de pagamento via Pix com validação manual[cite: 1].
-- ✅ **Transparência Contábil**: Controle visual e detalhado do saldo de aulas (contratadas, realizadas e pendentes)[cite: 1].
-- ✅ **Feedback**: Sistema de avaliação pós-aula (1 a 5 estrelas) com métricas de didática e pontualidade[cite: 1].
+- ✅ **Agendamento Autônomo**: Alunos podem visualizar horários livres e reservar aulas diretamente.
+- ✅ **Controle Financeiro**: Contratação de pacotes e gestão de pagamento via Pix com validação manual.
+- ✅ **Transparência Contábil**: Controle visual e detalhado do saldo de aulas (contratadas, realizadas e pendentes).
+- ✅ **Feedback**: Sistema de avaliação pós-aula (1 a 5 estrelas) com métricas de didática e pontualidade.
 
 ---
 
@@ -76,7 +76,7 @@ Abaixo estão os membros responsáveis pelo desenvolvimento do MVP e suas respec
 | **Ariely Lopes** | **Disponibilidade:** Lógica da tela de `agenda-disponibilidade` do Instrutor, permitindo bloquear horários e gerar os *slots* livres. |
 | **Lucas Gabriel** | **Gestão de Alunos:** Estruturação da tela de `gestao-alunos` do Instrutor, incluindo vinculação de pacotes e listagem da base de estudantes. |
 | **Anthony Gabriel** | **Agendamento Aluno:** Lógica da tela `agendamento-aulas`, permitindo ao aluno buscar *slots* livres e realizar reservas na agenda do instrutor. |
-| **Carlos Gabriel** | **Checkout & Pix:** Lógica das telas `pacotes` e `pagamento-pix`, implementando fluxo de upload/conferência de comprovante Pix[cite: 1]. |
+| **Carlos Gabriel** | **Checkout & Pix:** Lógica das telas `pacotes` e `pagamento-pix`, implementando fluxo de upload/conferência de comprovante Pix. |
 | **Gabriel Pacheco** | **Saldo e Histórico:** Lógica das telas `saldo-aulas` e `historico-avaliacoes`, calculando horas contratadas vs. pendentes e sistema de 1 a 5 estrelas. |
 
 
