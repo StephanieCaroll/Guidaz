@@ -7,8 +7,6 @@
 ![Ionic](https://img.shields.io/badge/Ionic-3880FF?style=for-the-badge&logo=ionic&logoColor=white)
 ![Angular](https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white)
 
-<img src="src/assets/icon/favicon.png" alt="Guidaz" width="150">
-
 > **A Plataforma Guidaz** é um aplicativo mobile focado na centralização da gestão de instrutores autônomos de direção. O projeto foi desenvolvido com uma arquitetura moderna baseada em **Angular** e **Ionic**, com foco em usabilidade mobile-first.
 
 ## ✨ Sobre o Projeto
