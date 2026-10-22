@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { IonContent, IonSelect, IonSelectOption } from '@ionic/angular/standalone';
+import { IonContent, IonSelect, IonSelectOption, IonInput, IonTextarea } from '@ionic/angular/standalone';
 import { PATTERNS } from '../../../core/utils/masks';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -10,7 +10,8 @@ import { DadosPessoaisComponent } from '../../../shared/components/dados-pessoai
 @Component({
   selector: 'app-cadastro-instrutor',
   templateUrl: './cadastro-instrutor.page.html',
-  imports: [ReactiveFormsModule, IonContent, IonSelect, IonSelectOption, DadosPessoaisComponent],
+  styleUrls: ['./cadastro-instrutor.page.scss'],
+  imports: [ReactiveFormsModule, IonContent, IonSelect, IonSelectOption, IonInput, IonTextarea, DadosPessoaisComponent],
 })
 export class CadastroInstrutorPage implements OnInit {
   private readonly fb = inject(FormBuilder);
@@ -32,7 +33,9 @@ export class CadastroInstrutorPage implements OnInit {
     numero: ['', Validators.required],
     complemento: [''],
     categorias: [[] as string[], [Validators.required, Validators.minLength(1)]],
-    veiculo: ['', Validators.required],
+    veiculoModelo: ['', Validators.required],
+    veiculoAno: ['', Validators.required],
+    veiculoPlaca: ['', Validators.required],
     biografia: ['', Validators.maxLength(300)],
   });
 

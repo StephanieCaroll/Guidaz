@@ -4,16 +4,11 @@ import { maskCep, maskCpf, maskData, maskTelefone } from '../../../core/utils/ma
 
 type Campo = 'telefone' | 'nascimento' | 'cpf' | 'cep';
 
-/**
- * Bloco comum aos cadastros de Instrutor e Aluno:
- * Nome, Telefone, Nascimento, CPF + Localização (com busca de CEP via ViaCEP).
- * O FormGroup recebido precisa ter os controles: nome, telefone, nascimento, cpf,
- * cep, logradouro, bairro, cidade, numero, complemento.
- */
 @Component({
   selector: 'app-dados-pessoais',
   imports: [ReactiveFormsModule],
   templateUrl: './dados-pessoais.component.html',
+  styleUrls: ['./dados-pessoais.component.scss'], 
 })
 export class DadosPessoaisComponent {
   readonly group = input.required<FormGroup>();
@@ -44,7 +39,7 @@ export class DadosPessoaisComponent {
         cidade: d.localidade ?? '',
       });
     } catch {
-      /* sem rede: o usuário preenche manualmente */
+     
     }
   }
 }

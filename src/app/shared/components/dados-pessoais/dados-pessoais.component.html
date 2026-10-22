@@ -5,19 +5,25 @@
   </div>
 
   <div class="row-3" style="--cols: 1fr 1.15fr 1.25fr">
-    <div>
+    <div class="input-col">
       <label class="label" for="telefone">Telefone</label>
       <div class="field field--sm">
         <input id="telefone" formControlName="telefone" placeholder="Insira seu telefone" inputmode="tel" autocomplete="tel" (input)="mascarar($event, 'telefone')" />
       </div>
     </div>
-    <div>
-      <label class="label" for="nascimento">Data de Nascimento</label>
+    
+    <div class="input-col">
+
+      <label class="label" for="nascimento">
+        <span class="text-long">Data de Nascimento</span>
+        <span class="text-short">Data de nasc.</span>
+      </label>
       <div class="field field--sm">
         <input id="nascimento" formControlName="nascimento" placeholder="00/00/0000" inputmode="numeric" (input)="mascarar($event, 'nascimento')" />
       </div>
     </div>
-    <div>
+
+    <div class="input-col">
       <label class="label" for="cpf">CPF</label>
       <div class="field field--sm">
         <input id="cpf" formControlName="cpf" placeholder="000.000.000-00" inputmode="numeric" (input)="mascarar($event, 'cpf')" />
@@ -28,19 +34,19 @@
   <h3 class="section-title">Localização</h3>
 
   <div class="row-3" style="--cols: 1fr 1.1fr 1.1fr">
-    <div>
+    <div class="input-col">
       <label class="label" for="cep">CEP</label>
       <div class="field field--sm">
         <input id="cep" formControlName="cep" placeholder="00000-000" inputmode="numeric" autocomplete="postal-code" (input)="mascarar($event, 'cep')" />
       </div>
     </div>
-    <div>
+    <div class="input-col">
       <label class="label" for="logradouro">Logradouro</label>
       <div class="field field--sm">
         <input id="logradouro" formControlName="logradouro" placeholder="Insira sua rua" autocomplete="address-line1" />
       </div>
     </div>
-    <div>
+    <div class="input-col">
       <label class="label" for="bairro">Bairro</label>
       <div class="field field--sm">
         <input id="bairro" formControlName="bairro" placeholder="Insira seu Bairro" />
@@ -49,19 +55,19 @@
   </div>
 
   <div class="row-3" style="--cols: 1.2fr 0.7fr 1.3fr">
-    <div>
+    <div class="input-col">
       <label class="label" for="cidade">Cidade</label>
       <div class="field field--sm">
         <input id="cidade" formControlName="cidade" placeholder="Insira sua cidade" autocomplete="address-level2" />
       </div>
     </div>
-    <div>
+    <div class="input-col">
       <label class="label" for="numero">Número</label>
       <div class="field field--sm">
         <input id="numero" formControlName="numero" placeholder="Ex: 129" inputmode="numeric" />
       </div>
     </div>
-    <div>
+    <div class="input-col">
       <label class="label" for="complemento">Complemento</label>
       <div class="field field--sm">
         <input id="complemento" formControlName="complemento" placeholder="Insira seu complemento" />

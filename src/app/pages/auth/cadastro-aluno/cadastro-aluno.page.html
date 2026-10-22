@@ -1,22 +1,28 @@
-<ion-content class="auth-content" [fullscreen]="true">
-  <div class="auth-hero"><h1 class="auth-logo">Guidaz</h1></div>
+<ion-content class="auth-bg ion-no-padding">
+  
+  <div class="header-glow">
+    <img src="assets/logo.png" alt="Guidaz Logo" class="logo-img">
+  </div>
 
-  <main class="auth-page">
-    <h2 class="auth-title">Crie sua conta</h2>
+  <div class="form-container">
+    <h2 class="page-title">Crie sua conta</h2>
 
     <form [formGroup]="form" (ngSubmit)="criarConta()" novalidate>
+      
       <app-dados-pessoais [group]="form" />
 
-      <hr class="auth-divider" />
+      <hr class="divider-line" />
 
-      <label class="label" for="categoria">Categorias de habilitação pretendida</label>
-      <ion-select id="categoria" class="field-select" formControlName="categoria" placeholder="Categorias" interface="popover" toggleIcon="chevron-down" expandedIcon="chevron-up">
-        @for (c of categorias; track c) {
-          <ion-select-option [value]="c">Categoria {{ c }}</ion-select-option>
-        }
-      </ion-select>
+      <div class="input-group">
+        <label for="categoria">Categorias de habilitação pretendida</label>
+        <ion-select id="categoria" class="custom-select" formControlName="categoria" placeholder="Categorias" interface="popover" toggleIcon="chevron-down" expandedIcon="chevron-up">
+          @for (c of categorias; track c) {
+            <ion-select-option [value]="c">Categoria {{ c }}</ion-select-option>
+          }
+        </ion-select>
+      </div>
 
-      <button class="btn-primary" type="submit">Criar Conta</button>
+      <button class="main-btn" type="submit">Criar Conta</button>
     </form>
-  </main>
+  </div>
 </ion-content>

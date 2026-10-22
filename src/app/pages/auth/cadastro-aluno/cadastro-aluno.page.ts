@@ -10,6 +10,7 @@ import { DadosPessoaisComponent } from '../../../shared/components/dados-pessoai
 @Component({
   selector: 'app-cadastro-aluno',
   templateUrl: './cadastro-aluno.page.html',
+  styleUrls: ['./cadastro-aluno.page.scss'], 
   imports: [ReactiveFormsModule, IonContent, IonSelect, IonSelectOption, DadosPessoaisComponent],
 })
 export class CadastroAlunoPage implements OnInit {
