@@ -1,48 +1,58 @@
-<ion-content class="auth-content" [fullscreen]="true">
-  <div class="auth-hero"><h1 class="auth-logo">Guidaz</h1></div>
+<ion-content class="auth-bg ion-no-padding">
+  
+  <div class="header-glow">
+    <img src="assets/logo.png" alt="Guidaz Logo" class="logo-img">
+  </div>
 
-  <main class="auth-page">
-    <h2 class="auth-title auth-title--narrow">Entre na sua conta</h2>
+  <div class="form-container">
+    <h2 class="page-title">Entre na sua<br>conta</h2>
 
-    <form [formGroup]="form" (ngSubmit)="entrar()" novalidate>
-      <label class="field">
-        <ion-icon name="mail-outline"></ion-icon>
-        <input type="email" formControlName="email" placeholder="Insira o endereço de e-mail" autocomplete="email" inputmode="email" />
-      </label>
+    <form [formGroup]="form" (ngSubmit)="entrar()">
+      
+      <ion-item class="custom-input" lines="none">
+        <ion-icon name="mail-outline" slot="start" class="input-icon"></ion-icon>
+        <ion-input type="email" placeholder="Insira o endereço de e-mail" formControlName="email"></ion-input>
+      </ion-item>
 
-      <label class="field">
-        <ion-icon name="lock-closed-outline"></ion-icon>
-        <input [type]="verSenha() ? 'text' : 'password'" formControlName="senha" placeholder="Digite sua senha" autocomplete="current-password" />
-        <button type="button" class="icon-btn" (click)="verSenha.set(!verSenha())" [attr.aria-label]="verSenha() ? 'Ocultar senha' : 'Mostrar senha'">
-          <ion-icon [name]="verSenha() ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
-        </button>
-      </label>
+      <ion-item class="custom-input" lines="none">
+        <ion-icon name="lock-closed-outline" slot="start" class="input-icon"></ion-icon>
+        <ion-input [type]="verSenha() ? 'text' : 'password'" placeholder="Digite sua senha" formControlName="senha"></ion-input>
+        
+        <ion-button fill="clear" slot="end" (click)="verSenha.set(!verSenha())" class="eye-btn">
+          <ion-icon [name]="verSenha() ? 'eye-outline' : 'eye-off-outline'" slot="icon-only"></ion-icon>
+        </ion-button>
+      </ion-item>
 
-      <a class="auth-link auth-link--right" routerLink="/esqueci-senha">Esqueceu sua senha?</a>
+      <div class="forgot-password">
+        <a routerLink="/esqueci-senha">Esqueceu sua senha?</a>
+      </div>
 
-      <button class="btn-primary" type="submit">Entrar</button>
+      <ion-button expand="block" type="submit" class="main-btn">
+        Entrar
+      </ion-button>
+
+      <div class="divider">
+        Ou entre com
+      </div>
+
+      <ion-button expand="block" class="social-btn google-btn" (click)="loginSocial('Google')">
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZmlsbD0iI0VBNDMzNSIgZD0iTTI0IDkuNWMzLjU0IDAgNi43MSAxLjIyIDkuMjEgMy42bDYuODUtNi44NUMzNS45IDIuMzggMzAuNDcgMCAyNCAwIDE0LjYyIDAgNi41MSA1LjM4IDIuNTYgMTMuMjJsNy45OCA2LjE5QzEyLjQzIDEzLjcyIDE3Ljc0IDkuNSAyNCA5LjV6Ii8+PHBhdGggZmlsbD0iIzQyODVGNCIgZD0iTTQ2Ljk4IDI0LjU1YzAtMS41Ny0uMTUtMy4wOS0uMzgtNC41NUgyNHY5LjAyaDEyLjk0Yy0uNTggMi45Ni0yLjI2IDUuNDgtNC43OCA3LjE4bDcuNzMgNmM0LjUxLTQuMTggNy4wOS0xMC4zNiA3LjA5LTE3LjY1eiIvPjxwYXRoIGZpbGw9IiNGQkJDMDUiIGQ9Ik0xMC41MyAyOC41OWMtLjQ4LTEuNDUtLjc2LTIuOTktLjc2LTQuNTlzLjI3LTMuMTQuNzYtNC41OWwtNy45OC02LjE5Qy45MiAxNi40NiAwIDIwLjEyIDAgMjRjMCAzLjg4LjkyIDcuNTQgMi41NiAxMC43OGw3Ljk3LTYuMTl6Ii8+PHBhdGggZmlsbD0iIzM0QTg1MyIgZD0iTTI0IDQ4YzYuNDggMCAxMS45My0yLjEzIDE1Ljg5LTUuODFsLTcuNzMtNmMtMi4xNSAxLjQ1LTQuOTIgMi4zLTguMTYgMi4zLTYuMjYgMC0xMS41Ny00LjIyLTEzLjQ3LTkuOTFsLTcuOTggNi4xOUM2LjUxIDQyLjYyIDE0LjYyIDQ4IDI0IDQ4eiIvPjwvc3ZnPg==" class="google-icon" slot="start" alt="Google">
+        Sign in with Google
+      </ion-button>
+
+      <ion-button expand="block" class="social-btn facebook-btn" (click)="loginSocial('Facebook')">
+        <ion-icon name="logo-facebook" slot="start"></ion-icon>
+        Sign in with Facebook
+      </ion-button>
+
+      <ion-button expand="block" class="social-btn apple-btn" (click)="loginSocial('Apple')">
+        <ion-icon name="logo-apple" slot="start"></ion-icon>
+        Sign in with Apple
+      </ion-button>
     </form>
 
-    <p class="auth-center">Ou entre com</p>
-
-    <button type="button" class="btn-social btn-social--google" (click)="loginSocial('Google')">
-      <svg width="17" height="17" viewBox="0 0 48 48" aria-hidden="true">
-        <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.2C12.4 13.6 17.7 9.5 24 9.5z"/>
-        <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/>
-        <path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.2C.9 16.4 0 20.100 0 24s.9 7.600 2.600 10.800l7.900-6.200z"/>
-        <path fill="#34A853" d="M24 48c6.500 0 11.900-2.100 15.900-5.800l-7.500-5.800c-2.100 1.400-4.800 2.300-8.400 2.300-6.300 0-11.600-4.100-13.500-9.800l-7.900 6.200C6.500 42.600 14.600 48 24 48z"/>
-      </svg>
-      Sign in with Google
-    </button>
-
-    <button type="button" class="btn-social btn-social--facebook" (click)="loginSocial('Facebook')">
-      <ion-icon name="logo-facebook"></ion-icon> Sign in with Facebook
-    </button>
-
-    <button type="button" class="btn-social btn-social--apple" (click)="loginSocial('Apple')">
-      <ion-icon name="logo-apple"></ion-icon> Sign in with Apple
-    </button>
-
-    <p class="auth-footer">Precisa de uma conta? <a routerLink="/cadastro"><strong>Cadastre-se</strong></a></p>
-  </main>
+    <p class="register-link">
+      Precisa de uma conta? <a routerLink="/cadastro">Cadastre-se</a>
+    </p>
+  </div>
 </ion-content>

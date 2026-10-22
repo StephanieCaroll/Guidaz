@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { IonContent, IonIcon } from '@ionic/angular/standalone';
+import { IonContent, IonIcon, IonButton, IonItem, IonInput } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { eyeOffOutline, eyeOutline, lockClosedOutline, logoApple, logoFacebook, mailOutline } from 'ionicons/icons';
 import { AuthService } from '../../../core/services/auth.service';
@@ -10,7 +10,8 @@ import { ToastService } from '../../../core/services/toast.service';
 @Component({
   selector: 'app-login',
   templateUrl: './login.page.html',
-  imports: [ReactiveFormsModule, RouterLink, IonContent, IonIcon],
+  styleUrls: ['./login.page.scss'],
+  imports: [IonItem, IonButton, IonInput, ReactiveFormsModule, RouterLink, IonContent, IonIcon],
 })
 export class LoginPage {
   private readonly fb = inject(FormBuilder);
