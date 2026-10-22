@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { IonContent, IonIcon } from '@ionic/angular/standalone';
+import { IonContent, IonIcon, IonItem, IonInput, IonButton } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { checkmark, eyeOffOutline, eyeOutline, lockClosedOutline, mailOutline } from 'ionicons/icons';
 import { Perfil } from '../../../core/models/user.model';
@@ -14,7 +14,8 @@ const senhasIguais = (g: AbstractControl): ValidationErrors | null =>
 @Component({
   selector: 'app-cadastro',
   templateUrl: './cadastro.page.html',
-  imports: [ReactiveFormsModule, RouterLink, IonContent, IonIcon],
+  styleUrls: ['./cadastro.page.scss'], 
+  imports: [ReactiveFormsModule, RouterLink, IonContent, IonIcon, IonItem, IonInput, IonButton],
 })
 export class CadastroPage {
   private readonly fb = inject(FormBuilder);
