@@ -1,19 +1,19 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular';
+import { Component } from '@angular/core';
+import { IonBackButton, IonButtons, IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-saldo-aulas',
-  templateUrl: './saldo-aulas.page.html',
-  styleUrls: ['./saldo-aulas.page.scss'],
-  imports: [IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule]
+  imports: [IonBackButton, IonButtons, IonContent, IonHeader, IonTitle, IonToolbar],
+  template: `
+    <ion-header>
+      <ion-toolbar>
+        <ion-buttons slot="start"><ion-back-button defaultHref="/aluno/home"></ion-back-button></ion-buttons>
+        <ion-title>Saldo de aulas</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <p style="padding: 16px">Tela em construção — responsável: Gabriel Pacheco.</p>
+    </ion-content>
+  `,
 })
-export class SaldoAulasPage implements OnInit {
-
-  constructor() { }
-
-  ngOnInit() {
-  }
-
-}
+export class SaldoAulasPage {}

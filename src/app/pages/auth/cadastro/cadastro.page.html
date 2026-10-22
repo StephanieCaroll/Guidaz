@@ -1,13 +1,45 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>cadastro</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="auth-content" [fullscreen]="true">
+  <div class="auth-hero"><h1 class="auth-logo">Guidaz</h1></div>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">cadastro</ion-title>
-    </ion-toolbar>
-  </ion-header>
+  <main class="auth-page">
+    <h2 class="auth-title">Crie sua conta</h2>
+
+    <form [formGroup]="form" (ngSubmit)="proximo()" novalidate>
+      <label class="field">
+        <ion-icon name="mail-outline"></ion-icon>
+        <input type="email" formControlName="email" placeholder="Insira o endereço de e-mail" autocomplete="email" inputmode="email" />
+      </label>
+
+      <label class="field">
+        <ion-icon name="lock-closed-outline"></ion-icon>
+        <input [type]="verSenha() ? 'text' : 'password'" formControlName="senha" placeholder="Digite sua senha" autocomplete="new-password" />
+        <button type="button" class="icon-btn" (click)="verSenha.set(!verSenha())" [attr.aria-label]="verSenha() ? 'Ocultar senha' : 'Mostrar senha'">
+          <ion-icon [name]="verSenha() ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+        </button>
+      </label>
+
+      <label class="field">
+        <ion-icon name="lock-closed-outline"></ion-icon>
+        <input [type]="verConfirmar() ? 'text' : 'password'" formControlName="confirmar" placeholder="Digite sua senha novamente" autocomplete="new-password" />
+        <button type="button" class="icon-btn" (click)="verConfirmar.set(!verConfirmar())" [attr.aria-label]="verConfirmar() ? 'Ocultar senha' : 'Mostrar senha'">
+          <ion-icon [name]="verConfirmar() ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+        </button>
+      </label>
+
+      <div class="role-row">
+        <button type="button" class="role" [class.role--on]="perfil() === 'instrutor'" role="checkbox" [attr.aria-checked]="perfil() === 'instrutor'" (click)="perfil.set('instrutor')">
+          <span class="box">@if (perfil() === 'instrutor') { <ion-icon name="checkmark"></ion-icon> }</span>
+          Sou Instrutor
+        </button>
+        <button type="button" class="role" [class.role--on]="perfil() === 'aluno'" role="checkbox" [attr.aria-checked]="perfil() === 'aluno'" (click)="perfil.set('aluno')">
+          <span class="box">@if (perfil() === 'aluno') { <ion-icon name="checkmark"></ion-icon> }</span>
+          Sou Aluno
+        </button>
+      </div>
+
+      <button class="btn-primary" type="submit">Próximo</button>
+    </form>
+
+    <p class="auth-footer">Já tem uma conta? <a routerLink="/login"><strong>Entrar</strong></a></p>
+  </main>
 </ion-content>

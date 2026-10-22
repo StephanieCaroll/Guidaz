@@ -1,0 +1,224 @@
+/* Estilos compartilhados das telas de autenticação (Login / Cadastro).
+   Fica global de propósito: o budget anyComponentStyle do angular.json é 4kb. */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --guidaz-blue: #1a6bff;
+  --guidaz-bg: #f2f2f7;
+  --guidaz-danger: #e5484d;
+  --guidaz-font: 'Montserrat', 'Segoe UI', Roboto, sans-serif;
+}
+
+.auth-content {
+  --background: var(--guidaz-bg);
+  font-family: var(--guidaz-font);
+}
+
+.auth-hero {
+  height: calc(170px + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(
+    ellipse 80% 72% at 50% 32%,
+    var(--guidaz-blue) 0%,
+    var(--guidaz-blue) 52%,
+    rgba(26, 107, 255, 0) 100%
+  );
+}
+
+.auth-logo {
+  margin: 0;
+  color: #fff;
+  font: 800 46px/1 var(--guidaz-font);
+  letter-spacing: -1.5px;
+}
+
+.auth-page {
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 0 22px 32px;
+  font-family: var(--guidaz-font);
+  color: #111;
+}
+
+.auth-title {
+  margin: 4px 0 20px;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+.auth-title--narrow { max-width: 9ch; }
+
+.section-title {
+  margin: 18px 0 8px 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.label {
+  display: block;
+  margin: 0 0 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #444;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  margin-bottom: 12px;
+  padding: 0 14px;
+  background: #fff;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px transparent;
+
+  ion-icon { flex: none; font-size: 18px; color: #555; }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font: 400 12.5px var(--guidaz-font);
+    color: #111;
+    &::placeholder { color: #666; }
+  }
+
+  &:focus-within { box-shadow: inset 0 0 0 1.5px var(--guidaz-blue); }
+  &:has(input.ng-invalid.ng-touched) { box-shadow: inset 0 0 0 1.5px var(--guidaz-danger); }
+}
+
+.field--sm {
+  height: 40px;
+  padding: 0 12px;
+  input { font-size: 11px; }
+}
+
+.row-3 {
+  display: grid;
+  grid-template-columns: var(--cols, repeat(3, minmax(0, 1fr)));
+  gap: 8px;
+}
+
+.icon-btn {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  display: flex;
+  cursor: pointer;
+}
+
+ion-select.field-select {
+  --padding-start: 0;
+  --padding-end: 0;
+  --placeholder-color: #444;
+  --placeholder-opacity: 1;
+  min-height: 44px;
+  margin-bottom: 12px;
+  padding: 0 18px;
+  background: #fff;
+  border-radius: 999px;
+  font: 400 12.5px var(--guidaz-font);
+  &.ng-invalid.ng-touched { box-shadow: inset 0 0 0 1.5px var(--guidaz-danger); }
+}
+
+.auth-divider {
+  height: 1px;
+  margin: 8px 0 16px;
+  background: #d6d6dc;
+  border: 0;
+}
+
+.auth-link {
+  display: block;
+  margin: -2px 4px 22px;
+  font-size: 10.5px;
+  color: var(--guidaz-blue);
+  text-decoration: none;
+}
+.auth-link--right { text-align: right; }
+
+.auth-center {
+  margin: 18px 0 14px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.auth-footer {
+  margin: 22px 0 0;
+  text-align: center;
+  font-size: 12.5px;
+  a { color: #111; text-decoration: none; }
+}
+
+.auth-hint {
+  margin: -8px 0 18px;
+  font-size: 12px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.btn-primary,
+.btn-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 46px;
+  border: 0;
+  border-radius: 999px;
+  font: 600 13px var(--guidaz-font);
+  cursor: pointer;
+  transition: transform 0.05s;
+  &:active { transform: scale(0.99); }
+  &:disabled { opacity: 0.6; cursor: default; }
+}
+
+.btn-primary { background: var(--guidaz-blue); color: #fff; margin-top: 6px; }
+
+.btn-social {
+  margin-bottom: 10px;
+  height: 42px;
+  font-weight: 500;
+  ion-icon { font-size: 17px; }
+}
+.btn-social--google { background: #fff; color: #333; box-shadow: inset 0 0 0 1px #dcdce1; }
+.btn-social--facebook { background: var(--guidaz-blue); color: #fff; }
+.btn-social--apple { background: #000; color: #fff; }
+
+.role-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 22px 6px 26px;
+}
+
+.role {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: 400 11.5px var(--guidaz-font);
+  color: #222;
+  cursor: pointer;
+
+  .box {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    background: #fff;
+    border: 1px solid #d6d6dc;
+    border-radius: 3px;
+    color: #fff;
+  }
+  &--on .box { background: var(--guidaz-blue); border-color: var(--guidaz-blue); }
+}

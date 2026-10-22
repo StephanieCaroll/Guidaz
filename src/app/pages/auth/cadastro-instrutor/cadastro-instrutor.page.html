@@ -1,0 +1,32 @@
+<ion-content class="auth-content" [fullscreen]="true">
+  <div class="auth-hero"><h1 class="auth-logo">Guidaz</h1></div>
+
+  <main class="auth-page">
+    <h2 class="auth-title">Crie sua conta</h2>
+
+    <form [formGroup]="form" (ngSubmit)="criarConta()" novalidate>
+      <app-dados-pessoais [group]="form" />
+
+      <hr class="auth-divider" />
+
+      <label class="label" for="categorias">Categorias de habilitação que leciona</label>
+      <ion-select id="categorias" class="field-select" formControlName="categorias" placeholder="Categorias" [multiple]="true" interface="popover" toggleIcon="chevron-down" expandedIcon="chevron-up">
+        @for (c of categorias; track c) {
+          <ion-select-option [value]="c">Categoria {{ c }}</ion-select-option>
+        }
+      </ion-select>
+
+      <label class="label" for="veiculo">Dados do Veículo</label>
+      <div class="field">
+        <input id="veiculo" formControlName="veiculo" placeholder="Modelo, ano e placa" />
+      </div>
+
+      <label class="label" for="biografia">Breve biografia</label>
+      <div class="field">
+        <input id="biografia" formControlName="biografia" placeholder="Conte um pouco sobre você" maxlength="300" />
+      </div>
+
+      <button class="btn-primary" type="submit">Criar Conta</button>
+    </form>
+  </main>
+</ion-content>
