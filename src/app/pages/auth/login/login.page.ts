@@ -23,7 +23,7 @@ export class LoginPage {
 
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
-    senha: ['', [Validators.required, Validators.minLength(6)]],
+    senha: ['', [Validators.required, Validators.minLength(3)]],
   });
 
   constructor() {
@@ -33,16 +33,25 @@ export class LoginPage {
   entrar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      void this.toast.mostrar('Informe um e-mail válido e a senha (mín. 6 caracteres).', 'erro');
+      void this.toast.mostrar('Informe um e-mail válido e a senha.', 'erro');
       return;
     }
+
     const { email, senha } = this.form.getRawValue();
-    const res = this.auth.login(email, senha);
-    if (!res.ok) {
-      void this.toast.mostrar(res.erro, 'erro');
-      return;
-    }
-    void this.router.navigateByUrl(this.auth.rotaInicial(res.perfil));
+
+    this.auth.login(email, senha).subscribe({
+      next: (res) => {
+        if (!res.ok) {
+          void this.toast.mostrar(res.erro, 'erro');
+          return;
+        }
+        void this.toast.mostrar('Login efetuado com sucesso!', 'ok');
+        void this.router.navigateByUrl(this.auth.rotaInicial(res.perfil));
+      },
+      error: () => {
+        void this.toast.mostrar('Erro de comunicação com o servidor.', 'erro');
+      }
+    });
   }
 
   loginSocial(provedor: string): void {

@@ -2,7 +2,11 @@ import { Routes } from '@angular/router';
 import { authGuard, perfilGuard, visitanteGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'login' },
+  
+  {
+    path: '',
+    loadComponent: () => import('./pages/auth/splash/splash.page').then(m => m.SplashPage)
+  },
 
   // ---------- Autenticação (públicas) ----------
   {

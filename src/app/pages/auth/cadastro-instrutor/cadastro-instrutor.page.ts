@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { IonContent, IonSelect, IonSelectOption, IonInput, IonTextarea } from '@ionic/angular/standalone';
+import { IonContent, IonSelect, IonSelectOption, IonInput, IonTextarea, LoadingController } from '@ionic/angular/standalone';
 import { PATTERNS } from '../../../core/utils/masks';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -18,6 +18,7 @@ export class CadastroInstrutorPage implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly loadingController = inject(LoadingController);
 
   readonly categorias = ['A', 'B', 'AB', 'C', 'D', 'E'];
 
@@ -43,15 +44,50 @@ export class CadastroInstrutorPage implements OnInit {
     if (this.auth.draft()?.perfil !== 'instrutor') void this.router.navigateByUrl('/cadastro');
   }
 
-  criarConta(): void {
+  async criarConta(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       void this.toast.mostrar('Revise os campos destacados.', 'erro');
       return;
     }
-    const res = this.auth.cadastrar(this.form.getRawValue());
-    if (!res.ok) return void this.toast.mostrar(res.erro, 'erro');
-    void this.toast.mostrar('Conta criada com sucesso!', 'ok');
-    void this.router.navigateByUrl(this.auth.rotaInicial(res.perfil));
+
+    const loading = await this.loadingController.create({
+      message: 'A cadastrar instrutor...',
+      spinner: 'crescent'
+    });
+    await loading.present();
+
+    const rawValues = this.form.getRawValue();
+
+    const categoriasFormatadas = Array.isArray(rawValues.categorias) 
+      ? rawValues.categorias.join(', ') 
+      : rawValues.categorias;
+
+    const dadosFormulario = {
+      ...rawValues,
+      categorias: rawValues.categorias
+    };
+
+    const dadosEspecificosApi = {
+      ...rawValues,
+      categoriasLecionadas: categoriasFormatadas,
+      veiculoAno: rawValues.veiculoAno ? Number(rawValues.veiculoAno) : null
+    };
+
+    this.auth.cadastrar(dadosFormulario, dadosEspecificosApi).subscribe({
+      next: async (res) => {
+        await loading.dismiss();
+        if (!res.ok) {
+          void this.toast.mostrar(res.erro, 'erro');
+          return;
+        }
+        void this.toast.mostrar('Conta de instrutor criada com sucesso!', 'ok');
+        void this.router.navigateByUrl(this.auth.rotaInicial(res.perfil));
+      },
+      error: async () => {
+        await loading.dismiss(); 
+        void this.toast.mostrar('Erro de comunicação com o servidor.', 'erro');
+      }
+    });
   }
 }
