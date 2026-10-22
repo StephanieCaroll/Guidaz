@@ -132,10 +132,10 @@ Agradecemos às seguintes pessoas que contribuíram para este projeto:
 </table>
 
 
-## 📫 Contribuindo para 4Movie
+## 📫 Contribuindo para Guidaz
 
 
-Para contribuir com *4Movie*, siga estas etapas:
+Para contribuir com *Guidaz*, siga estas etapas:
 
 1. Bifurque este repositório.
 2. Crie um branch:  
