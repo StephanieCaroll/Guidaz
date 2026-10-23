@@ -1,9 +1,9 @@
 # 🚗 Guidaz (Front-end Mobile App)
 
-![GitHub repo size](https://img.shields.io/github/repo-size/StephanieCaroll/Guidaz-stephanie?style=for-the-badge)
-![GitHub forks](https://img.shields.io/github/forks/StephanieCaroll/Guidaz-stephanie?style=for-the-badge)
-![GitHub issues](https://img.shields.io/github/issues/StephanieCaroll/Guidaz-stephanie?style=for-the-badge)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/StephanieCaroll/Guidaz-stephanie?style=for-the-badge)
+![GitHub repo size](https://img.shields.io/github/repo-size/StephanieCaroll/Guidaz?style=for-the-badge)
+![GitHub forks](https://img.shields.io/github/forks/StephanieCaroll/Guidaz?style=for-the-badge)
+![GitHub issues](https://img.shields.io/github/issues/StephanieCaroll/Guidaz?style=for-the-badge)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/StephanieCaroll/Guidaz?style=for-the-badge)
 ![Ionic](https://img.shields.io/badge/Ionic-3880FF?style=for-the-badge&logo=ionic&logoColor=white)
 ![Angular](https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white)
 
@@ -15,7 +15,7 @@
 
 O sistema da Guidaz é dividido em duas partes que funcionam em conjunto:
 
-* 📱 **Front-end (Mobile App):** [Repositório Front-end (Guidaz-stephanie)](https://github.com/StephanieCaroll/Guidaz-stephanie)
+* 📱 **Front-end (Mobile App):** [Repositório Front-end (Guidaz-stephanie)](https://github.com/StephanieCaroll/Guidaz)
 * ⚙️ **Back-end (API REST Spring Boot):** [Repositório Back-end (guidaz-backend)](https://github.com/StephanieCaroll/guidaz-backend)
 
 ---
