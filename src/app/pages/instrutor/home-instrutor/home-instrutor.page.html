@@ -1,0 +1,168 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="header-toolbar">
+    <div class="profile">
+      <div class="avatar"></div>
+
+      <div class="profile-text">
+        <span class="greeting">Bem-vindo Instrutor</span>
+        <span class="name">{{ nomeInstrutor }}</span>
+      </div>
+
+      <button class="bell" type="button" (click)="abrirNotificacoes()">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <span class="bell-dot" *ngIf="temNotificacao"></span>
+      </button>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg-light">
+  <!-- Calendário horizontal infinito -->
+  <div class="calendar-header">
+    <span class="month-label">{{ mesAno }}</span>
+    <button class="today-btn" type="button" *ngIf="!hojeSelecionado" (click)="irParaHoje()">
+      Ir para hoje
+    </button>
+  </div>
+
+  <div class="calendar-scroll" #calendario (scroll)="onScroll()">
+    <div
+      class="day-item"
+      *ngFor="let dia of dias; trackBy: trackDia"
+      [class.active]="dia.chave === selecionadoChave"
+      (click)="selecionarDia(dia)"
+    >
+      <span class="day-name">{{ dia.nome }}</span>
+      <div class="day-number">{{ dia.numero }}</div>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <!-- Card principal -->
+    <div class="main-card">
+      <span class="main-title">{{ resumo.titulo }}</span>
+      <div class="main-row">
+        <div class="main-left">
+          <strong class="big-number">{{ resumo.quantidade }}</strong>
+          <span class="main-label">Aulas agendadas</span>
+        </div>
+        <div class="main-right">
+          <strong class="big-money">R$ {{ resumo.previstos }}</strong>
+          <span class="main-label">Previstos</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cards pequenos -->
+    <div class="mini-row">
+      <div class="mini-card">
+        <strong>{{ mini.alunos }}</strong>
+        <span>Alunos</span>
+      </div>
+      <div class="mini-card">
+        <strong>{{ mini.pendentes }}</strong>
+        <span>Pendentes</span>
+      </div>
+      <div class="mini-card">
+        <strong>
+          {{ mediaTexto }}
+          <ion-icon name="star"></ion-icon>
+        </strong>
+        <span>Média</span>
+      </div>
+    </div>
+
+    <!-- Próxima aula -->
+    <h2 class="section-title">Próxima Aula</h2>
+
+    <!-- Fundo invisível: toca fora e o popover fecha -->
+    <div class="menu-backdrop" *ngIf="menuAbertoId !== null" (click)="fecharMenu()"></div>
+
+    <div class="lesson-card" *ngFor="let aula of proximasAulas">
+      <div class="lesson-top">
+        <span class="date-badge">
+          <ion-icon name="calendar-outline"></ion-icon>
+          {{ formatarData(aula.data) }}
+        </span>
+        <button class="dots-btn" type="button" (click)="toggleMenu(aula)">
+          <ion-icon name="ellipsis-vertical"></ion-icon>
+        </button>
+      </div>
+
+      <h3 class="lesson-title">{{ aula.titulo }}</h3>
+      <p class="lesson-student">{{ aula.aluno }}</p>
+      <div class="lesson-status">
+        <span class="dot"></span>
+        <span>{{ aula.status }}</span>
+      </div>
+
+      <!-- Popover Editar / Deletar -->
+      <div class="popover" *ngIf="menuAbertoId === aula.id">
+        <button class="popover-item" type="button" (click)="editarAula(aula)">
+          <ion-icon name="create-outline"></ion-icon>
+          <span>Editar</span>
+        </button>
+        <button class="popover-item" type="button" (click)="deletarAula(aula)">
+          <ion-icon name="trash-outline"></ion-icon>
+          <span>Deletar</span>
+        </button>
+      </div>
+    </div>
+
+    <p class="empty" *ngIf="proximasAulas.length === 0">Nenhuma aula agendada.</p>
+
+    <!-- Atalhos -->
+    <div class="action-card" (click)="abrirAtalho('/instrutor/gestao-alunos')">
+      <div class="action-text">
+        <h3>Meus Alunos</h3>
+        <p>{{ mini.alunos }} Alunos ativos</p>
+      </div>
+      <ion-icon name="chevron-forward-outline"></ion-icon>
+    </div>
+
+    <div class="action-card" (click)="abrirAtalho('/instrutor/agenda-disponibilidade')">
+      <div class="action-text">
+        <h3>Disponibilidade</h3>
+        <p>Ajuste seus horários</p>
+      </div>
+      <ion-icon name="chevron-forward-outline"></ion-icon>
+    </div>
+
+    <div class="action-card" (click)="abrirAtalho('/instrutor/gestao-alunos')">
+      <div class="action-text">
+        <h3>Pagamentos</h3>
+        <p>{{ mini.pendentes }} Aguardando</p>
+      </div>
+      <ion-icon name="chevron-forward-outline"></ion-icon>
+    </div>
+  </div>
+</ion-content>
+
+<!-- Fundo escuro do perfil (fora do footer, abaixo dele) -->
+<div class="perfil-backdrop" *ngIf="perfilAberto" (click)="fecharPerfil()"></div>
+
+<!-- Menu inferior -->
+<ion-footer class="ion-no-border">
+  <div class="footer-wrap">
+    <!-- Cartão do perfil (botão de teste) -->
+    <div class="perfil-card" *ngIf="perfilAberto">
+      <button class="logout-btn" type="button" (click)="sairDaConta()">
+        <ion-icon name="log-out-outline"></ion-icon>
+        <span>Sair da conta</span>
+      </button>
+    </div>
+
+    <div class="bottom-nav">
+      <button
+        class="nav-item"
+        type="button"
+        *ngFor="let item of menu"
+        [class.active]="perfilAberto ? item.id === 'perfil' : item.id === menuAtivo"
+        (click)="irPara(item)"
+      >
+        <ion-icon [name]="item.icone"></ion-icon>
+        <span>{{ item.label }}</span>
+      </button>
+    </div>
+  </div>
+</ion-footer>
