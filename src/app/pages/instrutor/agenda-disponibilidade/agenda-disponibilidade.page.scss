@@ -1,0 +1,723 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@500;600;700;800&display=swap');
+
+$azul: #1a6bff;
+$azul-escuro: #1556cc;
+$azul-claro: #eaf2ff;
+$fundo: #f2f2f7;
+$cinza: #7a7a7a;
+$preto: #202431;
+$sombra: 0 6px 20px rgba(20, 40, 80, 0.08);
+
+:host {
+  display: block;
+  font-family: 'Montserrat', sans-serif;
+  --azul: #{$azul};
+}
+
+.header-toolbar {
+  --background: #{$fundo};
+  --color: #{$preto};
+  --border-width: 0;
+  --min-height: 58px;
+
+  ion-title {
+    text-align: center;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.1px;
+  }
+
+  ion-back-button {
+    --color: #{$azul};
+  }
+}
+
+.agenda-content {
+  --background: #{$fundo};
+}
+
+.agenda-container {
+  width: 100%;
+  max-width: 1050px;
+  margin: 0 auto;
+  padding: 28px 30px 50px;
+}
+
+.intro-section {
+  margin-bottom: 22px;
+  text-align: center;
+
+  .intro-bubble {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 58px;
+    padding: 0 34px;
+    margin-bottom: 13px;
+    color: #ffffff;
+    background: $azul;
+    border-radius: 30px;
+    box-shadow: 0 7px 18px rgba(26, 107, 255, 0.2);
+
+    span {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.7px;
+    }
+  }
+
+  p {
+    max-width: 650px;
+    margin: 0 auto;
+    color: $cinza;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+}
+
+.instructor-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto 30px;
+  padding: 17px 21px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: $sombra;
+}
+
+.instructor-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 49px;
+  height: 49px;
+  color: $azul;
+  background: $azul-claro;
+  border-radius: 16px;
+
+  ion-icon {
+    font-size: 25px;
+  }
+}
+
+.instructor-info {
+  flex: 1;
+  min-width: 0;
+
+  h2 {
+    margin: 0 0 5px;
+    color: $preto;
+    font-size: 15px;
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    color: $cinza;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+  }
+}
+
+.instructor-rating {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+
+  span {
+    color: $cinza;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+  }
+
+  strong {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: $preto;
+    font-size: 14px;
+  }
+
+  ion-icon {
+    color: #f4b400;
+    font-size: 17px;
+  }
+}
+
+.days-section,
+.schedule-card,
+.occupied-card,
+.registered-section,
+.form-card {
+  width: 100%;
+  margin-bottom: 22px;
+  padding: 25px;
+  background: #ffffff;
+  border-radius: 22px;
+  box-shadow: $sombra;
+}
+
+.section-title {
+  margin-bottom: 19px;
+
+  .section-label {
+    color: $azul;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+  }
+
+  h2 {
+    margin: 6px 0;
+    color: $preto;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 19px;
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    color: $cinza;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+}
+
+.week-days {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.day-button {
+  min-height: 44px;
+  padding: 9px 12px;
+  color: #252b38;
+  background: #f7f8fc;
+  border: 1px solid #e6eaf2;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+
+  &.selected {
+    color: #ffffff;
+    background: $azul;
+    border-color: $azul;
+    box-shadow: 0 4px 10px rgba(26, 107, 255, 0.18);
+  }
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 14px 16px;
+  background: #f7f9ff;
+  border: 1px solid #edf1fa;
+  border-radius: 16px;
+}
+
+.calendar-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 37px;
+  height: 37px;
+  color: $azul;
+  background: #ffffff;
+  border: 1px solid #e7edfa;
+  border-radius: 50%;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 19px;
+  }
+}
+
+.calendar-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+
+  strong {
+    color: $preto;
+    font-size: 14px;
+    text-transform: capitalize;
+  }
+
+  span {
+    color: $cinza;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    text-transform: capitalize;
+  }
+}
+
+.date-input {
+  margin: 13px 0;
+  --background: #ffffff;
+  --padding-start: 4px;
+  --inner-padding-end: 4px;
+
+  ion-label {
+    color: #353b49;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  ion-input {
+    max-width: 150px;
+    color: $preto;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    text-align: right;
+  }
+}
+
+.hours-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.hour-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 15px 8px;
+  color: $azul;
+  background: $azul-claro;
+  border: 1px solid #dce8ff;
+  border-radius: 15px;
+
+  ion-icon {
+    font-size: 19px;
+  }
+
+  span {
+    color: $preto;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+  }
+
+  small {
+    color: #2873dc;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+  }
+}
+
+.hours-empty,
+.occupied-empty,
+.registered-empty {
+  padding: 23px 15px;
+  color: $cinza;
+  background: #f7f8fc;
+  border-radius: 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.hours-empty {
+  grid-column: 1 / -1;
+}
+
+.hours-loading,
+.registered-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 25px;
+  color: $cinza;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+
+  ion-spinner {
+    color: $azul;
+  }
+}
+
+.occupied-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  ion-icon {
+    color: $azul;
+    font-size: 20px;
+  }
+}
+
+.occupied-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.occupied-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px;
+  background: #f7f8fc;
+  border-radius: 14px;
+
+  strong {
+    color: $preto;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: $cinza;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+  }
+}
+
+.occupied-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 39px;
+  height: 39px;
+  color: #ffffff;
+  background: $azul;
+  border-radius: 50%;
+
+  ion-icon {
+    font-size: 19px;
+  }
+}
+
+.actions-section {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin: 5px 0 23px;
+}
+
+.action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 7px 20px;
+  color: $preto;
+  background: #ffffff;
+  border: 1px solid #e6eaf2;
+  border-radius: 14px;
+  box-shadow: 0 3px 10px rgba(20, 40, 80, 0.05);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 29px;
+  color: #ffffff;
+  background: $azul;
+  border-radius: 50%;
+
+  ion-icon {
+    font-size: 20px;
+  }
+}
+
+.block-action .action-icon {
+  ion-icon {
+    font-size: 17px;
+  }
+}
+
+.form-card {
+  max-width: 720px;
+  margin-right: auto;
+  margin-left: auto;
+
+  .section-title {
+    margin-bottom: 17px;
+  }
+}
+
+.time-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 15px;
+
+  ion-label {
+    color: #353b49;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  ion-input {
+    min-height: 45px;
+    padding: 0 12px;
+    color: $preto;
+    background: #f7f8fc;
+    border: 1px solid #e8ebf2;
+    border-radius: 11px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    --padding-start: 12px;
+  }
+}
+
+.add-button,
+.save-button {
+  height: 48px;
+  margin: 10px 0 0;
+  --background: #{$azul};
+  --background-activated: #{$azul-escuro};
+  --border-radius: 13px;
+  --box-shadow: 0 5px 12px rgba(26, 107, 255, 0.18);
+
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.registered-days {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.registered-day {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 9px 12px;
+  color: #252b38;
+  background: #f7f8fc;
+  border: 1px solid #e9edf5;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+
+  ion-icon {
+    margin-left: auto;
+    color: #9aa3b3;
+    font-size: 16px;
+  }
+
+  &.has-schedule .registered-dot {
+    background: $azul;
+  }
+
+  &.current-day {
+    color: $azul;
+    background: $azul-claro;
+    border-color: #c9dcff;
+  }
+}
+
+.registered-dot {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  background: #cbd1dc;
+  border-radius: 50%;
+}
+
+.registered-empty {
+  margin-top: 14px;
+}
+
+.important-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  width: 100%;
+  padding: 18px 20px;
+  margin-top: 5px;
+  background: #e5efff;
+  border: 1px solid #d4e4ff;
+  border-radius: 17px;
+
+  strong {
+    display: block;
+    margin: 1px 0 6px;
+    color: #1556b8;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+  }
+
+  p {
+    margin: 0;
+    color: #273b5b;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+}
+
+.important-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  color: #ffffff;
+  background: $azul;
+  border-radius: 50%;
+
+  ion-icon {
+    font-size: 18px;
+  }
+}
+
+.bottom-save {
+  width: 100%;
+  max-width: 350px;
+  margin: 20px auto 0;
+}
+
+.save-button {
+  height: 51px;
+}
+
+@media (max-width: 700px) {
+  .agenda-container {
+    padding: 23px 17px 35px;
+  }
+
+  .days-section,
+  .schedule-card,
+  .occupied-card,
+  .registered-section,
+  .form-card {
+    padding: 21px 17px;
+    border-radius: 19px;
+  }
+
+  .week-days {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hours-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .intro-section .intro-bubble {
+    min-height: 51px;
+    padding: 0 25px;
+
+    span {
+      font-size: 17px;
+    }
+  }
+
+  .section-title h2 {
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 420px) {
+  .agenda-container {
+    padding-right: 13px;
+    padding-left: 13px;
+  }
+
+  .header-toolbar ion-title {
+    font-size: 10px;
+  }
+
+  .instructor-card {
+    gap: 10px;
+    padding: 14px 12px;
+  }
+
+  .instructor-info h2 {
+    font-size: 13px;
+  }
+
+  .instructor-info p,
+  .instructor-rating span {
+    font-size: 10px;
+  }
+
+  .instructor-rating strong {
+    font-size: 12px;
+  }
+
+  .week-days {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .day-button {
+    font-size: 11px;
+  }
+
+  .hours-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .registered-days {
+    grid-template-columns: 1fr;
+  }
+
+  .actions-section {
+    flex-direction: column;
+  }
+
+  .action-button {
+    width: 100%;
+  }
+
+  .time-fields {
+    gap: 9px;
+  }
+
+  .important-note {
+    padding: 15px 13px;
+  }
+}

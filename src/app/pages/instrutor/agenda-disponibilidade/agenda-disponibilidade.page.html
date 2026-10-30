@@ -1,0 +1,289 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/instrutor/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>AGENDA E DISPONIBILIDADE</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="agenda-content">
+  <main class="agenda-container">
+
+    <section class="intro-section">
+      <div class="intro-bubble">
+        <span>MINHA DISPONIBILIDADE</span>
+      </div>
+
+      <p>
+        Gerencie seus horários de aula, adicione, edite ou bloqueie
+        os horários em que você está disponível.
+      </p>
+    </section>
+
+    <section class="instructor-card">
+      <div class="instructor-avatar">
+        <ion-icon name="person-outline"></ion-icon>
+      </div>
+
+      <div class="instructor-info">
+        <h2>{{ nomeInstrutor }}</h2>
+        <p>Instrutor de direção</p>
+      </div>
+
+      <div class="instructor-rating">
+        <span>Minha nota</span>
+        <strong>
+          <ion-icon name="star"></ion-icon>
+          {{ notaInstrutor }}
+        </strong>
+      </div>
+    </section>
+
+    <section class="days-section">
+      <div class="section-title">
+        <span class="section-label">ORGANIZE SUA ROTINA</span>
+        <h2>Dias da semana</h2>
+        <p>Selecione os dias em que você está disponível para dar aulas.</p>
+      </div>
+
+      <div class="week-days">
+        <button
+          type="button"
+          class="day-button"
+          *ngFor="let dia of diasSemana"
+          [class.selected]="diaEstaSelecionado(dia.valor)"
+          (click)="selecionarDia(dia.valor)"
+        >
+          {{ dia.nome }}
+        </button>
+      </div>
+    </section>
+
+    <section class="schedule-card">
+      <div class="section-title">
+        <span class="section-label">SUA AGENDA</span>
+        <h2>Horários disponíveis</h2>
+      </div>
+
+      <div class="calendar-header">
+        <button type="button" class="calendar-arrow" (click)="mudarData(-1)">
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </button>
+
+        <div class="calendar-date">
+          <strong>{{ mesAno }}</strong>
+          <span>{{ dataFormatada }}</span>
+        </div>
+
+        <button type="button" class="calendar-arrow" (click)="mudarData(1)">
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </button>
+      </div>
+
+      <ion-item lines="none" class="date-input">
+        <ion-label>Escolher data</ion-label>
+        <ion-input
+          type="date"
+          [value]="dataSelecionada"
+          (ionChange)="alterarData($event)"
+        ></ion-input>
+      </ion-item>
+
+      <div class="hours-loading" *ngIf="carregandoAgenda">
+        <ion-spinner name="crescent"></ion-spinner>
+        <span>Consultando agenda...</span>
+      </div>
+
+      <div class="hours-grid" *ngIf="!carregandoAgenda">
+        <div class="hour-item" *ngFor="let horario of horariosLivres">
+          <ion-icon name="time-outline"></ion-icon>
+          <span>{{ formatarHora(horario) }}</span>
+          <small>Livre</small>
+        </div>
+
+        <div class="hours-empty" *ngIf="horariosLivres.length === 0">
+          Nenhum horário livre encontrado para esta data.
+        </div>
+      </div>
+    </section>
+
+    <section class="occupied-card">
+      <div class="section-title">
+        <span class="section-label">COMPROMISSOS</span>
+        <h2>Horários ocupados</h2>
+      </div>
+
+      <div *ngIf="horariosOcupados.length === 0" class="occupied-empty">
+        <ion-icon name="calendar-clear-outline"></ion-icon>
+        <span>Nenhum horário ocupado</span>
+      </div>
+
+      <div class="occupied-list" *ngIf="horariosOcupados.length > 0">
+        <article class="occupied-item" *ngFor="let bloqueio of horariosOcupados">
+          <div class="occupied-symbol">
+            <ion-icon name="lock-closed-outline"></ion-icon>
+          </div>
+
+          <div>
+            <strong>
+              {{ bloqueio.diaInteiro ? 'Dia inteiro' :
+                formatarHora(bloqueio.horaInicio) + ' às ' +
+                formatarHora(bloqueio.horaFim) }}
+            </strong>
+            <p>{{ bloqueio.motivo }}</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="actions-section">
+      <button
+        type="button"
+        class="action-button add-action"
+        (click)="abrirFormularioDisponibilidade()"
+      >
+        <span class="action-icon">
+          <ion-icon name="add"></ion-icon>
+        </span>
+        Adicionar horários
+      </button>
+
+      <button
+        type="button"
+        class="action-button block-action"
+        (click)="abrirFormularioBloqueio()"
+      >
+        <span class="action-icon">
+          <ion-icon name="ban-outline"></ion-icon>
+        </span>
+        Bloquear horários
+      </button>
+    </section>
+
+    <section class="form-card" *ngIf="mostrarFormularioDisponibilidade">
+      <div class="section-title">
+        <h2>Adicionar horários</h2>
+        <p>Selecione os dias acima e informe o período disponível.</p>
+      </div>
+
+      <div class="time-fields">
+        <div class="form-field">
+          <ion-label>Horário inicial</ion-label>
+          <ion-input type="time" [(ngModel)]="horaInicio"></ion-input>
+        </div>
+
+        <div class="form-field">
+          <ion-label>Horário final</ion-label>
+          <ion-input type="time" [(ngModel)]="horaFim"></ion-input>
+        </div>
+      </div>
+
+      <ion-button
+        expand="block"
+        class="add-button"
+        (click)="salvarAlteracoes()"
+        [disabled]="salvando"
+      >
+        <ion-spinner *ngIf="salvando" name="crescent"></ion-spinner>
+        {{ salvando ? 'Salvando...' : 'SALVAR ALTERAÇÕES' }}
+      </ion-button>
+    </section>
+
+    <section class="form-card" *ngIf="mostrarFormularioBloqueio">
+      <div class="section-title">
+        <h2>Bloquear horários</h2>
+        <p>O bloqueio será aplicado à data selecionada no calendário.</p>
+      </div>
+
+      <div class="time-fields">
+        <div class="form-field">
+          <ion-label>Início</ion-label>
+          <ion-input type="time" [(ngModel)]="horaBloqueioInicio"></ion-input>
+        </div>
+
+        <div class="form-field">
+          <ion-label>Fim</ion-label>
+          <ion-input type="time" [(ngModel)]="horaBloqueioFim"></ion-input>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <ion-label>Motivo do bloqueio</ion-label>
+        <ion-input
+          [(ngModel)]="motivoBloqueio"
+          placeholder="Ex.: compromisso pessoal"
+        ></ion-input>
+      </div>
+
+      <ion-button
+        expand="block"
+        class="add-button"
+        (click)="cadastrarBloqueio()"
+        [disabled]="bloqueando"
+      >
+        <ion-spinner *ngIf="bloqueando" name="crescent"></ion-spinner>
+        {{ bloqueando ? 'Bloqueando...' : 'CONFIRMAR BLOQUEIO' }}
+      </ion-button>
+    </section>
+
+    <section class="registered-section">
+      <div class="section-title">
+        <span class="section-label">CONFIGURAÇÃO SEMANAL</span>
+        <h2>Horários cadastrados</h2>
+        <p>Selecione um dia para consultar sua agenda.</p>
+      </div>
+
+      <div class="registered-days">
+        <button
+          type="button"
+          *ngFor="let dia of diasSemana"
+          class="registered-day"
+          [class.has-schedule]="diasComDisponibilidade.includes(dia.valor)"
+          [class.current-day]="diaSelecionado === dia.valor"
+          (click)="selecionarDiaCadastrado(dia.valor)"
+        >
+          <span class="registered-dot"></span>
+          {{ dia.nome }}
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="registered-loading" *ngIf="carregando">
+        <ion-spinner name="crescent"></ion-spinner>
+        <span>Carregando horários cadastrados...</span>
+      </div>
+
+      <div class="registered-empty" *ngIf="!carregando && disponibilidades.length === 0">
+        Nenhum horário cadastrado até o momento.
+      </div>
+    </section>
+
+    <aside class="important-note">
+      <div class="important-icon">
+        <ion-icon name="alert"></ion-icon>
+      </div>
+
+      <div>
+        <strong>IMPORTANTE!</strong>
+        <p>
+          Lembre-se: seus horários são visíveis para os alunos apenas
+          quando você estiver com o dia selecionado com horários disponíveis.
+        </p>
+      </div>
+    </aside>
+
+    <div class="bottom-save">
+      <ion-button
+        expand="block"
+        class="save-button"
+        (click)="salvarAlteracoes()"
+        [disabled]="salvando"
+      >
+        <ion-spinner *ngIf="salvando" name="crescent"></ion-spinner>
+        {{ salvando ? 'Salvando...' : 'SALVAR ALTERAÇÕES' }}
+      </ion-button>
+    </div>
+
+  </main>
+</ion-content>
