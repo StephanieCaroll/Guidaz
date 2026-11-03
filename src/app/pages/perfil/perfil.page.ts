@@ -37,7 +37,11 @@ import {
   textOutline,
   globeOutline,
   logOutOutline,
-  chevronForwardOutline
+  chevronForwardOutline,
+  personOutline,
+  checkmarkCircleOutline,
+  closeOutline,
+  createOutline
 } from 'ionicons/icons';
 
 import { AuthService } from '../../core/services/auth.service';
@@ -45,7 +49,6 @@ import { SettingsService, FontSize, Language } from '../../core/services/setting
 import { ToastService } from '../../core/services/toast.service';
 import { BottomNavComponent } from '../../shared/components/bottom-nav/bottom-nav.component';
 
-/** Campos esperados no registro do banco (aluno e instrutor) */
 interface UsuarioPerfil {
   id?: number | string;
   perfil?: 'aluno' | 'instrutor';
@@ -55,17 +58,14 @@ interface UsuarioPerfil {
   foto?: string;
   fotoUrl?: string;
   nota?: number;
-  // instrutor
   cnh?: string;
   credencial?: string;
   veiculoModelo?: string;
   veiculo?: string;
   veiculoPlaca?: string;
   valorHora?: number | null;
-  // aluno
   categoria?: string;
   saldoAulas?: number;
-  // privacidade
   mostrarTelefone?: boolean;
 }
 
@@ -79,16 +79,6 @@ interface EditForm {
   veiculoPlaca: string;
   valorHora: number | string | null;
 }
-
-interface ItemMenu {
-  id: string;
-  icone: string;
-  label: string;
-  valor?: string;
-  acao: () => void;
-}
-
-const FOTO_PADRAO = 'assets/guidaz.png';
 
 @Component({
   selector: 'app-perfil',
@@ -122,20 +112,20 @@ export class PerfilPage {
   private readonly alertCtrl = inject(AlertController);
   private readonly actionSheetCtrl = inject(ActionSheetController);
 
-  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 
-  /** Atalho de tradução para o template */
   readonly t = (chave: string): string => this.settingsService.t(chave);
 
-  /** Usuário logado (sessão), tipado */
   readonly u = computed(() => this.authService.usuario() as unknown as UsuarioPerfil | null);
   readonly isInstrutor = computed(() => this.u()?.perfil === 'instrutor');
 
   readonly nome = computed(() => this.u()?.nome || this.t('usuarioPadrao'));
-  readonly fotoUrl = computed(() => this.u()?.fotoUrl || this.u()?.foto || FOTO_PADRAO);
-  readonly nota = computed(() => this.u()?.nota ?? null);
 
-  /** Linha de resumo abaixo do papel: valor/hora (instrutor) ou categoria e saldo (aluno) */
+  readonly fotoUrl = computed(() => this.u()?.fotoUrl || this.u()?.foto || '');
+  readonly temFoto = computed(() => !!this.fotoUrl());
+
+  readonly notaUsuario = computed(() => this.u()?.nota ?? 5.0);
+
   readonly resumo = computed(() => {
     const u = this.u();
     if (!u) return '';
@@ -150,77 +140,6 @@ export class PerfilPage {
     if (u.categoria) partes.push(`${this.t('categoria')} ${u.categoria}`);
     if (u.saldoAulas != null) partes.push(`${u.saldoAulas} ${this.t('aulas')}`);
     return partes.join(' • ');
-  });
-
-  readonly veiculoTexto = computed(() => {
-    const u = this.u();
-    const modelo = u?.veiculoModelo || u?.veiculo || '';
-    return [modelo, u?.veiculoPlaca].filter(Boolean).join(' • ');
-  });
-
-  /** Itens do bloco "Conta": mudam conforme aluno ou instrutor */
-  readonly itensConta = computed<ItemMenu[]>(() => {
-    const u = this.u();
-    const lista: ItemMenu[] = [
-      {
-        id: 'email',
-        icone: 'mail-outline',
-        label: this.t('email'),
-        valor: u?.email,
-        acao: () => this.abrirModalEdicao()
-      }
-    ];
-
-    if (this.isInstrutor()) {
-      lista.push(
-        {
-          id: 'agenda',
-          icone: 'calendar-outline',
-          label: this.t('agenda'),
-          acao: () => this.navegar('/instrutor/agenda-disponibilidade')
-        },
-        {
-          id: 'veiculo',
-          icone: 'car-sport-outline',
-          label: this.t('veiculo'),
-          valor: this.veiculoTexto() || u?.credencial,
-          acao: () => this.abrirModalEdicao()
-        }
-      );
-    } else {
-      lista.push(
-        {
-          id: 'saldo',
-          icone: 'wallet-outline',
-          label: this.t('saldoAulas'),
-          valor: u?.saldoAulas != null ? `${u.saldoAulas} ${this.t('aulas')}` : undefined,
-          acao: () => this.navegar('/aluno/saldo-aulas')
-        },
-        {
-          id: 'historico',
-          icone: 'time-outline',
-          label: this.t('historico'),
-          acao: () => this.navegar('/aluno/historico-avaliacoes')
-        }
-      );
-    }
-
-    lista.push(
-      {
-        id: 'privacidade',
-        icone: 'lock-closed-outline',
-        label: this.t('privacidade'),
-        acao: () => void this.abrirPrivacidade()
-      },
-      {
-        id: 'seguranca',
-        icone: 'shield-checkmark-outline',
-        label: this.t('seguranca'),
-        acao: () => void this.alterarSenha()
-      }
-    );
-
-    return lista;
   });
 
   isModalEdicaoAberto = false;
@@ -246,20 +165,19 @@ export class PerfilPage {
       textOutline,
       globeOutline,
       logOutOutline,
-      chevronForwardOutline
+      chevronForwardOutline,
+      personOutline,
+      checkmarkCircleOutline,
+      closeOutline,
+      createOutline
     });
   }
 
-  /** Toda vez que a página abre, busca os dados atualizados no banco */
   ionViewWillEnter(): void {
     this.authService.buscarDoBanco().subscribe({
-      error: () => {
-        /* sem conexão: continua com os dados da sessão */
-      }
+      error: () => {}
     });
   }
-
-  // ---------- Navegação ----------
 
   goBack(): void {
     void this.router.navigateByUrl(this.isInstrutor() ? '/instrutor/home' : '/aluno/home');
@@ -273,10 +191,35 @@ export class PerfilPage {
     this.authService.logout();
   }
 
-  // ---------- Foto ----------
+  abrirDetalheConta(_secao: string): void {
+    this.abrirModalEdicao();
+  }
+
+  irParaDisponibilidade(): void {
+    this.navegar('/instrutor/agenda-disponibilidade');
+  }
+
+  abrirOpcao(opcao: string): void {
+    switch (opcao) {
+      case 'Notificações':
+        this.toastService.presentToast(
+          `Notificações: ${this.settingsService.notificacoes() ? this.t('ativadas') : this.t('desativadas')}`,
+          'primary'
+        );
+        break;
+      case 'Privacidade':
+        void this.abrirPrivacidade();
+        break;
+      case 'Segurança':
+        this.toastService.presentToast('Em breve: recursos de segurança.', 'primary');
+        break;
+      default:
+        this.toastService.presentToast(opcao, 'primary');
+    }
+  }
 
   onImgError(event: Event): void {
-    (event.target as HTMLImageElement).src = FOTO_PADRAO;
+    (event.target as HTMLImageElement).style.display = 'none';
   }
 
   async tratarTrocaFoto(): Promise<void> {
@@ -292,12 +235,10 @@ export class PerfilPage {
   }
 
   private abrirSeletor(usarCamera: boolean): void {
-    const input = this.fileInput.nativeElement;
-    if (usarCamera) {
-      input.setAttribute('capture', 'environment');
-    } else {
-      input.removeAttribute('capture');
-    }
+    const input = this.fileInput?.nativeElement;
+    if (!input) return;
+    if (usarCamera) input.setAttribute('capture', 'environment');
+    else input.removeAttribute('capture');
     input.value = '';
     input.click();
   }
@@ -320,7 +261,6 @@ export class PerfilPage {
     }
   }
 
-  /** Reduz a imagem para no máximo `lado` px e converte para JPEG (evita salvar foto gigante no banco) */
   private redimensionar(arquivo: File, lado: number): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -341,8 +281,6 @@ export class PerfilPage {
       reader.readAsDataURL(arquivo);
     });
   }
-
-  // ---------- Edição de perfil ----------
 
   private formVazio(): EditForm {
     return {
@@ -415,8 +353,11 @@ export class PerfilPage {
     });
   }
 
-  /** Salva no banco e só mostra sucesso se o servidor realmente aceitou */
-  private persistir(dados: Record<string, unknown>, msgSucesso: string, aoSucesso?: () => void): void {
+  private persistir(
+    dados: Record<string, unknown>,
+    msgSucesso: string,
+    aoSucesso?: () => void
+  ): void {
     this.carregandoSalvar = true;
 
     this.authService.atualizarPerfil(dados).subscribe({
@@ -432,8 +373,6 @@ export class PerfilPage {
     });
   }
 
-  // ---------- Configurações do aplicativo ----------
-
   toggleDarkMode(event: CustomEvent): void {
     this.settingsService.setDarkMode(!!event.detail.checked);
   }
@@ -443,16 +382,16 @@ export class PerfilPage {
   }
 
   async alterarTamanhoTexto(): Promise<void> {
-    const atual = this.settingsService.fontSize();
+    const current = this.settingsService.fontSize();
     const opcoes: FontSize[] = ['Pequeno', 'Normal', 'Grande'];
 
     const alert = await this.alertCtrl.create({
       header: this.t('tamanhoTexto'),
       inputs: opcoes.map((op) => ({
-        type: 'radio' as const,
+        type: 'radio',
         label: this.t(`fs_${op}`),
         value: op,
-        checked: atual === op
+        checked: current === op
       })),
       buttons: [
         { text: this.t('cancelar'), role: 'cancel' },
@@ -461,7 +400,10 @@ export class PerfilPage {
           handler: (val: FontSize) => {
             if (val) {
               this.settingsService.setFontSize(val);
-              this.toastService.presentToast(`${this.t('tamanhoAlterado')}: ${this.t(`fs_${val}`)}`, 'success');
+              this.toastService.presentToast(
+                `${this.t('tamanhoAlterado')}: ${this.t(`fs_${val}`)}`,
+                'success'
+              );
             }
           }
         }
@@ -471,16 +413,16 @@ export class PerfilPage {
   }
 
   async alterarLinguagem(): Promise<void> {
-    const atual = this.settingsService.language();
+    const current = this.settingsService.language();
     const opcoes: Language[] = ['Português (BR)', 'English (US)', 'Español'];
 
     const alert = await this.alertCtrl.create({
       header: this.t('idiomaTitulo'),
       inputs: opcoes.map((op) => ({
-        type: 'radio' as const,
+        type: 'radio',
         label: op,
         value: op,
-        checked: atual === op
+        checked: current === op
       })),
       buttons: [
         { text: this.t('cancelar'), role: 'cancel' },
@@ -498,11 +440,11 @@ export class PerfilPage {
     await alert.present();
   }
 
-  // ---------- Privacidade e Segurança ----------
-
   async abrirPrivacidade(): Promise<void> {
     const alert = await this.alertCtrl.create({
       header: this.t('privacidade'),
+      subHeader: 'Quem pode ver suas informações',
+      message: 'Você controla o que outros usuários enxergam no seu perfil.',
       inputs: [
         {
           type: 'checkbox',
@@ -511,55 +453,16 @@ export class PerfilPage {
           checked: !!this.u()?.mostrarTelefone
         }
       ],
+      cssClass: 'privacy-alert',
       buttons: [
         { text: this.t('cancelar'), role: 'cancel' },
         {
           text: this.t('confirmar'),
           handler: (marcados: string[]) => {
-            this.persistir({ mostrarTelefone: (marcados || []).includes('telefone') }, 'perfilAtualizado');
-          }
-        }
-      ]
-    });
-    await alert.present();
-  }
-
-  async alterarSenha(): Promise<void> {
-    const alert = await this.alertCtrl.create({
-      header: this.t('seguranca'),
-      subHeader: this.t('alterarSenha'),
-      inputs: [
-        { name: 'atual', type: 'password', placeholder: this.t('senhaAtual') },
-        { name: 'nova', type: 'password', placeholder: this.t('novaSenha') },
-        { name: 'confirma', type: 'password', placeholder: this.t('confirmarSenha') }
-      ],
-      buttons: [
-        { text: this.t('cancelar'), role: 'cancel' },
-        {
-          text: this.t('confirmar'),
-          handler: (v: { atual: string; nova: string; confirma: string }) => {
-            if (!v.atual || !v.nova || !v.confirma) {
-              this.toastService.presentToast(this.t('preenchaCampos'), 'danger');
-              return false; // mantém o alerta aberto
-            }
-            if (v.nova.length < 6) {
-              this.toastService.presentToast(this.t('senhaCurta'), 'danger');
-              return false;
-            }
-            if (v.nova !== v.confirma) {
-              this.toastService.presentToast(this.t('senhaDiferente'), 'danger');
-              return false;
-            }
-
-            this.authService.alterarSenha(v.atual, v.nova).subscribe({
-              next: () => this.toastService.presentToast(this.t('senhaAlterada'), 'success'),
-              error: (e: Error) =>
-                this.toastService.presentToast(
-                  this.t(e.message === 'SENHA_ATUAL' ? 'senhaAtualErrada' : 'erroSalvar'),
-                  'danger'
-                )
-            });
-            return true;
+            this.persistir(
+              { mostrarTelefone: (marcados || []).includes('telefone') },
+              'perfilAtualizado'
+            );
           }
         }
       ]

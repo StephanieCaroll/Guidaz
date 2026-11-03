@@ -1,27 +1,33 @@
 <ion-content [fullscreen]="true" class="profile-content">
   <div class="page-container">
-    <!-- Cabeçalho Superior com Botão Voltar Circular -->
+    <!-- Botão voltar -->
     <div class="profile-header-bar">
-      <button class="back-btn" (click)="goBack()">
+      <button class="back-btn" type="button" (click)="goBack()">
         <ion-icon name="arrow-back-outline"></ion-icon>
       </button>
     </div>
 
-    <!-- Foto e Informações do Perfil -->
+    <!-- Avatar + Dados -->
     <div class="avatar-container">
-      <div class="avatar-wrapper">
-        <img
-          [src]="fotoUrl()"
-          alt="Foto de Perfil"
-          class="profile-img"
-          (error)="onImgError($event)"
-        />
-        <button class="camera-btn" (click)="tratarTrocaFoto()">
+      <div class="avatar-wrapper" (click)="tratarTrocaFoto()">
+        <div class="avatar-inner">
+          <img
+            *ngIf="temFoto()"
+            [src]="fotoUrl()"
+            alt="Foto de Perfil"
+            class="profile-img"
+            (error)="onImgError($event)"
+          />
+          <div *ngIf="!temFoto()" class="avatar-empty">
+            <ion-icon name="person-outline"></ion-icon>
+          </div>
+        </div>
+        <button class="camera-btn" type="button" (click)="$event.stopPropagation(); tratarTrocaFoto()">
           <ion-icon name="camera-outline"></ion-icon>
         </button>
       </div>
 
-      <h2 class="user-name">{{ usuario()?.nome || 'José Maria' }}</h2>
+      <h2 class="user-name">{{ nome() }}</h2>
       <p class="user-role">{{ isInstrutor() ? 'Instrutor' : 'Aluno' }}</p>
 
       <div class="rating-badge">
@@ -29,9 +35,10 @@
         <span class="rating-text">{{ notaUsuario() | number:'1.1-1' }}</span>
       </div>
 
-      <ion-button expand="block" shape="round" class="btn-editar-perfil" (click)="abrirModalEdicao()">
-        Editar Perfil
-      </ion-button>
+      <button class="btn-editar-perfil" type="button" (click)="abrirModalEdicao()">
+        <ion-icon name="create-outline"></ion-icon>
+        <span>Editar Perfil</span>
+      </button>
     </div>
 
     <div class="profile-sections">
@@ -40,66 +47,89 @@
         <h3 class="section-title">Conta</h3>
 
         <div class="menu-list">
-          <!-- Item Email -->
           <div class="menu-item" (click)="abrirDetalheConta('Email')">
             <div class="item-left">
-              <ion-icon name="mail-outline" class="item-icon"></ion-icon>
-              <span class="item-label">Email</span>
+              <div class="item-icon-wrap">
+                <ion-icon name="mail-outline" class="item-icon"></ion-icon>
+              </div>
+              <div class="item-text">
+                <span class="item-label">Email</span>
+                <span class="item-value">{{ u()?.email || 'Não informado' }}</span>
+              </div>
             </div>
             <div class="item-right">
               <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
             </div>
           </div>
 
-          <!-- Exclusivo para Instrutor: Agenda & Disponibilidade -->
           <div class="menu-item" *ngIf="isInstrutor()" (click)="irParaDisponibilidade()">
             <div class="item-left">
-              <ion-icon name="calendar-outline" class="item-icon"></ion-icon>
-              <span class="item-label">Agenda & Disponibilidade</span>
+              <div class="item-icon-wrap">
+                <ion-icon name="calendar-outline" class="item-icon"></ion-icon>
+              </div>
+              <div class="item-text">
+                <span class="item-label">Agenda & Disponibilidade</span>
+                <span class="item-value">Gerencie seus horários</span>
+              </div>
             </div>
             <div class="item-right">
               <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
             </div>
           </div>
 
-          <!-- Exclusivo para Instrutor: Veículo e Credencial -->
           <div class="menu-item" *ngIf="isInstrutor()" (click)="abrirModalEdicao()">
             <div class="item-left">
-              <ion-icon name="car-sport-outline" class="item-icon"></ion-icon>
-              <span class="item-label">Veículo & Credencial Detran</span>
+              <div class="item-icon-wrap">
+                <ion-icon name="car-sport-outline" class="item-icon"></ion-icon>
+              </div>
+              <div class="item-text">
+                <span class="item-label">Veículo & Credencial Detran</span>
+                <span class="item-value">{{ u()?.veiculoModelo || 'Não informado' }}</span>
+              </div>
             </div>
             <div class="item-right">
               <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
             </div>
           </div>
 
-          <!-- Notificações -->
           <div class="menu-item" (click)="abrirOpcao('Notificações')">
             <div class="item-left">
-              <ion-icon name="notifications-outline" class="item-icon"></ion-icon>
-              <span class="item-label">Notificações</span>
+              <div class="item-icon-wrap">
+                <ion-icon name="notifications-outline" class="item-icon"></ion-icon>
+              </div>
+              <div class="item-text">
+                <span class="item-label">Notificações</span>
+              </div>
             </div>
             <div class="item-right">
               <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
             </div>
           </div>
 
-          <!-- Privacidade -->
           <div class="menu-item" (click)="abrirOpcao('Privacidade')">
             <div class="item-left">
-              <ion-icon name="lock-closed-outline" class="item-icon"></ion-icon>
-              <span class="item-label">Privacidade</span>
+              <div class="item-icon-wrap">
+                <ion-icon name="lock-closed-outline" class="item-icon"></ion-icon>
+              </div>
+              <div class="item-text">
+                <span class="item-label">Privacidade</span>
+                <span class="item-value">Quem pode ver seu perfil</span>
+              </div>
             </div>
             <div class="item-right">
               <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
             </div>
           </div>
 
-          <!-- Segurança -->
           <div class="menu-item" (click)="abrirOpcao('Segurança')">
             <div class="item-left">
-              <ion-icon name="shield-checkmark-outline" class="item-icon"></ion-icon>
-              <span class="item-label">Segurança</span>
+              <div class="item-icon-wrap">
+                <ion-icon name="shield-checkmark-outline" class="item-icon"></ion-icon>
+              </div>
+              <div class="item-text">
+                <span class="item-label">Segurança</span>
+                <span class="item-value">Em breve</span>
+              </div>
             </div>
             <div class="item-right">
               <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
@@ -108,16 +138,19 @@
         </div>
       </div>
 
-      <!-- Bloco Configurações do aplicativo -->
+      <!-- Bloco Configurações -->
       <div class="section-group">
         <h3 class="section-title">Configurações do aplicativo</h3>
 
         <div class="menu-list">
-          <!-- Modo Escuro -->
           <div class="menu-item toggle-item">
             <div class="item-left">
-              <ion-icon name="moon-outline" class="item-icon"></ion-icon>
-              <span class="item-label">Modo Escuro</span>
+              <div class="item-icon-wrap">
+                <ion-icon name="moon-outline" class="item-icon"></ion-icon>
+              </div>
+              <div class="item-text">
+                <span class="item-label">Modo Escuro</span>
+              </div>
             </div>
             <ion-toggle
               [checked]="settingsService.darkMode()"
@@ -126,33 +159,42 @@
             </ion-toggle>
           </div>
 
-          <!-- Tamanho do Texto -->
           <div class="menu-item" (click)="alterarTamanhoTexto()">
             <div class="item-left">
-              <ion-icon name="text-outline" class="item-icon"></ion-icon>
-              <span class="item-label">Tamanho do Texto</span>
+              <div class="item-icon-wrap">
+                <ion-icon name="text-outline" class="item-icon"></ion-icon>
+              </div>
+              <div class="item-text">
+                <span class="item-label">Tamanho do Texto</span>
+              </div>
             </div>
             <div class="item-right">
               <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
             </div>
           </div>
 
-          <!-- Linguagem -->
           <div class="menu-item" (click)="alterarLinguagem()">
             <div class="item-left">
-              <ion-icon name="globe-outline" class="item-icon"></ion-icon>
-              <span class="item-label">Linguagem</span>
+              <div class="item-icon-wrap">
+                <ion-icon name="globe-outline" class="item-icon"></ion-icon>
+              </div>
+              <div class="item-text">
+                <span class="item-label">Linguagem</span>
+              </div>
             </div>
             <div class="item-right">
               <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
             </div>
           </div>
 
-          <!-- Sair da Conta -->
           <div class="menu-item logout-item" (click)="fazerLogout()">
             <div class="item-left">
-              <ion-icon name="log-out-outline" class="item-icon danger-color"></ion-icon>
-              <span class="item-label danger-color">Sair da Conta</span>
+              <div class="item-icon-wrap danger-bg">
+                <ion-icon name="log-out-outline" class="item-icon danger-color"></ion-icon>
+              </div>
+              <div class="item-text">
+                <span class="item-label danger-color">Sair da Conta</span>
+              </div>
             </div>
           </div>
         </div>
@@ -160,73 +202,152 @@
     </div>
   </div>
 
-  <!-- Componente Reutilizável de Navegação Inferior -->
+  <!-- Input escondido para troca de foto -->
+  <input
+    #fileInput
+    type="file"
+    accept="image/*"
+    hidden
+    (change)="onFotoSelecionada($event)"
+  />
+
   <app-bottom-nav activeTab="perfil"></app-bottom-nav>
 
-  <!-- Modal de Edição de Perfil -->
-  <ion-modal [isOpen]="isModalEdicaoAberto" (didDismiss)="fecharModalEdicao()">
+  <!-- Modal de Edição -->
+  <ion-modal [isOpen]="isModalEdicaoAberto" (didDismiss)="fecharModalEdicao()" class="edit-modal">
     <ng-template>
-      <ion-header>
-        <ion-toolbar color="primary">
-          <ion-title>Editar Perfil</ion-title>
-          <ion-buttons slot="end">
-            <ion-button (click)="fecharModalEdicao()">Cancelar</ion-button>
-          </ion-buttons>
-        </ion-toolbar>
-      </ion-header>
-
-      <ion-content class="ion-padding">
-        <form (ngSubmit)="salvarPerfil()">
-          <ion-item fill="outline" class="form-item">
-            <ion-label position="stacked">Nome Completo</ion-label>
-            <ion-input [(ngModel)]="editForm.nome" name="nome" required></ion-input>
-          </ion-item>
-
-          <ion-item fill="outline" class="form-item">
-            <ion-label position="stacked">E-mail</ion-label>
-            <ion-input [(ngModel)]="editForm.email" name="email" type="email" required></ion-input>
-          </ion-item>
-
-          <ion-item fill="outline" class="form-item">
-            <ion-label position="stacked">Telefone</ion-label>
-            <ion-input [(ngModel)]="editForm.telefone" name="telefone"></ion-input>
-          </ion-item>
-
-          <!-- Campos para Instrutor -->
-          <ng-container *ngIf="isInstrutor()">
-            <ion-item fill="outline" class="form-item">
-              <ion-label position="stacked">Número da CNH</ion-label>
-              <ion-input [(ngModel)]="editForm.cnh" name="cnh"></ion-input>
-            </ion-item>
-
-            <ion-item fill="outline" class="form-item">
-              <ion-label position="stacked">Credencial Detran</ion-label>
-              <ion-input [(ngModel)]="editForm.credencial" name="credencial"></ion-input>
-            </ion-item>
-
-            <ion-item fill="outline" class="form-item">
-              <ion-label position="stacked">Modelo do Veículo</ion-label>
-              <ion-input [(ngModel)]="editForm.veiculoModelo" name="veiculoModelo"></ion-input>
-            </ion-item>
-
-            <ion-item fill="outline" class="form-item">
-              <ion-label position="stacked">Placa do Veículo</ion-label>
-              <ion-input [(ngModel)]="editForm.veiculoPlaca" name="veiculoPlaca"></ion-input>
-            </ion-item>
-
-            <ion-item fill="outline" class="form-item">
-              <ion-label position="stacked">Valor Hora/Aula (R$)</ion-label>
-              <ion-input [(ngModel)]="editForm.valorHora" name="valorHora" type="number"></ion-input>
-            </ion-item>
-          </ng-container>
-
-          <div class="modal-actions">
-            <ion-button expand="block" type="submit" class="btn-salvar" [disabled]="carregandoSalvar">
-              <ion-spinner *ngIf="carregandoSalvar" name="crescent"></ion-spinner>
-              <span *ngIf="!carregandoSalvar">Salvar Alterações</span>
-            </ion-button>
+      <ion-content class="modal-ion-content" [scrollY]="true">
+        <div class="modal-shell">
+          <!-- Header fixo -->
+          <div class="modal-header">
+            <div class="modal-header-left">
+              <h2>Editar Perfil</h2>
+              <p>Atualize suas informações pessoais</p>
+            </div>
+            <button class="modal-close" type="button" (click)="fecharModalEdicao()">
+              <ion-icon name="close-outline"></ion-icon>
+            </button>
           </div>
-        </form>
+
+          <!-- Corpo scrollável -->
+          <div class="modal-body">
+            <form (ngSubmit)="salvarPerfil()">
+              <!-- Seção: Dados pessoais -->
+              <div class="form-section">
+                <h3 class="form-section-title">Dados pessoais</h3>
+
+                <div class="field">
+                  <label>Nome completo</label>
+                  <input
+                    class="field-input"
+                    [(ngModel)]="editForm.nome"
+                    name="nome"
+                    type="text"
+                    placeholder="Seu nome completo"
+                    required
+                  />
+                </div>
+
+                <div class="field">
+                  <label>E-mail</label>
+                  <input
+                    class="field-input"
+                    [(ngModel)]="editForm.email"
+                    name="email"
+                    type="email"
+                    placeholder="voce@email.com"
+                    required
+                  />
+                </div>
+
+                <div class="field">
+                  <label>Telefone</label>
+                  <input
+                    class="field-input"
+                    [(ngModel)]="editForm.telefone"
+                    name="telefone"
+                    type="tel"
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+              </div>
+
+              <!-- Seção: Instrutor -->
+              <div class="form-section" *ngIf="isInstrutor()">
+                <h3 class="form-section-title">Dados do instrutor</h3>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label>CNH</label>
+                    <input
+                      class="field-input"
+                      [(ngModel)]="editForm.cnh"
+                      name="cnh"
+                      type="text"
+                      placeholder="Número da CNH"
+                    />
+                  </div>
+                  <div class="field">
+                    <label>Credencial Detran</label>
+                    <input
+                      class="field-input"
+                      [(ngModel)]="editForm.credencial"
+                      name="credencial"
+                      type="text"
+                      placeholder="Credencial"
+                    />
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label>Modelo do veículo</label>
+                  <input
+                    class="field-input"
+                    [(ngModel)]="editForm.veiculoModelo"
+                    name="veiculoModelo"
+                    type="text"
+                    placeholder="Ex: Chevrolet Onix"
+                  />
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label>Placa</label>
+                    <input
+                      class="field-input"
+                      [(ngModel)]="editForm.veiculoPlaca"
+                      name="veiculoPlaca"
+                      type="text"
+                      placeholder="ABC-1D23"
+                    />
+                  </div>
+                  <div class="field">
+                    <label>Valor hora/aula (R$)</label>
+                    <input
+                      class="field-input"
+                      [(ngModel)]="editForm.valorHora"
+                      name="valorHora"
+                      type="number"
+                      placeholder="0,00"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Ações -->
+              <div class="modal-actions">
+                <button type="button" class="btn-cancel" (click)="fecharModalEdicao()">
+                  Cancelar
+                </button>
+                <button type="submit" class="btn-save" [disabled]="carregandoSalvar">
+                  <ion-spinner *ngIf="carregandoSalvar" name="crescent"></ion-spinner>
+                  <ion-icon *ngIf="!carregandoSalvar" name="checkmark-circle-outline"></ion-icon>
+                  <span>{{ carregandoSalvar ? 'Salvando...' : 'Salvar Alterações' }}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       </ion-content>
     </ng-template>
   </ion-modal>
