@@ -1,139 +1,81 @@
-
-import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-export type DiaSemana =
-  | 'MONDAY'
-  | 'TUESDAY'
-  | 'WEDNESDAY'
-  | 'THURSDAY'
-  | 'FRIDAY'
-  | 'SATURDAY'
-  | 'SUNDAY';
+export interface InstrutorInfo {
+  id: number;
+  nome: string;
+  especialidade?: string;
+  avaliacao?: number;
+  qtdAvaliacoes?: number;
+}
 
 export interface DisponibilidadeInstrutor {
-  id: number;
-  diaSemana: DiaSemana;
+  id?: number;
+  instrutorId: number;
+  diaSemana: string;
   horaInicio: string;
   horaFim: string;
   ativo: boolean;
 }
 
 export interface BloqueioAgenda {
-  id: number;
+  id?: number;
   instrutorId: number;
   data: string;
-  horaInicio: string | null;
-  horaFim: string | null;
-  diaInteiro: boolean;
-  motivo: string;
+  horaInicio: string;
+  horaFim: string;
+  motivo?: string;
 }
 
-export interface BloqueioAgendaRequest {
-  instrutorId: number;
-  data: string;
-  horaInicio: string | null;
-  horaFim: string | null;
-  diaInteiro: boolean;
-  motivo: string;
+export interface SlotDisponivel {
+  hora: string;
+  disponivel: boolean;
+  status: 'LIVRE' | 'OCUPADO_AULA' | 'BLOQUEADO_PESSOAL';
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class AgendaService {
+  private apiUrl = `${environment.apiUrl || 'http://localhost:8080/api'}`;
 
-  private readonly http = inject(HttpClient);
+  constructor(private http: HttpClient) {}
 
-  // environment.apiUrl já contém /api.
-  // Por isso, não devemos acrescentar /api novamente nas rotas.
-  private readonly apiUrl = environment.apiUrl;
-
-  // Lista todas as disponibilidades de um instrutor.
-  listarDisponibilidades(
-    instrutorId: number
-  ): Observable<DisponibilidadeInstrutor[]> {
-    return this.http.get<DisponibilidadeInstrutor[]>(
-      `${this.apiUrl}/disponibilidades/instrutor/${instrutorId}`
+  getInstrutorInfo(instrutorId: number): Observable<InstrutorInfo> {
+    return this.http.get<InstrutorInfo>(`${this.apiUrl}/instrutores/${instrutorId}`).pipe(
+      catchError(() => of({
+        id: instrutorId,
+        nome: 'Instrutor Cadastrado',
+        especialidade: 'Instrutor de Direção',
+        avaliacao: 5.0,
+        qtdAvaliacoes: 0
+      }))
     );
   }
 
-  // Lista as disponibilidades de um instrutor em determinado dia.
-  listarDisponibilidadesPorDia(
-    instrutorId: number,
-    diaSemana: DiaSemana
-  ): Observable<DisponibilidadeInstrutor[]> {
-
-    const params = new HttpParams()
-      .set('diaSemana', diaSemana);
-
-    return this.http.get<DisponibilidadeInstrutor[]>(
-      `${this.apiUrl}/disponibilidades/instrutor/${instrutorId}/dia`,
-      { params }
-    );
+  getDisponibilidades(instrutorId: number): Observable<DisponibilidadeInstrutor[]> {
+    return this.http.get<DisponibilidadeInstrutor[]>(`${this.apiUrl}/disponibilidades/instrutor/${instrutorId}`);
   }
 
-  // Cadastra uma nova disponibilidade para o instrutor.
-  cadastrarDisponibilidade(
-    instrutorId: number,
-    diaSemana: DiaSemana,
-    horaInicio: string,
-    horaFim: string
-  ): Observable<DisponibilidadeInstrutor> {
-
-    const params = new HttpParams()
-      .set('instrutorId', instrutorId.toString())
-      .set('diaSemana', diaSemana)
-      .set('horaInicio', horaInicio)
-      .set('horaFim', horaFim);
-
-    return this.http.post<DisponibilidadeInstrutor>(
-      `${this.apiUrl}/disponibilidades`,
-      null,
-      { params }
-    );
+  salvarDisponibilidades(instrutorId: number, disponibilidades: DisponibilidadeInstrutor[]): Observable<DisponibilidadeInstrutor[]> {
+    return this.http.post<DisponibilidadeInstrutor[]>(`${this.apiUrl}/disponibilidades/instrutor/${instrutorId}`, disponibilidades);
   }
 
-  // Consulta os horários livres do instrutor em uma data.
-  listarHorariosLivres(
-    instrutorId: number,
-    data: string
-  ): Observable<string[]> {
-
-    const params = new HttpParams()
-      .set('data', data);
-
-    return this.http.get<string[]>(
-      `${this.apiUrl}/disponibilidades/instrutor/${instrutorId}/horarios-livres`,
-      { params }
-    );
+  getSlotsDoDia(instrutorId: number, dataIso: string): Observable<SlotDisponivel[]> {
+    return this.http.get<SlotDisponivel[]>(`${this.apiUrl}/disponibilidades/instrutor/${instrutorId}/slots?data=${dataIso}`);
   }
 
-  // Lista os bloqueios de agenda do instrutor em uma data.
-  listarBloqueios(
-    instrutorId: number,
-    data: string
-  ): Observable<BloqueioAgenda[]> {
-
-    const params = new HttpParams()
-      .set('data', data);
-
-    return this.http.get<BloqueioAgenda[]>(
-      `${this.apiUrl}/bloqueios-agenda/instrutor/${instrutorId}`,
-      { params }
-    );
+  getBloqueios(instrutorId: number): Observable<BloqueioAgenda[]> {
+    return this.http.get<BloqueioAgenda[]>(`${this.apiUrl}/bloqueios/instrutor/${instrutorId}`);
   }
 
-  // Cadastra um bloqueio na agenda do instrutor.
-  cadastrarBloqueio(
-    dados: BloqueioAgendaRequest
-  ): Observable<BloqueioAgenda> {
+  criarBloqueio(instrutorId: number, bloqueio: BloqueioAgenda): Observable<BloqueioAgenda> {
+    return this.http.post<BloqueioAgenda>(`${this.apiUrl}/bloqueios/instrutor/${instrutorId}`, bloqueio);
+  }
 
-    return this.http.post<BloqueioAgenda>(
-      `${this.apiUrl}/bloqueios-agenda`,
-      dados
-    );
+  removerBloqueio(bloqueioId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/bloqueios/${bloqueioId}`);
   }
 }

@@ -1,380 +1,405 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
-
-import { AuthService } from '../../../core/services/auth.service';
+import { ViewWillEnter } from '@ionic/angular';
 import {
-  AgendaService,
-  DiaSemana,
-  DisponibilidadeInstrutor,
-  BloqueioAgenda
-} from '../../../core/services/agenda.service';
+  IonContent,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonButtons,
+  IonButton,
+  IonIcon,
+  IonAvatar,
+  IonInput,
+  IonItem,
+  IonLabel,
+  IonSelect,
+  IonSelectOption,
+  IonSpinner
+} from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { arrowBackOutline, addOutline, banOutline, trashOutline, informationCircleOutline } from 'ionicons/icons';
+
+import { AgendaService, DisponibilidadeInstrutor, BloqueioAgenda, InstrutorInfo } from '../../../core/services/agenda.service';
 import { ToastService } from '../../../core/services/toast.service';
+
+export interface DiaSemanaItem {
+  valor: string;
+  nome: string;
+  nomeCompleto: string;
+  selecionado: boolean;
+}
 
 @Component({
   selector: 'app-agenda-disponibilidade',
-  standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule],
   templateUrl: './agenda-disponibilidade.page.html',
   styleUrls: ['./agenda-disponibilidade.page.scss'],
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    IonContent,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonButtons,
+    IonButton,
+    IonIcon,
+    IonAvatar,
+    IonInput,
+    IonItem,
+    IonLabel,
+    IonSelect,
+    IonSelectOption,
+    IonSpinner
+  ]
 })
-export class AgendaDisponibilidadePage implements OnInit {
-  private readonly auth = inject(AuthService);
-  private readonly agendaService = inject(AgendaService);
-  private readonly toast = inject(ToastService);
+export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
+  instrutorId: number = 1;
+  nomeInstrutor: string = 'Carregando...';
+  instrutorEspecialidade: string = 'Instrutor de Direção';
+  notaInstrutor: number = 5.0;
+  instrutorQtdAvaliacoes: number = 0;
 
-  instrutorId: number | null = null;
-  nomeInstrutor = 'Instrutor';
-  notaInstrutor: string | number = '—';
-
-  disponibilidades: DisponibilidadeInstrutor[] = [];
-  bloqueios: BloqueioAgenda[] = [];
-  horariosLivres: string[] = [];
-
-  readonly diasSemana: { valor: DiaSemana; nome: string }[] = [
-    { valor: 'MONDAY', nome: 'Segunda-feira' },
-    { valor: 'TUESDAY', nome: 'Terça-feira' },
-    { valor: 'WEDNESDAY', nome: 'Quarta-feira' },
-    { valor: 'THURSDAY', nome: 'Quinta-feira' },
-    { valor: 'FRIDAY', nome: 'Sexta-feira' },
-    { valor: 'SATURDAY', nome: 'Sábado' },
-    { valor: 'SUNDAY', nome: 'Domingo' },
+  diasSemana: DiaSemanaItem[] = [
+    { valor: 'MONDAY', nome: 'Seg', nomeCompleto: 'Segunda-feira', selecionado: false },
+    { valor: 'TUESDAY', nome: 'Ter', nomeCompleto: 'Terça-feira', selecionado: false },
+    { valor: 'WEDNESDAY', nome: 'Qua', nomeCompleto: 'Quarta-feira', selecionado: false },
+    { valor: 'THURSDAY', nome: 'Qui', nomeCompleto: 'Quinta-feira', selecionado: false },
+    { valor: 'FRIDAY', nome: 'Sex', nomeCompleto: 'Sexta-feira', selecionado: false },
+    { valor: 'SATURDAY', nome: 'Sáb', nomeCompleto: 'Sábado', selecionado: false },
+    { valor: 'SUNDAY', nome: 'Dom', nomeCompleto: 'Domingo', selecionado: false }
   ];
 
-  diasSelecionados: DiaSemana[] = [];
-  diaSelecionado: DiaSemana = 'MONDAY';
+  private mapaDias: { [key: string]: string } = {
+    'MONDAY': 'Segunda-feira',
+    'TUESDAY': 'Terça-feira',
+    'WEDNESDAY': 'Quarta-feira',
+    'THURSDAY': 'Quinta-feira',
+    'FRIDAY': 'Sexta-feira',
+    'SATURDAY': 'Sábado',
+    'SUNDAY': 'Domingo'
+  };
 
-  dataSelecionada = this.dataAtualISO();
-  mesReferencia = new Date();
+  bloqueios: BloqueioAgenda[] = [];
+  horariosOcupados: BloqueioAgenda[] = [];
+  disponabilidadesSalvas: DisponibilidadeInstrutor[] = [];
+  disponabilidades: DisponibilidadeInstrutor[] = [];
 
-  horaInicio = '08:00';
-  horaFim = '12:00';
+  carregando: boolean = false;
+  salvando: boolean = false;
+  bloqueando: boolean = false;
 
-  horaBloqueioInicio = '08:00';
-  horaBloqueioFim = '12:00';
-  motivoBloqueio = '';
+  mostrarFormularioDisponibilidade: boolean = false;
+  mostrarFormularioBloqueio: boolean = false;
 
-  mostrarFormularioDisponibilidade = false;
-  mostrarFormularioBloqueio = false;
+  novoHorarioDia: string = 'MONDAY';
+  horaInicio: string = '08:00';
+  horaFim: string = '12:00';
 
-  carregando = false;
-  carregandoAgenda = false;
-  salvando = false;
-  bloqueando = false;
+  novoBloqueioData: string = new Date().toISOString().split('T')[0];
+  horaBloqueioInicio: string = '10:00';
+  horaBloqueioFim: string = '11:00';
+  motivoBloqueio: string = 'Compromisso Pessoal';
 
-  ngOnInit(): void {
-    this.obterInstrutor();
+  constructor(
+    private agendaService: AgendaService,
+    private toastService: ToastService,
+    private location: Location,
+    private cdr: ChangeDetectorRef
+  ) {
+    addIcons({
+      arrowBackOutline,
+      addOutline,
+      banOutline,
+      trashOutline,
+      informationCircleOutline
+    });
   }
 
-  private dataAtualISO(): string {
-    const hoje = new Date();
-    const ano = hoje.getFullYear();
-    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-    const dia = String(hoje.getDate()).padStart(2, '0');
-    return `${ano}-${mes}-${dia}`;
+  ngOnInit() {
+    this.carregarPerfilInstrutor();
+    this.carregarDados();
   }
 
-  private obterInstrutor(): void {
-    const usuario = this.auth.usuario();
-    const id = Number(usuario?.id);
+  ionViewWillEnter() {
+    this.carregarPerfilInstrutor();
+    this.carregarDados();
+  }
 
-    if (!usuario || usuario.perfil !== 'instrutor' || !Number.isFinite(id) || id <= 0) {
-      this.toast.mostrar('Não foi possível identificar o instrutor autenticado.', 'erro');
-      return;
-    }
+  voltar() {
+    this.location.back();
+  }
 
-    this.instrutorId = id;
-    this.nomeInstrutor = usuario.nome || 'Instrutor';
+  carregarPerfilInstrutor() {
+    this.agendaService.getInstrutorInfo(this.instrutorId).subscribe({
+      next: (info: InstrutorInfo) => {
+        if (info && info.nome) {
+          this.nomeInstrutor = info.nome;
+          this.instrutorEspecialidade = info.especialidade || 'Instrutor de Direção';
+          this.notaInstrutor = info.avaliacao || 5.0;
+          this.instrutorQtdAvaliacoes = info.qtdAvaliacoes || 0;
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
+  carregarDados() {
     this.carregarDisponibilidades();
-    this.carregarAgendaDaData();
+    this.carregarBloqueios();
   }
 
-  carregarDisponibilidades(): void {
-    if (this.instrutorId === null) return;
-
+  carregarDisponibilidades() {
     this.carregando = true;
+    this.cdr.detectChanges();
 
-    this.agendaService.listarDisponibilidades(this.instrutorId).subscribe({
-      next: (dados) => {
-        this.disponibilidades = dados;
+    this.agendaService.getDisponibilidades(this.instrutorId).subscribe({
+      next: (res: DisponibilidadeInstrutor[]) => {
+        this.disponabilidadesSalvas = [...res];
+        this.disponabilidades = [...res];
+        this.sincronizarBotoesDias();
         this.carregando = false;
+        this.cdr.detectChanges();
       },
-      error: (erro) => {
-        console.error('Erro ao carregar disponibilidades:', erro);
+      error: (err: any) => {
+        console.error('Erro ao carregar disponibilidades:', err);
+        this.toastService.mostrar('Erro ao carregar disponibilidades da API', 'erro');
         this.carregando = false;
-        this.toast.mostrar('Não foi possível carregar os horários cadastrados.', 'erro');
-      },
+        this.cdr.detectChanges();
+      }
     });
   }
 
-  carregarAgendaDaData(): void {
-    if (this.instrutorId === null) return;
-
-    this.carregandoAgenda = true;
-
-    this.agendaService.listarHorariosLivres(this.instrutorId, this.dataSelecionada)
-      .subscribe({
-        next: (horarios) => {
-          this.horariosLivres = horarios ?? [];
-          this.carregarBloqueios();
-        },
-        error: (erro) => {
-          console.error('Erro ao carregar horários livres:', erro);
-          this.horariosLivres = [];
-          this.carregarBloqueios();
-        },
-      });
+  carregarBloqueios() {
+    this.agendaService.getBloqueios(this.instrutorId).subscribe({
+      next: (res: BloqueioAgenda[]) => {
+        this.bloqueios = [...res];
+        this.horariosOcupados = [...res];
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        console.error('Erro ao carregar bloqueios:', err);
+        this.cdr.detectChanges();
+      }
+    });
   }
 
-  private carregarBloqueios(): void {
-    if (this.instrutorId === null) return;
-
-    this.agendaService.listarBloqueios(this.instrutorId, this.dataSelecionada)
-      .subscribe({
-        next: (dados) => {
-          this.bloqueios = dados ?? [];
-          this.carregandoAgenda = false;
-        },
-        error: (erro) => {
-          console.error('Erro ao carregar bloqueios:', erro);
-          this.bloqueios = [];
-          this.carregandoAgenda = false;
-        },
-      });
+  sincronizarBotoesDias() {
+    const diasComDisponibilidade = new Set(this.disponabilidadesSalvas.filter(d => d.ativo).map(d => d.diaSemana));
+    this.diasSemana.forEach(dia => {
+      dia.selecionado = diasComDisponibilidade.has(dia.valor);
+    });
+    this.cdr.detectChanges();
   }
 
-  selecionarDia(dia: DiaSemana): void {
-    this.diaSelecionado = dia;
+  diaEstaSelecionado(valor: string): boolean {
+    const dia = this.diasSemana.find(d => d.valor === valor);
+    return dia ? dia.selecionado : false;
+  }
 
-    if (this.diasSelecionados.includes(dia)) {
-      this.diasSelecionados = this.diasSelecionados.filter(item => item !== dia);
-    } else {
-      this.diasSelecionados = [...this.diasSelecionados, dia];
+  selecionarDia(valor: string) {
+    const dia = this.diasSemana.find(d => d.valor === valor);
+    if (dia) {
+      this.toggleDiaSemana(dia);
     }
   }
 
-  diaEstaSelecionado(dia: DiaSemana): boolean {
-    return this.diasSelecionados.includes(dia);
+  toggleDiaSemana(dia: DiaSemanaItem) {
+    dia.selecionado = !dia.selecionado;
+    if (!dia.selecionado) {
+      this.disponabilidadesSalvas = this.disponabilidadesSalvas.filter(d => d.diaSemana !== dia.valor);
+    } else {
+      const existe = this.disponabilidadesSalvas.some(d => d.diaSemana === dia.valor);
+      if (!existe) {
+        this.disponabilidadesSalvas.push({
+          instrutorId: this.instrutorId,
+          diaSemana: dia.valor,
+          horaInicio: '08:00',
+          horaFim: '12:00',
+          ativo: true
+        });
+      }
+    }
+    this.disponabilidades = [...this.disponabilidadesSalvas];
+    this.cdr.detectChanges();
   }
 
-  selecionarDiaCadastrado(dia: DiaSemana): void {
-    this.diaSelecionado = dia;
-    this.dataSelecionada = this.proximaDataDoDia(dia);
-    this.atualizarMesReferencia();
-    this.carregarAgendaDaData();
+  private timeToMinutes(timeStr: string): number {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(':');
+    const hours = parseInt(parts[0], 10) || 0;
+    const minutes = parseInt(parts[1], 10) || 0;
+    return hours * 60 + minutes;
   }
 
-  private proximaDataDoDia(dia: DiaSemana): string {
-    const mapa: Record<DiaSemana, number> = {
-      SUNDAY: 0,
-      MONDAY: 1,
-      TUESDAY: 2,
-      WEDNESDAY: 3,
-      THURSDAY: 4,
-      FRIDAY: 5,
-      SATURDAY: 6,
-    };
+  private existeConflitoHorario(inicio1: string, fim1: string, inicio2: string, fim2: string): boolean {
+    const start1 = this.timeToMinutes(inicio1);
+    const end1 = this.timeToMinutes(fim1);
+    const start2 = this.timeToMinutes(inicio2);
+    const end2 = this.timeToMinutes(fim2);
 
-    const data = new Date(`${this.dataSelecionada}T12:00:00`);
-    const diferenca = (mapa[dia] - data.getDay() + 7) % 7;
-    data.setDate(data.getDate() + diferenca);
-
-    return this.formatarDataISO(data);
+    return start1 < end2 && end1 > start2;
   }
 
-  alterarData(event: CustomEvent): void {
-    const valor = event.detail.value;
-    if (!valor) return;
-
-    this.dataSelecionada = String(valor).substring(0, 10);
-    this.atualizarMesReferencia();
-    this.carregarAgendaDaData();
+  private formatarTimeParaBackend(hora: string): string {
+    if (!hora) return '00:00:00';
+    const clean = hora.trim();
+    if (clean.length === 5) {
+      return `${clean}:00`;
+    }
+    return clean;
   }
 
-  mudarData(dias: number): void {
-    const data = new Date(`${this.dataSelecionada}T12:00:00`);
-    data.setDate(data.getDate() + dias);
-    this.dataSelecionada = this.formatarDataISO(data);
-    this.atualizarMesReferencia();
-    this.carregarAgendaDaData();
-  }
-
-  private formatarDataISO(data: Date): string {
-    const ano = data.getFullYear();
-    const mes = String(data.getMonth() + 1).padStart(2, '0');
-    const dia = String(data.getDate()).padStart(2, '0');
-    return `${ano}-${mes}-${dia}`;
-  }
-
-  private atualizarMesReferencia(): void {
-    this.mesReferencia = new Date(`${this.dataSelecionada}T12:00:00`);
-  }
-
-  get mesAno(): string {
-    return this.mesReferencia.toLocaleDateString('pt-BR', {
-      month: 'long',
-      year: 'numeric',
-    });
-  }
-
-  get dataFormatada(): string {
-    return new Date(`${this.dataSelecionada}T12:00:00`)
-      .toLocaleDateString('pt-BR', {
-        weekday: 'long',
-        day: '2-digit',
-        month: 'long',
-      });
-  }
-
-  get horariosOcupados(): BloqueioAgenda[] {
-    return this.bloqueios;
-  }
-
-  get diasComDisponibilidade(): DiaSemana[] {
-    return this.diasSemana
-      .filter(dia => this.disponibilidades.some(
-        item => item.diaSemana === dia.valor && item.ativo
-      ))
-      .map(dia => dia.valor);
-  }
-
-  abrirFormularioDisponibilidade(): void {
+  abrirFormularioDisponibilidade() {
     this.mostrarFormularioDisponibilidade = !this.mostrarFormularioDisponibilidade;
     this.mostrarFormularioBloqueio = false;
+    this.cdr.detectChanges();
   }
 
-  abrirFormularioBloqueio(): void {
-    this.mostrarFormularioBloqueio = !this.mostrarFormularioBloqueio;
-    this.mostrarFormularioDisponibilidade = false;
-  }
+  confirmarAdicionarHorario() {
+    const startMin = this.timeToMinutes(this.horaInicio);
+    const endMin = this.timeToMinutes(this.horaFim);
 
-  salvarAlteracoes(): void {
-    if (this.instrutorId === null) {
-      this.toast.mostrar('Instrutor não identificado.', 'erro');
+    if (startMin >= endMin) {
+      this.toastService.mostrar('A hora de início deve ser anterior à hora de término.', 'erro');
       return;
     }
 
-    if (this.diasSelecionados.length === 0) {
-      this.toast.mostrar('Selecione pelo menos um dia da semana.', 'erro');
-      return;
-    }
-
-    if (!this.horaInicio || !this.horaFim || this.horaInicio >= this.horaFim) {
-      this.toast.mostrar('Confira os horários inicial e final.', 'erro');
-      return;
-    }
-
-    this.salvando = true;
-
-    const diasParaCadastrar = this.diasSelecionados.filter(dia =>
-      !this.disponibilidades.some(item =>
-        item.diaSemana === dia &&
-        item.ativo &&
-        item.horaInicio.substring(0, 5) === this.horaInicio &&
-        item.horaFim.substring(0, 5) === this.horaFim
-      )
+    const conflito = this.disponabilidadesSalvas.some(d =>
+      d.diaSemana === this.novoHorarioDia &&
+      this.existeConflitoHorario(this.horaInicio, this.horaFim, d.horaInicio, d.horaFim)
     );
 
-    if (diasParaCadastrar.length === 0) {
-      this.salvando = false;
-      this.toast.mostrar('Esses horários já estão cadastrados.', 'erro');
+    if (conflito) {
+      this.toastService.mostrar('Já existe um horário cadastrado que entra em conflito neste dia!', 'erro');
       return;
     }
 
-    let concluidos = 0;
-    let falhas = 0;
-
-    diasParaCadastrar.forEach(dia => {
-      this.agendaService.cadastrarDisponibilidade(
-        this.instrutorId!,
-        dia,
-        `${this.horaInicio}:00`,
-        `${this.horaFim}:00`
-      ).subscribe({
-        next: () => {
-          concluidos++;
-          this.finalizarCadastro(concluidos, falhas, diasParaCadastrar.length);
-        },
-        error: (erro) => {
-          console.error(`Erro ao cadastrar ${dia}:`, erro);
-          falhas++;
-          this.finalizarCadastro(concluidos, falhas, diasParaCadastrar.length);
-        },
-      });
+    this.disponabilidadesSalvas.push({
+      instrutorId: this.instrutorId,
+      diaSemana: this.novoHorarioDia,
+      horaInicio: this.horaInicio,
+      horaFim: this.horaFim,
+      ativo: true
     });
+    this.disponabilidades = [...this.disponabilidadesSalvas];
+    this.sincronizarBotoesDias();
+
+    this.mostrarFormularioDisponibilidade = false;
+    this.toastService.mostrar('Horário adicionado! Clique em Salvar Alterações para persistir no banco.', 'ok');
+    this.cdr.detectChanges();
   }
 
-  private finalizarCadastro(concluidos: number, falhas: number, total: number): void {
-    if (concluidos + falhas !== total) return;
-
-    this.salvando = false;
-    this.carregarDisponibilidades();
-
-    if (concluidos > 0) {
-      this.toast.mostrar(`${concluidos} dia(s) cadastrado(s) com sucesso!`, 'ok');
-      this.diasSelecionados = [];
-      this.mostrarFormularioDisponibilidade = false;
-    }
-
-    if (falhas > 0) {
-      this.toast.mostrar(`${falhas} horário(s) não puderam ser cadastrados.`, 'erro');
-    }
+  abrirFormularioBloqueio() {
+    this.mostrarFormularioBloqueio = !this.mostrarFormularioBloqueio;
+    this.mostrarFormularioDisponibilidade = false;
+    this.cdr.detectChanges();
   }
 
-  cadastrarBloqueio(): void {
-    if (this.instrutorId === null) return;
+  cadastrarBloqueio() {
+    const startMin = this.timeToMinutes(this.horaBloqueioInicio);
+    const endMin = this.timeToMinutes(this.horaBloqueioFim);
 
-    if (!this.motivoBloqueio.trim()) {
-      this.toast.mostrar('Informe o motivo do bloqueio.', 'erro');
+    if (startMin >= endMin) {
+      this.toastService.mostrar('A hora de início do bloqueio deve ser anterior à hora de fim.', 'erro');
       return;
     }
 
-    if (
-      (!this.horaBloqueioInicio || !this.horaBloqueioFim) ||
-      this.horaBloqueioInicio >= this.horaBloqueioFim
-    ) {
-      this.toast.mostrar('Informe um intervalo de horário válido.', 'erro');
+    const conflito = this.bloqueios.some(b =>
+      b.data === this.novoBloqueioData &&
+      this.existeConflitoHorario(this.horaBloqueioInicio, this.horaBloqueioFim, b.horaInicio, b.horaFim)
+    );
+
+    if (conflito) {
+      this.toastService.mostrar('Já existe um bloqueio agendado que entra em conflito nesta mesma data!', 'erro');
       return;
     }
 
     this.bloqueando = true;
+    this.cdr.detectChanges();
 
-    this.agendaService.cadastrarBloqueio({
+    const novoBloqueio: BloqueioAgenda = {
       instrutorId: this.instrutorId,
-      data: this.dataSelecionada,
-      horaInicio: `${this.horaBloqueioInicio}:00`,
-      horaFim: `${this.horaBloqueioFim}:00`,
-      diaInteiro: false,
-      motivo: this.motivoBloqueio.trim(),
-    }).subscribe({
+      data: this.novoBloqueioData,
+      horaInicio: this.formatarTimeParaBackend(this.horaBloqueioInicio),
+      horaFim: this.formatarTimeParaBackend(this.horaBloqueioFim),
+      motivo: this.motivoBloqueio
+    };
+
+    this.agendaService.criarBloqueio(this.instrutorId, novoBloqueio).subscribe({
       next: () => {
+        this.toastService.mostrar('Horário bloqueado com sucesso!', 'ok');
         this.bloqueando = false;
         this.mostrarFormularioBloqueio = false;
-        this.motivoBloqueio = '';
-        this.toast.mostrar('Horário bloqueado com sucesso!', 'ok');
-        this.carregarAgendaDaData();
+        this.carregarBloqueios();
+        this.cdr.detectChanges();
       },
-      error: (erro) => {
-        console.error('Erro ao bloquear horário:', erro);
+      error: (err: any) => {
+        console.error('Erro ao criar bloqueio:', err);
+        this.toastService.mostrar('Erro ao criar bloqueio no servidor.', 'erro');
         this.bloqueando = false;
-        this.toast.mostrar('Não foi possível bloquear esse horário.', 'erro');
-      },
+        this.cdr.detectChanges();
+      }
     });
   }
 
-  nomeDia(dia: DiaSemana): string {
-    return this.diasSemana.find(item => item.valor === dia)?.nome ?? dia;
+  removerBloqueio(id?: number) {
+    if (!id) return;
+    this.agendaService.removerBloqueio(id).subscribe({
+      next: () => {
+        this.toastService.mostrar('Bloqueio removido com sucesso!', 'ok');
+        this.carregarBloqueios();
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        console.error('Erro ao remover bloqueio:', err);
+        this.toastService.mostrar('Erro ao remover bloqueio.', 'erro');
+        this.cdr.detectChanges();
+      }
+    });
   }
 
-  formatarHora(horario: string | null): string {
-    return horario ? horario.substring(0, 5) : '';
+  removerHorarioCadastrado(index: number) {
+    this.disponabilidadesSalvas.splice(index, 1);
+    this.disponabilidades = [...this.disponabilidadesSalvas];
+    this.sincronizarBotoesDias();
+    this.cdr.detectChanges();
   }
 
-  horarioEstaLivre(horario: string): boolean {
-    return this.horariosLivres.some(item =>
-      this.formatarHora(item) === this.formatarHora(horario)
-    );
+  salvarAlteracoes() {
+    this.salvando = true;
+    this.cdr.detectChanges();
+
+    const payload = this.disponabilidadesSalvas.map(d => ({
+      ...d,
+      horaInicio: this.formatarTimeParaBackend(d.horaInicio),
+      horaFim: this.formatarTimeParaBackend(d.horaFim)
+    }));
+
+    this.agendaService.salvarDisponibilidades(this.instrutorId, payload).subscribe({
+      next: (res: DisponibilidadeInstrutor[]) => {
+        this.disponabilidadesSalvas = [...res];
+        this.disponabilidades = [...res];
+        this.sincronizarBotoesDias();
+        this.toastService.mostrar('Disponibilidades salvas com sucesso!', 'ok');
+        this.salvando = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        console.error('Erro ao salvar disponibilidades:', err);
+        this.toastService.mostrar('Erro ao salvar disponibilidades.', 'erro');
+        this.salvando = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  getNomeDia(key: string): string {
+    return this.mapaDias[key] || key;
   }
 }
