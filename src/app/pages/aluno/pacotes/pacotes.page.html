@@ -1,0 +1,82 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="pacotes-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/aluno/home" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>Pacotes de Aulas</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="pacotes-content">
+  <div class="page-container">
+
+    <section class="card-section">
+      <h2 class="section-title">Escolha o pacote por categoria</h2>
+      <p class="section-subtitle">Selecione a categoria desejada para ver o pacote de aulas.</p>
+
+      <div class="categorias-grid">
+        @for (item of pacotes; track item.categoria) {
+          <button
+            type="button"
+            class="categoria-card"
+            [class.selecionado]="pacoteSelecionado().categoria === item.categoria"
+            (click)="selecionarPacote(item)"
+          >
+            <div class="cat-badge">Categoria {{ item.categoria }}</div>
+            <strong class="cat-nome">{{ item.veiculo }}</strong>
+            <span class="cat-aulas">Pacote de {{ item.aulas }} aulas</span>
+            <strong class="cat-preco">R$ {{ formatarPreco(item.preco) }}</strong>
+          </button>
+        }
+      </div>
+    </section>
+
+    <section class="card-section resumo-card">
+      <h2 class="section-title">Resumo do pacote</h2>
+
+      <div class="resumo-linha">
+        <span>Categoria</span>
+        <strong>Categoria {{ pacoteSelecionado().categoria }} ({{ pacoteSelecionado().veiculo }})</strong>
+      </div>
+
+      <div class="resumo-linha">
+        <span>Quantidade de aulas</span>
+        <strong>{{ pacoteSelecionado().aulas }} aulas</strong>
+      </div>
+
+      <hr class="resumo-divisor" />
+
+      <div class="resumo-total">
+        <span>Valor do pacote</span>
+        <strong>R$ {{ formatarPreco(pacoteSelecionado().preco) }}</strong>
+      </div>
+
+      <button type="button" class="btn-confirmar" (click)="confirmarPacote()">
+        <ion-icon name="checkmark-circle-outline"></ion-icon>
+        <span>Confirmar pacote</span>
+      </button>
+    </section>
+
+  </div>
+</ion-content>
+
+<ion-footer class="ion-no-border">
+  <nav class="bottom-bar" aria-label="Navegação do aluno">
+    <a routerLink="/aluno/home" class="nav-item">
+      <ion-icon name="home-outline"></ion-icon>
+      <span>Início</span>
+    </a>
+    <a routerLink="/aluno/pacotes" class="nav-item ativo">
+      <ion-icon name="layers-outline"></ion-icon>
+      <span>Pacotes</span>
+    </a>
+    <a routerLink="/aluno/saldo-aulas" class="nav-item">
+      <ion-icon name="wallet-outline"></ion-icon>
+      <span>Saldo</span>
+    </a>
+    <a routerLink="/perfil" class="nav-item">
+      <ion-icon name="person-outline"></ion-icon>
+      <span>Perfil</span>
+    </a>
+  </nav>
+</ion-footer>

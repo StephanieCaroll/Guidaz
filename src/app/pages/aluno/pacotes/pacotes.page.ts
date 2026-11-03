@@ -1,19 +1,88 @@
-import { Component } from '@angular/core';
-import { IonBackButton, IonButtons, IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular/standalone';
+import { Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import {
+  IonBackButton,
+  IonButtons,
+  IonContent,
+  IonFooter,
+  IonHeader,
+  IonIcon,
+  IonTitle,
+  IonToolbar,
+} from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import {
+  checkmarkCircleOutline,
+  homeOutline,
+  layersOutline,
+  personOutline,
+  walletOutline,
+} from 'ionicons/icons';
+import { ToastService } from '../../../core/services/toast.service';
+
+export interface PacoteAula {
+  categoria: 'A' | 'B' | 'AB' | 'C' | 'D' | 'E';
+  veiculo: string;
+  aulas: number;
+  preco: number;
+}
 
 @Component({
   selector: 'app-pacotes',
-  imports: [IonBackButton, IonButtons, IonContent, IonHeader, IonTitle, IonToolbar],
-  template: `
-    <ion-header>
-      <ion-toolbar>
-        <ion-buttons slot="start"><ion-back-button defaultHref="/aluno/home"></ion-back-button></ion-buttons>
-        <ion-title>Pacotes de aulas</ion-title>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content>
-      <p style="padding: 16px">Tela em construção — responsável: Carlos Gabriel.</p>
-    </ion-content>
-  `,
+  templateUrl: './pacotes.page.html',
+  styleUrls: ['./pacotes.page.scss'],
+  imports: [
+    RouterLink,
+    IonBackButton,
+    IonButtons,
+    IonContent,
+    IonFooter,
+    IonHeader,
+    IonIcon,
+    IonTitle,
+    IonToolbar,
+  ],
 })
-export class PacotesPage {}
+export class PacotesPage {
+  private readonly toast = inject(ToastService);
+
+  readonly pacotes: PacoteAula[] = [
+    { categoria: 'A', veiculo: 'Moto', aulas: 2, preco: 220 },
+    { categoria: 'B', veiculo: 'Carro', aulas: 2, preco: 280 },
+    { categoria: 'AB', veiculo: 'Moto e Carro', aulas: 4, preco: 500 },
+    { categoria: 'C', veiculo: 'Caminhão', aulas: 10, preco: 1500 },
+    { categoria: 'D', veiculo: 'Ônibus', aulas: 10, preco: 1400 },
+    { categoria: 'E', veiculo: 'Carreta', aulas: 15, preco: 2510 },
+  ];
+
+  readonly pacoteSelecionado = signal<PacoteAula>(this.pacotes[1]);
+
+  constructor() {
+    addIcons({
+      checkmarkCircleOutline,
+      homeOutline,
+      layersOutline,
+      walletOutline,
+      personOutline,
+    });
+  }
+
+  selecionarPacote(pacote: PacoteAula): void {
+    this.pacoteSelecionado.set(pacote);
+  }
+
+  formatarPreco(valor: number): string {
+    return valor.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  confirmarPacote(): void {
+    const pacote = this.pacoteSelecionado();
+    void this.toast.mostrar(
+      `Pacote selecionado: Categoria ${pacote.categoria} • ${pacote.aulas} aulas • R$ ${this.formatarPreco(pacote.preco)}`,
+      'ok'
+    );
+  }
+}
