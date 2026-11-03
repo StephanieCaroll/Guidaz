@@ -39,3 +39,41 @@
 html, body, ion-app {
   background-color: #ffffff !important;
 }
+
+/* Estilos Globais Guidaz */
+
+/* Suporte Global ao Modo Escuro */
+body.dark {
+  --ion-background-color: #121212;
+  --ion-background-color-rgb: 18, 18, 18;
+  --ion-text-color: #ffffff;
+  --ion-text-color-rgb: 255, 255, 255;
+  --ion-item-background: #1e1e1e;
+  --ion-card-background: #1e1e1e;
+
+  ion-content {
+    --background: #121212;
+    --color: #ffffff;
+  }
+}
+
+/* Tamanho de Fonte Global */
+body.font-pequeno {
+  font-size: 85% !important;
+
+  h1, h2, h3, h4, ion-title {
+    font-size: 90% !important;
+  }
+}
+
+body.font-normal {
+  font-size: 100% !important;
+}
+
+body.font-grande {
+  font-size: 115% !important;
+
+  h1, h2, h3, h4, ion-title {
+    font-size: 120% !important;
+  }
+}

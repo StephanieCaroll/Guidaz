@@ -21,6 +21,14 @@ export interface Usuario extends DadosCadastro {
   id: string;
   email: string;
   perfil: Perfil;
+  fotoUrl?: string;
+  foto?: string;
+  nota?: number;
+  cnh?: string;
+  credencial?: string;
+  veiculoModelo?: string;
+  veiculoPlaca?: string;
+  valorHora?: number;
 }
 
 /** Guarda e-mail/senha/perfil entre a tela "Cadastro" e o formulário completo. */

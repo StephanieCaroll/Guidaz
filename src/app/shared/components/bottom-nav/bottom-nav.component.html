@@ -1,0 +1,12 @@
+<nav class="bottom-nav-bar">
+  <button
+    type="button"
+    class="nav-btn"
+    *ngFor="let item of itens(); trackBy: trackItem"
+    [class.active]="activeTab === item.id"
+    (click)="navegar(item)"
+  >
+    <ion-icon [name]="item.icone"></ion-icon>
+    <span>{{ settingsService.t(item.chaveLabel) }}</span>
+  </button>
+</nav>

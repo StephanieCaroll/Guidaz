@@ -16,18 +16,13 @@ import {
   notificationsOutline,
   ellipsisVertical,
   calendarOutline,
-  calendarNumberOutline,
-  homeOutline,
-  home,
   star,
   chevronForwardOutline,
-  personOutline,
-  trendingUp,
   createOutline,
-  trashOutline,
-  logOutOutline
+  trashOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../../core/services/auth.service';
+import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
 
 /* Tipos */
 interface DiaCalendario {
@@ -45,13 +40,6 @@ interface Aula {
   aluno: string;
   valor: number;
   status: 'Agendada' | 'Concluída' | 'Cancelada';
-}
-
-interface ItemMenu {
-  id: string;
-  label: string;
-  icone: string;
-  rota: string;
 }
 
 /* Constantes */
@@ -85,7 +73,7 @@ function chaveDia(d: Date): string {
   templateUrl: './home-instrutor.page.html',
   styleUrls: ['./home-instrutor.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule]
+  imports: [IonicModule, CommonModule, FormsModule, BottomNavComponent]
 })
 export class HomeInstrutorPage implements OnInit, AfterViewInit {
   @ViewChild('calendario') calendario!: ElementRef<HTMLDivElement>;
@@ -103,15 +91,6 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
   aulas: Aula[] = [];
   proximasAulas: Aula[] = [];
   menuAbertoId: number | null = null;
-  perfilAberto = false;
-
-  menu: ItemMenu[] = [
-    { id: 'inicio', label: 'INÍCIO', icone: 'home-outline', rota: '/instrutor/home' },
-    { id: 'agenda', label: 'AGENDA', icone: 'calendar-number-outline', rota: '/instrutor/agenda-disponibilidade' },
-    { id: 'progresso', label: 'PROGRESSO', icone: 'trending-up', rota: '/instrutor/gestao-alunos' },
-    { id: 'perfil', label: 'PERFIL', icone: 'person-outline', rota: '/perfil' }
-  ];
-  menuAtivo = 'inicio';
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -121,16 +100,10 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
       notificationsOutline,
       ellipsisVertical,
       calendarOutline,
-      calendarNumberOutline,
-      homeOutline,
-      home,
       star,
       chevronForwardOutline,
-      personOutline,
-      trendingUp,
       createOutline,
-      trashOutline,
-      logOutOutline
+      trashOutline
     });
   }
 
@@ -315,32 +288,7 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
     this.atualizarProximas();
   }
 
-  /* NAVEGAÇÃO / PERFIL */
-
-  irPara(item: ItemMenu) {
-    this.fecharMenu();
-
-    // PERFIL: abre/fecha o cartão com o botão de sair
-    if (item.id === 'perfil') {
-      this.perfilAberto = !this.perfilAberto;
-      return;
-    }
-
-    this.perfilAberto = false;
-    if (item.id === this.menuAtivo) return;
-
-    this.router.navigateByUrl(item.rota);
-  }
-
-  fecharPerfil() {
-    this.perfilAberto = false;
-  }
-
-  /** Botão de teste: encerra a sessão pelo AuthService e volta ao login */
-  sairDaConta() {
-    this.perfilAberto = false;
-    this.auth.logout(); // limpa o signal, o localStorage e navega para /login
-  }
+  /* ATALHOS / NOTIFICAÇÕES */
 
   abrirAtalho(rota: string) {
     this.router.navigateByUrl(rota);

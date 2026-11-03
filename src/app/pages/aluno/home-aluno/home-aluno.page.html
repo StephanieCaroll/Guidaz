@@ -169,31 +169,5 @@
   </div>
 </ion-content>
 
-<!-- Fundo escuro do perfil -->
-<div class="perfil-backdrop" *ngIf="perfilAberto" (click)="fecharPerfil()"></div>
-
-<!-- Menu inferior -->
-<ion-footer class="ion-no-border">
-  <div class="footer-wrap">
-    <!-- Cartão do perfil (botão de teste) -->
-    <div class="perfil-card" *ngIf="perfilAberto">
-      <button class="logout-btn" type="button" (click)="sairDaConta()">
-        <ion-icon name="log-out-outline"></ion-icon>
-        <span>Sair da conta</span>
-      </button>
-    </div>
-
-    <div class="bottom-nav">
-      <button
-        class="nav-item"
-        type="button"
-        *ngFor="let item of menu"
-        [class.active]="perfilAberto ? item.id === 'perfil' : item.id === menuAtivo"
-        (click)="irPara(item)"
-      >
-        <ion-icon [name]="item.icone"></ion-icon>
-        <span>{{ item.label }}</span>
-      </button>
-    </div>
-  </div>
-</ion-footer>
+<!-- Menu inferior compartilhado -->
+<app-bottom-nav activeTab="inicio"></app-bottom-nav>

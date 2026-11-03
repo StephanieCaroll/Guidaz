@@ -16,18 +16,13 @@ import {
   notificationsOutline,
   ellipsisVertical,
   calendarOutline,
-  calendarNumberOutline,
-  homeOutline,
-  home,
   chevronForwardOutline,
   chevronDownOutline,
-  personOutline,
-  trendingUp,
   createOutline,
-  trashOutline,
-  logOutOutline
+  trashOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../../core/services/auth.service';
+import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
 
 /* Tipos */
 interface DiaCalendario {
@@ -42,13 +37,6 @@ interface Aula {
   data: Date;
   titulo: string;
   status: 'Completa' | 'Incompleta';
-}
-
-interface ItemMenu {
-  id: string;
-  label: string;
-  icone: string;
-  rota: string;
 }
 
 type Filtro = 'todas' | 'completa' | 'incompleta';
@@ -84,7 +72,7 @@ function chaveDia(d: Date): string {
   templateUrl: './home-aluno.page.html',
   styleUrls: ['./home-aluno.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule]
+  imports: [IonicModule, CommonModule, FormsModule, BottomNavComponent]
 })
 export class HomeAlunoPage implements OnInit, AfterViewInit {
   @ViewChild('calendario') calendario!: ElementRef<HTMLDivElement>;
@@ -119,18 +107,6 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
   /* Popover Editar / Deletar */
   menuAbertoId: string | null = null;
 
-  /* Cartão do perfil (botão sair) */
-  perfilAberto = false;
-
-  /* Menu inferior (rotas reais do app.routes.ts) */
-  menu: ItemMenu[] = [
-    { id: 'inicio', label: 'INÍCIO', icone: 'home-outline', rota: '/aluno/home' },
-    { id: 'agenda', label: 'AGENDA', icone: 'calendar-number-outline', rota: '/aluno/agendamento-aulas' },
-    { id: 'progresso', label: 'PROGRESSO', icone: 'trending-up', rota: '/aluno/historico-avaliacoes' },
-    { id: 'perfil', label: 'PERFIL', icone: 'person-outline', rota: '/perfil' }
-  ];
-  menuAtivo = 'inicio';
-
   constructor(
     private cdr: ChangeDetectorRef,
     private router: Router
@@ -139,16 +115,10 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
       notificationsOutline,
       ellipsisVertical,
       calendarOutline,
-      calendarNumberOutline,
-      homeOutline,
-      home,
       chevronForwardOutline,
       chevronDownOutline,
-      personOutline,
-      trendingUp,
       createOutline,
-      trashOutline,
-      logOutOutline
+      trashOutline
     });
   }
 
@@ -339,32 +309,7 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
     this.aulas = this.aulas.filter(a => a.id !== aula.id);
   }
 
-  /* NAVEGAÇÃO / PERFIL */
-
-  irPara(item: ItemMenu) {
-    this.fecharMenu();
-
-    // PERFIL: abre/fecha o cartão com o botão de sair
-    if (item.id === 'perfil') {
-      this.perfilAberto = !this.perfilAberto;
-      return;
-    }
-
-    this.perfilAberto = false;
-    if (item.id === this.menuAtivo) return;
-
-    this.router.navigateByUrl(item.rota);
-  }
-
-  fecharPerfil() {
-    this.perfilAberto = false;
-  }
-
-  /** Botão de teste: encerra a sessão pelo AuthService e volta ao login */
-  sairDaConta() {
-    this.perfilAberto = false;
-    this.auth.logout(); // limpa o signal, o localStorage e navega para /login
-  }
+  /* ATALHOS / NOTIFICAÇÕES */
 
   abrirAtalho(rota: string) {
     this.router.navigateByUrl(rota);
