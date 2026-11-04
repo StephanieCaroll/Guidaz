@@ -1,0 +1,73 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="pix-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/aluno/pacotes" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>Pagamento via Pix</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="pix-content">
+  <div class="page-container">
+    @if (pacote) {
+      <section class="resumo-card" aria-label="Resumo do pacote selecionado">
+        <strong>Pacote de aulas — Categoria {{ pacote.categoria }}</strong>
+        <p>Veículo: {{ pacote.veiculo }}</p>
+        <p>Quantidade: {{ pacote.aulas }} aulas</p>
+        <p class="resumo-valor">Valor: R$ {{ formatarPreco(pacote.preco) }}</p>
+      </section>
+
+      <section class="qr-card" aria-labelledby="qr-title">
+        <h2 id="qr-title">QR Code Pix</h2>
+        <div class="qr-placeholder" aria-label="Área ilustrativa, não é um QR Code válido">
+          <ion-icon name="qr-code-outline" aria-hidden="true"></ion-icon>
+          <span>Área ilustrativa</span>
+        </div>
+        <p class="aviso-qr">Apenas ilustrativo. Não válido para pagamento.</p>
+      </section>
+
+      <section class="chave-card">
+        <span class="chave-label">Chave Pix fictícia</span>
+        <strong>{{ chavePix }}</strong>
+      </section>
+
+      <button class="btn-secundario" type="button" (click)="copiarChavePix()">
+        <ion-icon name="copy-outline" aria-hidden="true"></ion-icon>
+        <span>Copiar chave Pix</span>
+      </button>
+
+      <button class="btn-principal" type="button" (click)="informarComprovante()">
+        Já realizei o pagamento
+      </button>
+    } @else {
+      <section class="sem-pacote-card">
+        <h2>Nenhum pacote selecionado</h2>
+        <p>Volte à tela de Pacotes e escolha um pacote para ver o resumo.</p>
+        <button class="btn-principal" type="button" (click)="voltarParaPacotes()">
+          Escolher pacote
+        </button>
+      </section>
+    }
+  </div>
+</ion-content>
+
+<ion-footer class="ion-no-border">
+  <nav class="bottom-bar" aria-label="Navegação do aluno">
+    <a routerLink="/aluno/home" class="nav-item">
+      <ion-icon name="home-outline" aria-hidden="true"></ion-icon>
+      <span>Início</span>
+    </a>
+    <a routerLink="/aluno/agendamento-aulas" class="nav-item">
+      <ion-icon name="calendar-outline" aria-hidden="true"></ion-icon>
+      <span>Agenda</span>
+    </a>
+    <a routerLink="/aluno/saldo-aulas" class="nav-item">
+      <ion-icon name="layers-outline" aria-hidden="true"></ion-icon>
+      <span>Progresso</span>
+    </a>
+    <a routerLink="/perfil" class="nav-item">
+      <ion-icon name="person-outline" aria-hidden="true"></ion-icon>
+      <span>Perfil</span>
+    </a>
+  </nav>
+</ion-footer>
