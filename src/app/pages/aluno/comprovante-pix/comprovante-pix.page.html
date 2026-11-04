@@ -1,0 +1,133 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="comprovante-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/aluno/pagamento-pix" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ status() === 'selecionar' ? 'Enviar comprovante' : 'Pagamento em análise' }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="comprovante-content">
+  <div class="page-container">
+    @if (pacote) {
+      @if (status() === 'selecionar') {
+        <p class="instrucoes">Envie uma imagem ou PDF do comprovante do pagamento.</p>
+
+        <section class="upload-card">
+          <div class="upload-icon">
+            <ion-icon name="cloud-upload-outline" aria-hidden="true"></ion-icon>
+          </div>
+          @if (arquivo(); as arquivoAtual) {
+            <p class="arquivo-selecionado">
+              <ion-icon name="document-text-outline" aria-hidden="true"></ion-icon>
+              {{ arquivoAtual.name }}
+            </p>
+          } @else {
+            <p class="arquivo-vazio">Nenhum arquivo selecionado</p>
+          }
+          <input
+            #inputArquivo
+            class="input-arquivo"
+            type="file"
+            accept="image/*,application/pdf"
+            (change)="selecionarArquivo($event)"
+          />
+          <button class="btn-secundario" type="button" (click)="inputArquivo.click()">
+            Selecionar arquivo
+          </button>
+          <p class="formatos">Imagem ou PDF, até 10 MB.</p>
+          @if (erroArquivo()) {
+            <p class="erro-arquivo" role="alert">{{ erroArquivo() }}</p>
+          }
+        </section>
+
+        <section class="resumo-card">
+          <strong>Pacote de aulas — Categoria {{ pacote.categoria }}</strong>
+          <p>Veículo: {{ pacote.veiculo }}</p>
+          <p>Quantidade: {{ pacote.aulas }} aulas</p>
+          <p class="resumo-valor">Valor: R$ {{ formatarPreco(pacote.preco) }}</p>
+        </section>
+
+        <button
+          class="btn-principal"
+          type="button"
+          [disabled]="!arquivo()"
+          (click)="enviarComprovante()"
+        >
+          Enviar comprovante
+        </button>
+        <p class="nota-demo">Demonstração: o arquivo fica nesta tela e não é enviado a um servidor.</p>
+      } @else {
+        <section class="estado-card" [class.aprovado]="status() === 'aprovado'" [class.rejeitado]="status() === 'rejeitado'">
+          @if (status() === 'analise') {
+            <div class="status-icon status-analise">
+              <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
+            </div>
+            <p class="mensagem-status">Seu comprovante foi enviado nesta simulação e seria analisado pelo instrutor.</p>
+            <span class="status-pill status-pill-analise">Em análise</span>
+          } @else if (status() === 'aprovado') {
+            <div class="status-icon status-aprovado">
+              <ion-icon name="checkmark-circle-outline" aria-hidden="true"></ion-icon>
+            </div>
+            <p class="mensagem-status">Comprovante aprovado na simulação.</p>
+            <span class="status-pill status-pill-aprovado">Aprovado</span>
+          } @else {
+            <div class="status-icon status-rejeitado">
+              <ion-icon name="close-circle-outline" aria-hidden="true"></ion-icon>
+            </div>
+            <p class="mensagem-status">Comprovante não aprovado na simulação. Confira o arquivo e tente novamente.</p>
+            <span class="status-pill status-pill-rejeitado">Não aprovado</span>
+          }
+        </section>
+
+        <section class="resumo-card">
+          <strong>Pacote de aulas — Categoria {{ pacote.categoria }}</strong>
+          <p>Veículo: {{ pacote.veiculo }}</p>
+          <p>Quantidade: {{ pacote.aulas }} aulas</p>
+          <p class="resumo-valor">Valor: R$ {{ formatarPreco(pacote.preco) }}</p>
+        </section>
+
+        @if (status() === 'analise') {
+          <button class="btn-principal" type="button" (click)="simularResultado('aprovado')">
+            Simular confirmação
+          </button>
+          <button class="btn-secundario botao-segundo" type="button" (click)="simularResultado('rejeitado')">
+            Simular rejeição
+          </button>
+          <p class="nota-demo">Demonstração: em produção, a análise seria feita pelo instrutor.</p>
+        } @else {
+          <button class="btn-secundario" type="button" (click)="status.set('selecionar')">
+            Voltar ao comprovante
+          </button>
+        }
+      }
+    } @else {
+      <section class="resumo-card sem-pacote">
+        <strong>Nenhum pacote encontrado</strong>
+        <p>Volte a Pacotes e inicie o fluxo novamente.</p>
+        <a class="btn-principal link-pacotes" routerLink="/aluno/pacotes">Voltar a Pacotes</a>
+      </section>
+    }
+  </div>
+</ion-content>
+
+<ion-footer class="ion-no-border">
+  <nav class="bottom-bar" aria-label="Navegação do aluno">
+    <a routerLink="/aluno/home" class="nav-item">
+      <ion-icon name="home-outline" aria-hidden="true"></ion-icon>
+      <span>Início</span>
+    </a>
+    <a routerLink="/aluno/agendamento-aulas" class="nav-item">
+      <ion-icon name="calendar-outline" aria-hidden="true"></ion-icon>
+      <span>Agenda</span>
+    </a>
+    <a routerLink="/aluno/saldo-aulas" class="nav-item">
+      <ion-icon name="layers-outline" aria-hidden="true"></ion-icon>
+      <span>Progresso</span>
+    </a>
+    <a routerLink="/perfil" class="nav-item">
+      <ion-icon name="person-outline" aria-hidden="true"></ion-icon>
+      <span>Perfil</span>
+    </a>
+  </nav>
+</ion-footer>

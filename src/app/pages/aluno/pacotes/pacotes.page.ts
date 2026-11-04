@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   IonBackButton,
   IonButtons,
@@ -18,7 +18,6 @@ import {
   personOutline,
   walletOutline,
 } from 'ionicons/icons';
-import { ToastService } from '../../../core/services/toast.service';
 
 export interface PacoteAula {
   categoria: 'A' | 'B' | 'AB' | 'C' | 'D' | 'E';
@@ -44,7 +43,7 @@ export interface PacoteAula {
   ],
 })
 export class PacotesPage {
-  private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
 
   readonly pacotes: PacoteAula[] = [
     { categoria: 'A', veiculo: 'Moto', aulas: 2, preco: 220 },
@@ -80,9 +79,6 @@ export class PacotesPage {
 
   confirmarPacote(): void {
     const pacote = this.pacoteSelecionado();
-    void this.toast.mostrar(
-      `Pacote selecionado: Categoria ${pacote.categoria} • ${pacote.aulas} aulas • R$ ${this.formatarPreco(pacote.preco)}`,
-      'ok'
-    );
+    void this.router.navigate(['/aluno/pagamento-pix'], { state: { pacote } });
   }
 }
