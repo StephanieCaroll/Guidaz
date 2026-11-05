@@ -132,6 +132,28 @@ $vermelho: #ef4444;
     letter-spacing: 0.6px;
   }
 
+  // Biografia (apenas instrutor)
+  .biografia-box {
+    width: 100%;
+    max-width: 320px;
+    margin: 0 0 14px 0;
+    padding: 10px 16px;
+    background: $cinza-bg;
+    border-left: 3px solid $azul;
+    border-radius: 10px;
+    box-sizing: border-box;
+
+    .biografia-text {
+      margin: 0;
+      font-size: fs(13);
+      font-style: italic;
+      line-height: 1.45;
+      color: #4b5563;
+      text-align: center;
+      word-break: break-word;
+    }
+  }
+
   .rating-badge {
     display: flex;
     align-items: center;
@@ -658,6 +680,15 @@ ion-modal.edit-modal {
   .section-title,
   .item-value {
     color: #9ca3af;
+  }
+
+  .biografia-box {
+    background: #1f2937;
+    border-left-color: #60a5fa;
+
+    .biografia-text {
+      color: #d1d5db;
+    }
   }
 
   .rating-badge {

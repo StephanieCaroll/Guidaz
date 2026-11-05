@@ -28,6 +28,8 @@ export interface Usuario extends DadosCadastro {
   credencial?: string;
   veiculoModelo?: string;
   veiculoPlaca?: string;
+  veiculoAno?: number | string;
+  categoriasLecionadas?: string[];
   valorHora?: number;
 }
 

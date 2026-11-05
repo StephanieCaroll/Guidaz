@@ -15,6 +15,7 @@ import {
   IonItem,
   IonLabel,
   IonInput,
+  IonTextarea,
   IonSpinner,
   AlertController,
   ActionSheetController
@@ -63,10 +64,20 @@ interface UsuarioPerfil {
   veiculoModelo?: string;
   veiculo?: string;
   veiculoPlaca?: string;
+  veiculoAno?: number | string;
   valorHora?: number | null;
   categoria?: string;
+  categoriasLecionadas?: string[];
+  categorias?: string[];
   saldoAulas?: number;
   mostrarTelefone?: boolean;
+  cep?: string;
+  logradouro?: string;
+  bairro?: string;
+  cidade?: string;
+  numero?: string;
+  complemento?: string;
+  biografia?: string;
 }
 
 interface EditForm {
@@ -77,7 +88,15 @@ interface EditForm {
   credencial: string;
   veiculoModelo: string;
   veiculoPlaca: string;
+  veiculoAno: number | string;
   valorHora: number | string | null;
+  cep: string;
+  logradouro: string;
+  bairro: string;
+  cidade: string;
+  numero: string;
+  complemento: string;
+  biografia: string;
 }
 
 @Component({
@@ -100,6 +119,7 @@ interface EditForm {
     IonItem,
     IonLabel,
     IonInput,
+    IonTextarea,
     IonSpinner,
     BottomNavComponent
   ]
@@ -125,6 +145,8 @@ export class PerfilPage {
   readonly temFoto = computed(() => !!this.fotoUrl());
 
   readonly notaUsuario = computed(() => this.u()?.nota ?? 5.0);
+
+  readonly biografia = computed(() => this.u()?.biografia || '');
 
   readonly resumo = computed(() => {
     const u = this.u();
@@ -291,7 +313,15 @@ export class PerfilPage {
       credencial: '',
       veiculoModelo: '',
       veiculoPlaca: '',
-      valorHora: null
+      veiculoAno: '',
+      valorHora: null,
+      cep: '',
+      logradouro: '',
+      bairro: '',
+      cidade: '',
+      numero: '',
+      complemento: '',
+      biografia: ''
     };
   }
 
@@ -305,7 +335,15 @@ export class PerfilPage {
       credencial: u?.credencial || '',
       veiculoModelo: u?.veiculoModelo || u?.veiculo || '',
       veiculoPlaca: u?.veiculoPlaca || '',
-      valorHora: u?.valorHora ?? null
+      veiculoAno: u?.veiculoAno || '',
+      valorHora: u?.valorHora ?? null,
+      cep: u?.cep || '',
+      logradouro: u?.logradouro || '',
+      bairro: u?.bairro || '',
+      cidade: u?.cidade || '',
+      numero: u?.numero || '',
+      complemento: u?.complemento || '',
+      biografia: u?.biografia || ''
     };
     this.isModalEdicaoAberto = true;
   }
@@ -327,7 +365,13 @@ export class PerfilPage {
     const dados: Record<string, unknown> = {
       nome,
       email,
-      telefone: (f.telefone || '').trim()
+      telefone: (f.telefone || '').trim(),
+      cep: (f.cep || '').trim(),
+      logradouro: (f.logradouro || '').trim(),
+      bairro: (f.bairro || '').trim(),
+      cidade: (f.cidade || '').trim(),
+      numero: (f.numero || '').trim(),
+      complemento: (f.complemento || '').trim()
     };
 
     if (this.isInstrutor()) {
@@ -344,6 +388,8 @@ export class PerfilPage {
         credencial: (f.credencial || '').trim(),
         veiculoModelo: (f.veiculoModelo || '').trim(),
         veiculoPlaca: (f.veiculoPlaca || '').trim().toUpperCase(),
+        veiculoAno: (f.veiculoAno || '').toString().trim(),
+        biografia: (f.biografia || '').trim(),
         valorHora
       });
     }

@@ -91,6 +91,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/aluno/pagamento-pix/pagamento-pix.page').then((m) => m.PagamentoPixPage),
       },
       {
+        path: 'comprovante-pix',
+        title: 'Enviar comprovante | Guidaz',
+        loadComponent: () => import('./pages/aluno/comprovante-pix/comprovante-pix.page').then((m) => m.ComprovantePixPage),
+      },
+      {
         path: 'saldo-aulas',
         title: 'Saldo de aulas | Guidaz',
         loadComponent: () => import('./pages/aluno/saldo-aulas/saldo-aulas.page').then((m) => m.SaldoAulasPage),

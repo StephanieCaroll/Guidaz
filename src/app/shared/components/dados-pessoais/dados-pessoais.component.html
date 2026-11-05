@@ -13,7 +13,6 @@
     </div>
     
     <div class="input-col">
-
       <label class="label" for="nascimento">
         <span class="text-long">Data de Nascimento</span>
         <span class="text-short">Data de nasc.</span>
@@ -71,6 +70,34 @@
       <label class="label" for="complemento">Complemento</label>
       <div class="field field--sm">
         <input id="complemento" formControlName="complemento" placeholder="Insira seu complemento" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Campos específicos do Instrutor -->
+  <div *ngIf="isInstrutor">
+    <h3 class="section-title">Dados do Instrutor</h3>
+
+    <div class="row-3" style="--cols: 1fr 1fr">
+      <div class="input-col">
+        <label class="label" for="veiculoPlaca">Placa do Veículo</label>
+        <div class="field field--sm">
+          <input id="veiculoPlaca" formControlName="veiculoPlaca" placeholder="ABC-1234" />
+        </div>
+      </div>
+
+      <div class="input-col">
+        <label class="label" for="veiculoAno">Ano do Veículo</label>
+        <div class="field field--sm">
+          <input id="veiculoAno" formControlName="veiculoAno" placeholder="Ex: 2022" inputmode="numeric" />
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 1rem;">
+      <label class="label" for="biografia">Biografia</label>
+      <div class="field">
+        <textarea id="biografia" formControlName="biografia" rows="3" placeholder="Insira uma breve apresentação sobre você..."></textarea>
       </div>
     </div>
   </div>

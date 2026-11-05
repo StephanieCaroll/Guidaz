@@ -30,6 +30,11 @@
       <h2 class="user-name">{{ nome() }}</h2>
       <p class="user-role">{{ isInstrutor() ? 'Instrutor' : 'Aluno' }}</p>
 
+      <!-- Biografia exibida abaixo do tipo de usuário (Apenas se for Instrutor) -->
+      <div class="biografia-box" *ngIf="isInstrutor() && biografia()">
+        <p class="biografia-text">"{{ biografia() }}"</p>
+      </div>
+
       <div class="rating-badge">
         <ion-icon name="star" class="star-icon"></ion-icon>
         <span class="rating-text">{{ notaUsuario() | number:'1.1-1' }}</span>
@@ -272,6 +277,79 @@
                 </div>
               </div>
 
+              <!-- Seção: Endereço -->
+              <div class="form-section">
+                <h3 class="form-section-title">Endereço</h3>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label>CEP</label>
+                    <input
+                      class="field-input"
+                      [(ngModel)]="editForm.cep"
+                      name="cep"
+                      type="text"
+                      placeholder="00000-000"
+                    />
+                  </div>
+                  <div class="field">
+                    <label>Número</label>
+                    <input
+                      class="field-input"
+                      [(ngModel)]="editForm.numero"
+                      name="numero"
+                      type="text"
+                      placeholder="123"
+                    />
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label>Logradouro</label>
+                  <input
+                    class="field-input"
+                    [(ngModel)]="editForm.logradouro"
+                    name="logradouro"
+                    type="text"
+                    placeholder="Rua / Avenida"
+                  />
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label>Bairro</label>
+                    <input
+                      class="field-input"
+                      [(ngModel)]="editForm.bairro"
+                      name="bairro"
+                      type="text"
+                      placeholder="Seu bairro"
+                    />
+                  </div>
+                  <div class="field">
+                    <label>Cidade</label>
+                    <input
+                      class="field-input"
+                      [(ngModel)]="editForm.cidade"
+                      name="cidade"
+                      type="text"
+                      placeholder="Sua cidade"
+                    />
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label>Complemento</label>
+                  <input
+                    class="field-input"
+                    [(ngModel)]="editForm.complemento"
+                    name="complemento"
+                    type="text"
+                    placeholder="Apto, Bloco, etc."
+                  />
+                </div>
+              </div>
+
               <!-- Seção: Instrutor -->
               <div class="form-section" *ngIf="isInstrutor()">
                 <h3 class="form-section-title">Dados do instrutor</h3>
@@ -322,15 +400,37 @@
                     />
                   </div>
                   <div class="field">
-                    <label>Valor hora/aula (R$)</label>
+                    <label>Ano do veículo</label>
                     <input
                       class="field-input"
-                      [(ngModel)]="editForm.valorHora"
-                      name="valorHora"
-                      type="number"
-                      placeholder="0,00"
+                      [(ngModel)]="editForm.veiculoAno"
+                      name="veiculoAno"
+                      type="text"
+                      placeholder="Ex: 2022"
                     />
                   </div>
+                </div>
+
+                <div class="field">
+                  <label>Valor hora/aula (R$)</label>
+                  <input
+                    class="field-input"
+                    [(ngModel)]="editForm.valorHora"
+                    name="valorHora"
+                    type="number"
+                    placeholder="0,00"
+                  />
+                </div>
+
+                <div class="field">
+                  <label>Biografia</label>
+                  <ion-textarea
+                    class="field-input"
+                    [(ngModel)]="editForm.biografia"
+                    name="biografia"
+                    rows="3"
+                    placeholder="Escreva uma breve apresentação..."
+                  ></ion-textarea>
                 </div>
               </div>
 
