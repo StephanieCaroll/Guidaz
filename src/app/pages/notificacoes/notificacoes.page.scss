@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Montserrat:wght@500;600;700;800&display=swap');
+
+$azul: #1a6bff;
+$fundo: #f2f2f7;
+$cinza-texto: #7a7a7a;
+$sombra-card: 0 6px 16px rgba(0, 0, 0, 0.07);
+
+:host {
+  font-family: 'Montserrat', sans-serif;
+}
+
+button {
+  font-family: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.bg-light {
+  --background: #{$fundo};
+}
+
+/* Header Personalizado Azul */
+.custom-header {
+  background: $azul;
+  padding: calc(16px + env(safe-area-inset-top)) 20px 24px 20px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  justify-content: center;
+
+  .back-btn {
+    position: absolute;
+    left: 20px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+
+    ion-icon {
+      font-size: 20px;
+      color: $azul;
+    }
+
+    &:active {
+      opacity: 0.85;
+    }
+  }
+
+  .header-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0;
+  }
+}
+
+/* Conteúdo da Página */
+.page-content {
+  padding: 20px 22px calc(90px + env(safe-area-inset-bottom));
+}
+
+.notification-group {
+  margin-bottom: 24px;
+
+  .group-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #000000;
+    margin: 0 0 14px 6px;
+    letter-spacing: 0.5px;
+  }
+}
+
+/* Card de Notificação */
+.notification-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 14px 18px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: $sombra-card;
+
+  .icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    ion-icon {
+      font-size: 24px;
+      stroke-width: 32px;
+    }
+
+    /* Cores fiéis à imagem */
+    &.cancelada {
+      background: #ff9500;
+      ion-icon {
+        color: #000000;
+      }
+    }
+
+    &.agendada {
+      background: #4ed3ff;
+      ion-icon {
+        color: #000000;
+      }
+    }
+
+    &.pagamento {
+      background: #73f055;
+      ion-icon {
+        color: #000000;
+      }
+    }
+  }
+
+  .card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #000000;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .card-desc {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 400;
+      color: $cinza-texto;
+      margin: 0;
+      line-height: 1.3;
+    }
+  }
+}

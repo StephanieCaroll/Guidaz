@@ -95,4 +95,8 @@ export class PagamentoPixPage {
       state: { pacote: this.pacote },
     });
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 3a2a546a9cffcaa7e40d9c0d43211f30046ac45d

@@ -1,7 +1,16 @@
 <ion-header class="ion-no-border">
   <ion-toolbar class="header-toolbar">
     <div class="profile">
-      <div class="avatar"></div>
+      <div class="avatar">
+        <img
+          *ngIf="temFoto"
+          [src]="fotoUrl"
+          alt="Foto do Instrutor"
+          class="profile-img"
+          (error)="onImgError($event)"
+        />
+        <ion-icon *ngIf="!temFoto" name="person-outline"></ion-icon>
+      </div>
 
       <div class="profile-text">
         <span class="greeting">Bem-vindo Instrutor</span>

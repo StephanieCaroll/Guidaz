@@ -4,17 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   IonContent,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonButtons,
-  IonButton,
   IonIcon,
   IonToggle,
   IonModal,
-  IonItem,
-  IonLabel,
-  IonInput,
+  IonTextarea,
   IonSpinner,
   AlertController,
   ActionSheetController
@@ -48,6 +41,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { SettingsService, FontSize, Language } from '../../core/services/settings.service';
 import { ToastService } from '../../core/services/toast.service';
 import { BottomNavComponent } from '../../shared/components/bottom-nav/bottom-nav.component';
+import { environment } from '../../../environments/environment';
 
 interface UsuarioPerfil {
   id?: number | string;
@@ -63,10 +57,20 @@ interface UsuarioPerfil {
   veiculoModelo?: string;
   veiculo?: string;
   veiculoPlaca?: string;
+  veiculoAno?: number | string;
   valorHora?: number | null;
   categoria?: string;
+  categoriasLecionadas?: string[];
+  categorias?: string[];
   saldoAulas?: number;
   mostrarTelefone?: boolean;
+  cep?: string;
+  logradouro?: string;
+  bairro?: string;
+  cidade?: string;
+  numero?: string;
+  complemento?: string;
+  biografia?: string;
 }
 
 interface EditForm {
@@ -77,7 +81,15 @@ interface EditForm {
   credencial: string;
   veiculoModelo: string;
   veiculoPlaca: string;
+  veiculoAno: number | string;
   valorHora: number | string | null;
+  cep: string;
+  logradouro: string;
+  bairro: string;
+  cidade: string;
+  numero: string;
+  complemento: string;
+  biografia: string;
 }
 
 @Component({
@@ -89,17 +101,10 @@ interface EditForm {
     CommonModule,
     FormsModule,
     IonContent,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonButtons,
-    IonButton,
     IonIcon,
     IonToggle,
     IonModal,
-    IonItem,
-    IonLabel,
-    IonInput,
+    IonTextarea,
     IonSpinner,
     BottomNavComponent
   ]
@@ -121,10 +126,21 @@ export class PerfilPage {
 
   readonly nome = computed(() => this.u()?.nome || this.t('usuarioPadrao'));
 
-  readonly fotoUrl = computed(() => this.u()?.fotoUrl || this.u()?.foto || '');
+  readonly fotoUrl = computed(() => {
+    const raw = this.u()?.fotoUrl || this.u()?.foto || '';
+    if (!raw) return '';
+    if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:')) {
+      return raw;
+    }
+    const baseUrl = environment.apiUrl.replace(/\/api\/?$/, '');
+    return raw.startsWith('/') ? `${baseUrl}${raw}` : `${baseUrl}/${raw}`;
+  });
+
   readonly temFoto = computed(() => !!this.fotoUrl());
 
   readonly notaUsuario = computed(() => this.u()?.nota ?? 5.0);
+
+  readonly biografia = computed(() => this.u()?.biografia || '');
 
   readonly resumo = computed(() => {
     const u = this.u();
@@ -139,7 +155,7 @@ export class PerfilPage {
     const partes: string[] = [];
     if (u.categoria) partes.push(`${this.t('categoria')} ${u.categoria}`);
     if (u.saldoAulas != null) partes.push(`${u.saldoAulas} ${this.t('aulas')}`);
-    return partes.join(' • ');
+    return partes.join(' - ');
   });
 
   isModalEdicaoAberto = false;
@@ -253,32 +269,16 @@ export class PerfilPage {
       return;
     }
 
-    try {
-      const dataUrl = await this.redimensionar(arquivo, 400);
-      this.persistir({ fotoUrl: dataUrl }, 'fotoAtualizada');
-    } catch {
-      this.toastService.presentToast(this.t('fotoInvalida'), 'danger');
-    }
-  }
-
-  private redimensionar(arquivo: File, lado: number): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(reader.error);
-      reader.onload = () => {
-        const img = new Image();
-        img.onerror = () => reject(new Error('IMAGEM_INVALIDA'));
-        img.onload = () => {
-          const escala = Math.min(1, lado / Math.max(img.width, img.height));
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.round(img.width * escala);
-          canvas.height = Math.round(img.height * escala);
-          canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/jpeg', 0.8));
-        };
-        img.src = reader.result as string;
-      };
-      reader.readAsDataURL(arquivo);
+    this.carregandoSalvar = true;
+    this.authService.uploadFoto(arquivo).subscribe({
+      next: () => {
+        this.carregandoSalvar = false;
+        this.toastService.presentToast(this.t('fotoAtualizada'), 'success');
+      },
+      error: () => {
+        this.carregandoSalvar = false;
+        this.toastService.presentToast(this.t('erroSalvar'), 'danger');
+      }
     });
   }
 
@@ -291,7 +291,15 @@ export class PerfilPage {
       credencial: '',
       veiculoModelo: '',
       veiculoPlaca: '',
-      valorHora: null
+      veiculoAno: '',
+      valorHora: null,
+      cep: '',
+      logradouro: '',
+      bairro: '',
+      cidade: '',
+      numero: '',
+      complemento: '',
+      biografia: ''
     };
   }
 
@@ -305,7 +313,15 @@ export class PerfilPage {
       credencial: u?.credencial || '',
       veiculoModelo: u?.veiculoModelo || u?.veiculo || '',
       veiculoPlaca: u?.veiculoPlaca || '',
-      valorHora: u?.valorHora ?? null
+      veiculoAno: u?.veiculoAno || '',
+      valorHora: u?.valorHora ?? null,
+      cep: u?.cep || '',
+      logradouro: u?.logradouro || '',
+      bairro: u?.bairro || '',
+      cidade: u?.cidade || '',
+      numero: u?.numero || '',
+      complemento: u?.complemento || '',
+      biografia: u?.biografia || ''
     };
     this.isModalEdicaoAberto = true;
   }
@@ -327,7 +343,13 @@ export class PerfilPage {
     const dados: Record<string, unknown> = {
       nome,
       email,
-      telefone: (f.telefone || '').trim()
+      telefone: (f.telefone || '').trim(),
+      cep: (f.cep || '').trim(),
+      logradouro: (f.logradouro || '').trim(),
+      bairro: (f.bairro || '').trim(),
+      cidade: (f.cidade || '').trim(),
+      numero: (f.numero || '').trim(),
+      complemento: (f.complemento || '').trim()
     };
 
     if (this.isInstrutor()) {
@@ -344,6 +366,8 @@ export class PerfilPage {
         credencial: (f.credencial || '').trim(),
         veiculoModelo: (f.veiculoModelo || '').trim(),
         veiculoPlaca: (f.veiculoPlaca || '').trim().toUpperCase(),
+        veiculoAno: (f.veiculoAno || '').toString().trim(),
+        biografia: (f.biografia || '').trim(),
         valorHora
       });
     }

@@ -1,17 +1,25 @@
 import { Component, input } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Perfil } from '../../../core/models/user.model';
 import { maskCep, maskCpf, maskData, maskTelefone } from '../../../core/utils/masks';
 
 type Campo = 'telefone' | 'nascimento' | 'cpf' | 'cep';
 
 @Component({
   selector: 'app-dados-pessoais',
-  imports: [ReactiveFormsModule],
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './dados-pessoais.component.html',
   styleUrls: ['./dados-pessoais.component.scss'], 
 })
 export class DadosPessoaisComponent {
   readonly group = input.required<FormGroup>();
+  readonly perfil = input<Perfil>('aluno');
+
+  get isInstrutor(): boolean {
+    return this.perfil() === 'instrutor';
+  }
 
   private readonly masks: Record<Campo, (v: string) => string> = {
     telefone: maskTelefone,
@@ -39,7 +47,7 @@ export class DadosPessoaisComponent {
         cidade: d.localidade ?? '',
       });
     } catch {
-     
+      // Falha silenciosa de busca
     }
   }
 }

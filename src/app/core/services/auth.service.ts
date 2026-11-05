@@ -199,6 +199,46 @@ export class AuthService {
     );
   }
 
+  // UPLOAD FOTO DE PERFIL
+  uploadFoto(file: File): Observable<Usuario> {
+    const usuario = this._usuario();
+    const id = usuario?.id || (usuario as any)?.codigo || (usuario as any)?.idAluno || (usuario as any)?.idInstrutor;
+
+    if (!usuario || !id) {
+      return throwError(() => new Error('USUARIO_NAO_LOGADO'));
+    }
+
+    const endpoint = this.endpointUsuario();
+    const url = `${endpoint}/${id}/foto`;
+
+    const formData = new FormData();
+    formData.append('foto', file);
+
+    return this.http.post<Usuario>(url, formData).pipe(
+      map((resp: any) => {
+        let usuarioRetornado = resp;
+        if (typeof resp === 'string') {
+          try { usuarioRetornado = JSON.parse(resp); } catch (e) {}
+        }
+
+        const atualizado: Usuario = {
+          ...usuario,
+          ...(usuarioRetornado ?? {}),
+          id: id,
+          perfil: usuario.perfil
+        };
+
+        this._usuario.set(atualizado);
+        this.salvarSessao(atualizado);
+        return atualizado;
+      }),
+      catchError((err) => {
+        console.error('Erro ao fazer upload da foto de perfil:', err);
+        return throwError(() => err);
+      })
+    );
+  }
+
   // ALTERAR SENHA 
   alterarSenha(atualSenha: string, novaSenha: string): Observable<void> {
     const usuario = this._usuario();
