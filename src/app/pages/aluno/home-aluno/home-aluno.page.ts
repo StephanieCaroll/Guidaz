@@ -19,10 +19,12 @@ import {
   chevronForwardOutline,
   chevronDownOutline,
   createOutline,
-  trashOutline
+  trashOutline,
+  personOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
+import { environment } from '../../../../environments/environment';
 
 /* Tipos */
 interface DiaCalendario {
@@ -42,7 +44,7 @@ interface Aula {
 type Filtro = 'todas' | 'completa' | 'incompleta';
 
 /* Constantes */
-const ITEM_W = 50; // largura (px) de cada dia no calendário. Tem que ser igual no SCSS
+const ITEM_W = 50; // largura (px) de cada dia no calendário.
 const LOTE = 30; // quantos dias carrega por vez ao chegar nas pontas
 
 const SEMANA_CURTA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
@@ -79,8 +81,9 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
 
   private readonly auth = inject(AuthService);
 
-  /* Usuário logado */
   nomeAluno = '';
+  fotoUrl = '';
+  temFoto = false;
   temNotificacao = true;
 
   /* Calendário */
@@ -89,13 +92,10 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
   dias: DiaCalendario[] = [];
   mesAno = '';
 
-  /* Progresso (trocar por dados do back-end depois) */
   progresso = { categoria: 'Categoria B', realizadas: 6, total: 10 };
 
-  /* Aulas (trocar por dados do back-end depois) */
   aulas: Aula[] = [];
 
-  /* Filtro */
   filtro: Filtro = 'todas';
   filtroAberto = false;
   opcoesFiltro: { id: Filtro; label: string }[] = [
@@ -118,7 +118,8 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
       chevronForwardOutline,
       chevronDownOutline,
       createOutline,
-      trashOutline
+      trashOutline,
+      personOutline
     });
   }
 
@@ -141,14 +142,29 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
     });
   }
 
-  /** Pega o nome de quem logou direto do AuthService */
+  /** Pega os dados de quem logou direto do AuthService e processa a foto */
   private carregarUsuario() {
     const u: any = this.auth.usuario();
     this.nomeAluno = u?.nome ?? u?.nomeCompleto ?? u?.name ?? '';
 
-    if (!this.nomeAluno) {
-      console.warn('Usuário logado sem campo de nome:', u);
+    const raw = u?.fotoUrl || u?.foto || '';
+    if (raw) {
+      if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:')) {
+        this.fotoUrl = raw;
+      } else {
+        const baseUrl = environment.apiUrl.replace(/\/api\/?$/, '');
+        this.fotoUrl = raw.startsWith('/') ? `${baseUrl}${raw}` : `${baseUrl}/${raw}`;
+      }
+      this.temFoto = true;
+    } else {
+      this.fotoUrl = '';
+      this.temFoto = false;
     }
+  }
+
+  onImgError(event: Event) {
+    this.temFoto = false;
+    (event.target as HTMLImageElement).style.display = 'none';
   }
 
   /* PROGRESSO */

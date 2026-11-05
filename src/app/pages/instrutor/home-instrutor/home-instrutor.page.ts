@@ -19,10 +19,12 @@ import {
   star,
   chevronForwardOutline,
   createOutline,
-  trashOutline
+  trashOutline,
+  personOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
+import { environment } from '../../../../environments/environment';
 
 /* Tipos */
 interface DiaCalendario {
@@ -81,6 +83,8 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
   private readonly auth = inject(AuthService);
 
   nomeInstrutor = '';
+  fotoUrl = '';
+  temFoto = false;
   temNotificacao = true;
   hoje = zerarHora(new Date());
   selecionado = this.hoje;
@@ -103,7 +107,8 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
       star,
       chevronForwardOutline,
       createOutline,
-      trashOutline
+      trashOutline,
+      personOutline
     });
   }
 
@@ -134,14 +139,29 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
     return this.mini.media.toFixed(1).replace('.', ',');
   }
 
-  /** Pega o nome de quem logou direto do AuthService */
+  /** Pega os dados de quem logou direto do AuthService e processa a foto */
   private carregarUsuario() {
     const u: any = this.auth.usuario();
     this.nomeInstrutor = u?.nome ?? u?.nomeCompleto ?? u?.name ?? '';
 
-    if (!this.nomeInstrutor) {
-      console.warn('Usuário logado sem campo de nome:', u);
+    const raw = u?.fotoUrl || u?.foto || '';
+    if (raw) {
+      if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:')) {
+        this.fotoUrl = raw;
+      } else {
+        const baseUrl = environment.apiUrl.replace(/\/api\/?$/, '');
+        this.fotoUrl = raw.startsWith('/') ? `${baseUrl}${raw}` : `${baseUrl}/${raw}`;
+      }
+      this.temFoto = true;
+    } else {
+      this.fotoUrl = '';
+      this.temFoto = false;
     }
+  }
+
+  onImgError(event: Event) {
+    this.temFoto = false;
+    (event.target as HTMLImageElement).style.display = 'none';
   }
 
   /* CALENDÁRIO */

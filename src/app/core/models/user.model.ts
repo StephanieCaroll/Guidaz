@@ -18,7 +18,7 @@ export interface DadosCadastro {
 }
 
 export interface Usuario extends DadosCadastro {
-  id: string;
+  id: string | number;
   email: string;
   perfil: Perfil;
   fotoUrl?: string;
