@@ -316,6 +316,7 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
 
   abrirNotificacoes() {
     this.temNotificacao = false;
+    this.router.navigateByUrl('/notificacoes');
   }
 
   /* DADOS DE EXEMPLO */

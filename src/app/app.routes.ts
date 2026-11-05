@@ -115,6 +115,10 @@ export const routes: Routes = [
     title: 'Meu perfil | Guidaz',
     loadComponent: () => import('./pages/perfil/perfil.page').then((m) => m.PerfilPage),
   },
+  {
+    path: 'notificacoes',
+    loadComponent: () => import('./pages/notificacoes/notificacoes.page').then(m => m.NotificacoesPage)
+  },
 
   { path: '**', redirectTo: 'login' },
 ];
