@@ -1,0 +1,92 @@
+<ion-content [fullscreen]="true" class="hist">
+  <div class="hist__container">
+
+    <header class="hist__header">
+    </header>
+
+    <p class="erro" *ngIf="erro()">{{ erro() }}</p>
+
+    <!-- Progresso (horas contratadas, realizadas e pendentes) -->
+    <section class="resumo">
+      <div class="resumo__topo">
+        <p class="resumo__rotulo">Seu Progresso</p>
+        <span class="resumo__tag">Categoria {{ categoria }}</span>
+      </div>
+      <p class="resumo__total">
+        {{ resumo().horasRealizadas | number:'1.0-1' }} de
+        {{ resumo().horasContratadas | number:'1.0-1' }} Horas
+      </p>
+
+      <div class="barra" role="progressbar"
+           [attr.aria-valuenow]="resumo().percentualConcluido" aria-valuemin="0" aria-valuemax="100">
+        <div class="barra__preenchida" [style.width.%]="resumo().percentualConcluido"></div>
+      </div>
+
+      <div class="resumo__stats">
+        <span>{{ resumo().horasRealizadas | number:'1.0-1' }} Realizadas</span>
+        <span>{{ resumo().horasPendentes | number:'1.0-1' }} Pendentes</span>
+      </div>
+    </section>
+
+    <!-- Lista -->
+    <section class="lista">
+      <h2 class="lista__titulo">Histórico de Aulas</h2>
+
+      <label class="busca">
+        <ion-icon name="search-outline"></ion-icon>
+        <input type="search" placeholder="Pesquisar por aula ou instrutor"
+               [value]="busca()" (input)="onBusca($event)" />
+      </label>
+
+      <div class="chips">
+        <button type="button" class="chip" *ngFor="let f of filtros"
+                [class.chip--ativo]="filtro() === f.id"
+                (click)="filtro.set(f.id)">
+          {{ f.label }}
+        </button>
+      </div>
+
+      <div class="lista__grid">
+        <article class="card" *ngFor="let aula of aulasFiltradas(); trackBy: trackAula"
+                 (click)="abrirDetalhe(aula)">
+          <span class="card__data">
+            <ion-icon name="calendar-outline"></ion-icon>
+            {{ formatarData(aula.data) }}
+          </span>
+
+          <button type="button" class="card__menu" aria-label="Mais opções"
+                  (click)="$event.stopPropagation()">
+            <ion-icon name="ellipsis-vertical"></ion-icon>
+          </button>
+
+          <h3 class="card__titulo">{{ aula.titulo }}</h3>
+          <p class="card__aluno">{{ aula.instrutor }}</p>
+
+          <span class="card__status" [ngClass]="'status--' + aula.status">
+            <i class="status__ponto"></i>{{ labelStatus(aula.status) }}
+          </span>
+
+          <!-- Avaliação 1 a 5 estrelas: só em aula concluída -->
+          <div class="estrelas" *ngIf="aula.status === 'concluida'">
+            <span class="estrelas__rotulo">
+              {{ aula.minhaNota ? 'Sua avaliação' : 'Avalie esta aula' }}
+            </span>
+            <div class="estrelas__lista">
+              <button type="button" class="estrela" *ngFor="let n of estrelas"
+                      [class.estrela--cheia]="n <= (aula.minhaNota ?? 0)"
+                      [attr.aria-label]="n + ' estrelas'"
+                      (click)="avaliar(aula, n, $event)">
+                <ion-icon [name]="n <= (aula.minhaNota ?? 0) ? 'star' : 'star-outline'"></ion-icon>
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <p class="vazio" *ngIf="aulasFiltradas().length === 0">Nenhuma aula encontrada.</p>
+    </section>
+
+  </div>
+</ion-content>
+
+<app-bottom-nav activeTab="historico"></app-bottom-nav>

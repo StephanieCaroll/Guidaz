@@ -18,7 +18,7 @@ const T: Record<string, [string, string, string]> = {
   // menu inferior
   navInicio: ['Início', 'Home', 'Inicio'],
   navAgenda: ['Agenda', 'Schedule', 'Agenda'],
-  navProgresso: ['Progresso', 'Progress', 'Progreso'],
+  navHistorico: ['Histórico', 'History', 'Historial'],
   navPerfil: ['Perfil', 'Profile', 'Perfil'],
 
   // perfil

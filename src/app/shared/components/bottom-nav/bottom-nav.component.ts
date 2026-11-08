@@ -8,7 +8,7 @@ import { homeOutline, calendarOutline, statsChartOutline, personOutline } from '
 import { AuthService } from '../../../core/services/auth.service';
 import { SettingsService } from '../../../core/services/settings.service';
 
-export type AbaNav = 'inicio' | 'agenda' | 'progresso' | 'perfil';
+export type AbaNav = 'inicio' | 'agenda' | 'historico' | 'perfil';
 
 interface ItemNav {
   id: AbaNav;
@@ -49,10 +49,10 @@ export class BottomNavComponent {
         rota: instrutor ? '/instrutor/agenda-disponibilidade' : '/aluno/agendamento-aulas'
       },
       {
-        id: 'progresso',
-        chaveLabel: 'navProgresso',
+        id: 'historico',
+        chaveLabel: 'navHistorico',
         icone: 'stats-chart-outline',
-        rota: instrutor ? '/instrutor/gestao-alunos' : '/aluno/historico-avaliacoes'
+        rota: instrutor ? '/instrutor/progresso-instrutor' : '/aluno/historico-aula'
       },
       {
         id: 'perfil',

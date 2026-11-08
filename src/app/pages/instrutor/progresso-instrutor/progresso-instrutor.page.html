@@ -1,0 +1,83 @@
+<ion-content [fullscreen]="true" class="hist">
+  <div class="hist__container">
+
+    <!-- Cabeçalho -->
+    <header class="hist__header">
+      <div>
+      </div>
+    </header>
+
+    <!-- Resumo do mês -->
+    <section class="resumo">
+      <p class="resumo__rotulo">Resumo do Mês</p>
+      <p class="resumo__total">{{ resumo.total }} Aulas</p>
+      <div class="resumo__stats">
+        <span><strong>{{ resumo.realizadas }}</strong> Realizadas</span>
+        <span><strong>{{ resumo.canceladas }}</strong> Canceladas</span>
+        <span><strong>{{ resumo.faltas }}</strong> Faltas</span>
+      </div>
+    </section>
+
+    <!-- Atalhos -->
+    <section class="atalhos">
+      <button type="button" class="atalho" (click)="irPara('/instrutor/gestao-alunos')">
+        <ion-icon name="people-outline" class="atalho__icone"></ion-icon>
+        <span class="atalho__texto">
+          <strong>Meus Alunos</strong>
+          <small>{{ resumo.alunosAtivos }} Alunos ativos</small>
+        </span>
+        <ion-icon name="chevron-forward" class="atalho__seta"></ion-icon>
+      </button>
+
+      <button type="button" class="atalho" (click)="irPara('/instrutor/historico-avaliacoes')">
+        <ion-icon name="star-outline" class="atalho__icone"></ion-icon>
+        <span class="atalho__texto">
+          <strong>Avaliações</strong>
+          <small>Feedbacks</small>
+        </span>
+        <ion-icon name="chevron-forward" class="atalho__seta"></ion-icon>
+      </button>
+    </section>
+
+    <!-- Histórico -->
+    <section class="lista">
+      <h2 class="lista__titulo">Histórico de Aulas</h2>
+
+      <label class="busca">
+        <ion-icon name="search-outline"></ion-icon>
+        <input
+          type="search"
+          placeholder="Pesquisar por nome ou categoria"
+          [value]="busca()"
+          (input)="onBusca($event)" />
+      </label>
+
+      <div class="lista__grid">
+        <article class="card" *ngFor="let aula of aulasFiltradas(); trackBy: trackAula">
+          <span class="card__data">
+            <ion-icon name="calendar-outline"></ion-icon>
+            {{ formatarData(aula.data) }}
+          </span>
+
+          <button type="button" class="card__menu" aria-label="Mais opções">
+            <ion-icon name="ellipsis-vertical"></ion-icon>
+          </button>
+
+          <h3 class="card__titulo">{{ aula.titulo }}</h3>
+          <p class="card__aluno">{{ aula.aluno }}</p>
+
+          <span class="card__status" [ngClass]="'status--' + aula.status">
+            <i class="status__ponto"></i>{{ labelStatus(aula.status) }}
+          </span>
+        </article>
+      </div>
+
+      <p class="vazio" *ngIf="aulasFiltradas().length === 0">
+        Nenhuma aula encontrada.
+      </p>
+    </section>
+
+  </div>
+</ion-content>
+
+<app-bottom-nav activeTab="historico"></app-bottom-nav>

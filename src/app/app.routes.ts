@@ -52,6 +52,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/instrutor/home-instrutor/home-instrutor.page').then((m) => m.HomeInstrutorPage),
       },
       {
+        path: 'progresso-instrutor',
+        title: 'Progresso | Guidaz',
+        loadComponent: () => import('./pages/instrutor/progresso-instrutor/progresso-instrutor.page').then(m => m.ProgressoInstrutorPage),
+      },
+      {
         path: 'agenda-disponibilidade',
         title: 'Agenda e disponibilidade | Guidaz',
         loadComponent: () => import('./pages/instrutor/agenda-disponibilidade/agenda-disponibilidade.page').then((m) => m.AgendaDisponibilidadePage),
@@ -96,15 +101,16 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/aluno/comprovante-pix/comprovante-pix.page').then((m) => m.ComprovantePixPage),
       },
       {
-        path: 'saldo-aulas',
-        title: 'Saldo de aulas | Guidaz',
-        loadComponent: () => import('./pages/aluno/saldo-aulas/saldo-aulas.page').then((m) => m.SaldoAulasPage),
+        path: 'historico-aula',
+        title: 'Histórico de aulas | Guidaz',
+        loadComponent: () => import('./pages/aluno/historico-aula/historico-aula.page').then(m => m.HistoricoAulaPage),
       },
       {
-        path: 'historico-avaliacoes',
-        title: 'Histórico e avaliações | Guidaz',
-        loadComponent: () => import('./pages/aluno/historico-avaliacoes/historico-avaliacoes.page').then((m) => m.HistoricoAvaliacoesPage),
-      },
+       
+        path: 'detalhe-aula',
+        title: 'Detalhe da aula | Guidaz',
+        loadComponent: () => import('./pages/aluno/detalhe-aula/detalhe-aula.page').then(m => m.DetalheAulaPage),
+},
     ],
   },
 

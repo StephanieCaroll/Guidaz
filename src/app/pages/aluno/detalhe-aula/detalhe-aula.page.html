@@ -1,0 +1,101 @@
+<ion-content [fullscreen]="true" class="det">
+
+  <!-- Topo azul -->
+  <div class="hero">
+    <button type="button" class="hero__btn" aria-label="Voltar" (click)="voltar()">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+    </button>
+    <button type="button" class="hero__btn" aria-label="Favoritar" (click)="alternarFavorito()">
+      <ion-icon [name]="favorito() ? 'bookmark' : 'bookmark-outline'"></ion-icon>
+    </button>
+  </div>
+
+  <!-- Folha de conteúdo -->
+  <div class="folha">
+    <div class="folha__container">
+
+      <span class="tag">{{ aula.tipo }}</span>
+      <h1 class="titulo">{{ aula.titulo }}</h1>
+
+      <div class="meta">
+        <span class="meta__status" [class.meta__status--off]="!aula.disponivel">
+          <i class="ponto"></i>{{ aula.disponivel ? 'Disponível' : 'Indisponível' }}
+        </span>
+        <span class="meta__nota">
+          <ion-icon name="star"></ion-icon>
+          <strong>{{ aula.nota | number:'1.1-1' }}</strong>
+          <span>({{ aula.avaliacoes }} avaliações)</span>
+        </span>
+      </div>
+
+      <!-- Informações rápidas -->
+      <div class="info">
+        <div class="info__item">
+          <ion-icon name="layers-outline"></ion-icon>
+          <span class="info__rotulo">Categoria</span>
+          <strong class="info__valor">{{ aula.categoria }}</strong>
+        </div>
+        <div class="info__item">
+          <ion-icon name="time-outline"></ion-icon>
+          <span class="info__rotulo">Duração</span>
+          <strong class="info__valor">{{ aula.duracaoMin }} min</strong>
+        </div>
+        <div class="info__item">
+          <ion-icon name="pricetag-outline"></ion-icon>
+          <span class="info__rotulo">Valor</span>
+          <strong class="info__valor">{{ aula.valor | currency:'BRL':'symbol':'1.0-0' }}</strong>
+        </div>
+      </div>
+
+      <div class="conteudo">
+        <div class="conteudo__principal">
+
+          <h2 class="secao">Instrutor</h2>
+          <button type="button" class="instrutor" (click)="verPerfil()">
+            <span class="instrutor__foto">
+              <img *ngIf="aula.instrutor.foto; else semFoto" [src]="aula.instrutor.foto" alt="" />
+              <ng-template #semFoto><ion-icon name="person-outline"></ion-icon></ng-template>
+            </span>
+            <span class="instrutor__texto">
+              <strong>{{ aula.instrutor.nome }}</strong>
+              <small>{{ aula.instrutor.funcao }}</small>
+              <small class="instrutor__nota">
+                <ion-icon name="star"></ion-icon>
+                {{ aula.nota | number:'1.1-1' }} ({{ aula.avaliacoes }} avaliações)
+              </small>
+            </span>
+            <span class="instrutor__link">
+              Ver perfil <ion-icon name="chevron-forward"></ion-icon>
+            </span>
+          </button>
+
+          <h2 class="secao">Descrição</h2>
+          <p class="descricao">{{ aula.descricao }}</p>
+
+          <h2 class="secao">O que está incluso</h2>
+          <ul class="inclusos">
+            <li *ngFor="let item of aula.inclusos">
+              <ion-icon name="checkmark-circle"></ion-icon>
+              <span>{{ item }}</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Coluna lateral (desktop) / bloco final (celular) -->
+        <aside class="conteudo__lateral">
+          <div class="reserva">
+            <p class="reserva__rotulo">Valor da aula</p>
+            <p class="reserva__valor">{{ aula.valor | currency:'BRL':'symbol':'1.0-0' }}</p>
+            <button type="button" class="cta" [disabled]="!aula.disponivel" (click)="agendar()">
+              <ion-icon name="calendar-outline"></ion-icon>
+              Agendar aula
+            </button>
+          </div>
+        </aside>
+      </div>
+
+    </div>
+  </div>
+</ion-content>
+
+<app-bottom-nav activeTab="historico"></app-bottom-nav>
