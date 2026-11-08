@@ -20,6 +20,17 @@ export interface AulaHistoricoApi {
   minhaNota: number | null;
 }
 
+export interface ResumoInstrutor {
+  totalAulas: number;
+  realizadas: number;
+  canceladas: number;
+  faltas: number;
+  agendadas: number;
+  horasRealizadas: number;
+  horasPendentes: number;
+  mediaAvaliacoes: number | null;
+}
+
 export interface AvaliacaoRequest {
   usuarioId: number;
   tipoAvaliador: 'ALUNO' | 'INSTRUTOR';
@@ -39,6 +50,10 @@ export class AulaService {
 
   historicoAluno(alunoId: number): Observable<AulaHistoricoApi[]> {
     return this.http.get<AulaHistoricoApi[]>(`${this.api}/aulas/aluno/${alunoId}`);
+  }
+
+  resumoInstrutor(instrutorId: number): Observable<ResumoInstrutor> {
+  return this.http.get<ResumoInstrutor>(`${this.api}/horas/instrutor/${instrutorId}`);
   }
 
   historicoInstrutor(instrutorId: number): Observable<AulaHistoricoApi[]> {

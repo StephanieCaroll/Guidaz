@@ -7,15 +7,21 @@
       </div>
     </header>
 
+    <p class="erro" *ngIf="erro()">{{ erro() }}</p>
+
     <!-- Resumo do mês -->
     <section class="resumo">
       <p class="resumo__rotulo">Resumo do Mês</p>
-      <p class="resumo__total">{{ resumo.total }} Aulas</p>
+      <p class="resumo__total">{{ resumo().totalAulas }} Aulas</p>
       <div class="resumo__stats">
-        <span><strong>{{ resumo.realizadas }}</strong> Realizadas</span>
-        <span><strong>{{ resumo.canceladas }}</strong> Canceladas</span>
-        <span><strong>{{ resumo.faltas }}</strong> Faltas</span>
+        <span><strong>{{ resumo().realizadas }}</strong> Realizadas</span>
+        <span><strong>{{ resumo().canceladas }}</strong> Canceladas</span>
+        <span><strong>{{ resumo().faltas }}</strong> Faltas</span>
       </div>
+      <p class="resumo__horas">
+        {{ resumo().horasRealizadas | number:'1.0-1' }} h ministradas ·
+        {{ resumo().horasPendentes | number:'1.0-1' }} h a ministrar
+      </p>
     </section>
 
     <!-- Atalhos -->
@@ -24,7 +30,7 @@
         <ion-icon name="people-outline" class="atalho__icone"></ion-icon>
         <span class="atalho__texto">
           <strong>Meus Alunos</strong>
-          <small>{{ resumo.alunosAtivos }} Alunos ativos</small>
+          <small>{{ alunosAtivos }} Alunos ativos</small>
         </span>
         <ion-icon name="chevron-forward" class="atalho__seta"></ion-icon>
       </button>
@@ -33,7 +39,7 @@
         <ion-icon name="star-outline" class="atalho__icone"></ion-icon>
         <span class="atalho__texto">
           <strong>Avaliações</strong>
-          <small>Feedbacks</small>
+          <small>{{ subtituloAvaliacoes() }}</small>
         </span>
         <ion-icon name="chevron-forward" class="atalho__seta"></ion-icon>
       </button>
@@ -69,6 +75,20 @@
           <span class="card__status" [ngClass]="'status--' + aula.status">
             <i class="status__ponto"></i>{{ labelStatus(aula.status) }}
           </span>
+
+          <!-- Avaliação do aluno: só em aula concluída -->
+          <div class="estrelas" *ngIf="aula.status === 'concluida'">
+            <span class="estrelas__rotulo">
+              {{ aula.minhaNota ? 'Sua avaliação' : 'Avalie o aluno' }}
+            </span>
+            <div class="estrelas__lista">
+              <button type="button" class="estrela" *ngFor="let n of estrelas"
+                      [attr.aria-label]="n + ' estrelas'"
+                      (click)="avaliar(aula, n, $event)">
+                <ion-icon [name]="n <= (aula.minhaNota ?? 0) ? 'star' : 'star-outline'"></ion-icon>
+              </button>
+            </div>
+          </div>
         </article>
       </div>
 

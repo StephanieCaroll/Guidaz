@@ -263,3 +263,53 @@
   .resumo__total { font-size: 2.2rem; }
   .lista__grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+.resumo__horas {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.erro {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--vermelho);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Avaliação por estrelas */
+.estrelas {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--borda);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.estrelas__rotulo {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.estrelas__lista {
+  display: flex;
+  gap: 2px;
+}
+
+.estrela {
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: var(--laranja);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+
+  ion-icon { font-size: 24px; }
+}
