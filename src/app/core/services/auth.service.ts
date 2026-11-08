@@ -39,6 +39,10 @@ export class AuthService {
 
   // LOGIN 
   login(email: string, senha: string): Observable<Resultado> {
+    // Reseta estado anterior para impedir vazamento de cache entre contas
+    this._usuario.set(null);
+    try { localStorage.removeItem(KEY_SESSION); } catch {}
+
     return new Observable<Resultado>((observer) => {
       this.http.get<any[]>(`${this.apiUrl}/alunos`).subscribe({
         next: (alunos) => {
@@ -47,7 +51,6 @@ export class AuthService {
           );
 
           if (aluno) {
-            // Busca forçada do ID
             const idForcado = aluno.id || aluno.codigo || aluno.idAluno || aluno.idUsuario;
             this.abrirSessao({ ...aluno, id: idForcado, perfil: 'aluno' });
             observer.next({ ok: true, perfil: 'aluno' });
@@ -62,7 +65,6 @@ export class AuthService {
               );
 
               if (instrutor) {
-                // Busca forçada do ID
                 const idForcado = instrutor.id || instrutor.codigo || instrutor.idInstrutor || instrutor.idUsuario;
                 this.abrirSessao({ ...instrutor, id: idForcado, perfil: 'instrutor' });
                 observer.next({ ok: true, perfil: 'instrutor' });
@@ -112,7 +114,7 @@ export class AuthService {
             observer.complete();
           });
         },
-        error: (err) => {
+        error: () => {
           observer.next({ ok: false, erro: 'Erro ao realizar cadastro no servidor.' });
           observer.complete();
         }
@@ -127,7 +129,6 @@ export class AuthService {
 
     const id = atual.id || (atual as any).codigo || (atual as any).idAluno || (atual as any).idInstrutor;
 
-    // Trava de segurança: se não tiver ID, nem tenta buscar pra não dar erro 400
     if (!id) {
       console.warn('Sem ID na sessão para buscar. Usando os dados locais.');
       return of(atual);
@@ -258,15 +259,16 @@ export class AuthService {
 
   // LOGOUT E SESSÃO
   logout(): void {
+    this.draft.set(null);
     this._usuario.set(null);
     try { localStorage.removeItem(KEY_SESSION); } catch {}
-    void this.router.navigateByUrl('/login');
+    void this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 
   private abrirSessao(reg: any): void {
     const { senha: _senha, ...usuario } = reg;
-    this._usuario.set(usuario);
     this.salvarSessao(usuario);
+    this._usuario.set(usuario);
   }
 
   private salvarSessao(usuario: Usuario): void {

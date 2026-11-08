@@ -81,6 +81,16 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/aluno/home-aluno/home-aluno.page').then((m) => m.HomeAlunoPage),
       },
       {
+        path: 'instrutores',
+        title: 'Escolher instrutor | Guidaz',
+        loadComponent: () => import('./pages/aluno/instrutores/instrutores.page').then((m) => m.InstrutoresPage),
+      },
+      {
+        path: 'perfil-instrutor/:id',
+        title: 'Perfil do Instrutor | Guidaz',
+        loadComponent: () => import('./pages/aluno/perfil-instrutor/perfil-instrutor.page').then(m => m.PerfilInstrutorPage)
+      },
+      {
         path: 'agendamento-aulas',
         title: 'Agendar aulas | Guidaz',
         loadComponent: () => import('./pages/aluno/agendamento-aulas/agendamento-aulas.page').then((m) => m.AgendamentoAulasPage),
@@ -106,11 +116,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/aluno/historico-aula/historico-aula.page').then(m => m.HistoricoAulaPage),
       },
       {
-       
         path: 'detalhe-aula',
         title: 'Detalhe da aula | Guidaz',
         loadComponent: () => import('./pages/aluno/detalhe-aula/detalhe-aula.page').then(m => m.DetalheAulaPage),
-},
+      },
     ],
   },
 

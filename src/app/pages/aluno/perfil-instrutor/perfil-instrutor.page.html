@@ -1,0 +1,163 @@
+<ion-content [fullscreen]="true" class="page-container">
+  <!-- Top Bar com botões de voltar e opções -->
+  <div class="top-nav-bar">
+    <button class="btn-round" (click)="voltar()" type="button" aria-label="Voltar">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+    </button>
+    <button class="btn-round dots-btn" type="button" aria-label="Opções">
+      <ion-icon name="ellipsis-horizontal-outline"></ion-icon>
+    </button>
+  </div>
+
+  <!-- Estado: Carregando -->
+  <div *ngIf="carregando" class="state-container">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <p>Carregando perfil do instrutor...</p>
+  </div>
+
+  <!-- Estado: Erro -->
+  <div *ngIf="!carregando && erroCarregamento" class="state-container">
+    <ion-icon name="alert-circle-outline" class="state-icon error"></ion-icon>
+    <p>Não foi possível carregar as informações do instrutor.</p>
+    <button class="btn-retry" (click)="carregarDadosInstrutor()" type="button">
+      Tentar novamente
+    </button>
+  </div>
+
+  <!-- Conteúdo do Perfil -->
+  <div class="profile-content" *ngIf="!carregando && !erroCarregamento && instrutor">
+    
+    <!-- Cabeçalho do Perfil -->
+    <div class="profile-header">
+      <h1 class="instructor-name">{{ instrutor.nome }}</h1>
+      <span class="instructor-role">Instrutor</span>
+
+      <!-- Foto com Fallback -->
+      <div class="avatar-wrapper">
+        <img
+          *ngIf="getFotoUrl() && !hasImgError"
+          [src]="getFotoUrl()"
+          (error)="onImgError()"
+          alt="Foto {{ instrutor.nome }}"
+          class="avatar-img"
+        />
+        <div *ngIf="!getFotoUrl() || hasImgError" class="avatar-placeholder">
+          <ion-icon name="person-outline"></ion-icon>
+        </div>
+      </div>
+
+      <!-- Nota e Avaliações -->
+      <div class="rating-badge">
+        <ion-icon name="star" class="star-icon"></ion-icon>
+        <span>
+          {{ instrutor.notaMedia ? (instrutor.notaMedia | number:'1.1-1') : '5,0' }}
+          ({{ instrutor.totalAvaliacoes ?? (instrutor.avaliacoes?.length || 0) }} avaliações)
+        </span>
+      </div>
+
+      <!-- Biografia -->
+      <p class="instructor-bio" *ngIf="instrutor.biografia?.trim()">
+        {{ instrutor.biografia }}
+      </p>
+      <p class="instructor-bio empty-text" *ngIf="!instrutor.biografia?.trim()">
+        Biografia não preenchida ainda.
+      </p>
+
+      <!-- Botão Principal de Agendar Aula -->
+      <button class="btn-agendar-main" (click)="agendarAula()" type="button">
+        <ion-icon name="calendar-outline"></ion-icon>
+        Agendar Aula
+      </button>
+    </div>
+
+    <!-- Grid 2 Colunas: Habilidades e Preços -->
+    <div class="cards-grid">
+      <!-- Card Habilidades e Categorias -->
+      <div class="info-card small-card">
+        <h3>Habilidades e Categorias</h3>
+        <p class="highlight-text" *ngIf="instrutor.categoriasLecionadas?.trim()">
+          {{ instrutor.categoriasLecionadas }}
+        </p>
+        <span class="empty-field" *ngIf="!instrutor.categoriasLecionadas?.trim()">
+          Não preenchido ainda
+        </span>
+      </div>
+
+      <!-- Card Preços e Pacotes -->
+      <div class="info-card small-card">
+        <h3>Preços e Pacotes</h3>
+
+        <div *ngIf="instrutor.precoAulaAvulsa || instrutor.precoPacote">
+          <div class="package-item" *ngIf="instrutor.precoAulaAvulsa">
+            <span class="label">Aula Avulsa</span>
+            <span class="price">R$ {{ instrutor.precoAulaAvulsa | number:'1.2-2' }}</span>
+          </div>
+
+          <div class="package-item" *ngIf="instrutor.precoPacote">
+            <span class="label">Pacote {{ instrutor.qtdAulasPacote || 10 }} Aulas</span>
+            <span class="price">R$ {{ instrutor.precoPacote | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <span class="empty-field" *ngIf="!instrutor.precoAulaAvulsa && !instrutor.precoPacote">
+          Não preenchido ainda
+        </span>
+      </div>
+    </div>
+
+    <!-- Card Disponibilidade e Localização -->
+    <div class="info-card wide-card location-card">
+      <div class="location-info">
+        <h3>Disponibilidade e Localização</h3>
+        
+        <p class="region-text" *ngIf="instrutor.localizacaoCompleta">
+          {{ instrutor.localizacaoCompleta }}
+        </p>
+        <p class="schedule-text" *ngIf="instrutor.disponibilidade">
+          {{ instrutor.disponibilidade }}
+        </p>
+
+        <span class="empty-field" *ngIf="!instrutor.localizacaoCompleta && !instrutor.disponibilidade">
+          Não preenchido ainda
+        </span>
+      </div>
+
+      <div class="map-preview">
+        <div class="map-placeholder"></div>
+      </div>
+    </div>
+
+    <!-- Card Avaliações -->
+    <div class="info-card reviews-card">
+      <h3 class="reviews-title">Avaliações</h3>
+
+      <div class="reviews-list" *ngIf="instrutor.avaliacoes && instrutor.avaliacoes.length > 0">
+        <div class="review-item" *ngFor="let item of instrutor.avaliacoes">
+          <div class="review-avatar">
+            <ion-icon name="person-outline"></ion-icon>
+          </div>
+          <div class="review-details">
+            <h4>{{ item.nomeAluno || item.nome || 'Aluno Guidaz' }}</h4>
+            <div class="stars-row">
+              <ion-icon
+                name="star"
+                *ngFor="let s of [1,2,3,4,5]"
+                [class.filled]="s <= (item.nota || 5)"
+              ></ion-icon>
+            </div>
+            <p class="comment-text" *ngIf="item.comentario?.trim()">{{ item.comentario }}</p>
+            <p class="comment-text empty-text" *ngIf="!item.comentario?.trim()">Sem comentário por escrito.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-reviews" *ngIf="!instrutor.avaliacoes || instrutor.avaliacoes.length === 0">
+        <p class="empty-field">Nenhuma avaliação cadastrada ainda.</p>
+      </div>
+    </div>
+
+  </div>
+</ion-content>
+
+<!-- Navegação Inferior -->
+<app-bottom-nav activeTab="inicio"></app-bottom-nav>

@@ -133,6 +133,10 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
   /** Roda toda vez que a página é aberta */
   ionViewWillEnter() {
     this.carregarUsuario();
+    this.auth.buscarDoBanco().subscribe({
+      next: () => this.carregarUsuario(),
+      error: (err) => console.error('Erro ao recarregar usuário na home:', err)
+    });
   }
 
   ngAfterViewInit() {
