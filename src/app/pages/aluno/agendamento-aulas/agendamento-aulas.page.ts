@@ -37,6 +37,13 @@ interface HorarioApi {
   status: string;
 }
 
+interface PacoteResumo {
+  categoria: string;
+  veiculo: string;
+  aulas: number;
+  preco: number;
+}
+
 @Component({
   selector: 'app-agendamento-aulas',
   templateUrl: './agendamento-aulas.page.html',
@@ -57,6 +64,8 @@ export class AgendamentoAulasPage {
 
   instrutorId: number | null = null;
   instrutor: InstrutorResumo | null = null;
+  instrutorNome: string | undefined;
+  pacote: PacoteResumo | undefined;
   dataSelecionada = this.dataLocal(new Date());
   horarios: HorarioAgendamento[] = [];
   horarioReservando: string | null = null;
@@ -84,9 +93,14 @@ export class AgendamentoAulasPage {
     });
   }
 
-  // Lê o instrutor recebido pela navegação e carrega os dados da tela.
+  // Lê o instrutor e o pacote recebidos pela navegação e carrega os dados da tela.
   ionViewWillEnter(): void {
-    const id = Number(this.route.snapshot.queryParamMap.get('instrutorId'));
+    const queryId = Number(this.route.snapshot.queryParamMap.get('instrutorId'));
+    const stateId = Number(history.state?.['instrutorId']);
+    const id = Number.isInteger(queryId) && queryId > 0
+      ? queryId
+      : (Number.isInteger(stateId) && stateId > 0 ? stateId : 0);
+
     if (!Number.isInteger(id) || id <= 0) {
       this.instrutorId = null;
       void this.router.navigateByUrl('/aluno/instrutores', { replaceUrl: true });
@@ -94,6 +108,22 @@ export class AgendamentoAulasPage {
     }
 
     this.instrutorId = id;
+    if (typeof history.state?.['instrutorNome'] === 'string') {
+      this.instrutorNome = history.state['instrutorNome'];
+    }
+    if (history.state?.['pacote']) {
+      this.pacote = history.state['pacote'] as PacoteResumo;
+    }
+
+    if (!this.pacote) {
+      void this.router.navigate(['/aluno/pacotes'], {
+        queryParams: { instrutorId: this.instrutorId },
+        state: { instrutorId: this.instrutorId, instrutorNome: this.instrutorNome },
+        replaceUrl: true
+      });
+      return;
+    }
+
     this.carregarInstrutor();
     this.carregarHorarios();
   }
@@ -143,7 +173,7 @@ export class AgendamentoAulasPage {
     this.horarios = [];
 
     this.http.get<HorarioApi[]>(
-      `${this.apiUrl}/agendamentos/instrutor/${this.instrutorId}/disponiveis`,
+      `${this.apiUrl}/disponibilidades/instrutor/${this.instrutorId}/slots`,
       { params: { data: this.dataSelecionada } }
     ).pipe(
       timeout(15000),
@@ -196,37 +226,33 @@ export class AgendamentoAulasPage {
     this.selecionarDia(data.slice(0, 10));
   }
 
-  // Envia a reserva do horário acionado usando os dados da sessão do aluno.
+  // Guarda a data e o horário escolhidos e avança para o pagamento Pix.
   reservar(horaInicio: string): void {
     if (!this.instrutorId || this.reservando) return;
 
-    const alunoId = Number(this.auth.usuario()?.id);
-    if (!Number.isInteger(alunoId) || alunoId <= 0) {
-      this.erroReserva = 'Não foi possível identificar o aluno conectado.';
+    if (!this.pacote) {
+      void this.router.navigate(['/aluno/pacotes'], {
+        queryParams: { instrutorId: this.instrutorId },
+        state: { instrutorId: this.instrutorId, instrutorNome: this.instrutor?.nome || this.instrutorNome }
+      });
       return;
     }
 
-    this.reservando = true;
-    this.horarioReservando = horaInicio;
-    this.erroReserva = '';
+    const horaFim = this.calcularHoraFim(horaInicio);
+    const instrutorNome = this.instrutor?.nome || this.instrutorNome;
 
-    this.http.post<void>(`${this.apiUrl}/agendamentos`, {
-      alunoId,
-      instrutorId: this.instrutorId,
-      data: this.dataSelecionada,
-      horaInicio
-    }).subscribe({
-      next: () => {
-        this.reservando = false;
-        this.horarioReservando = null;
-        this.carregarHorarios();
-        this.mensagemSucesso = 'Aula reservada com sucesso!';
-      },
-      error: (erro) => {
-        console.error('Erro ao reservar aula:', erro);
-        this.erroReserva = 'Não foi possível concluir a reserva. Tente novamente.';
-        this.reservando = false;
-        this.horarioReservando = null;
+    this.erroReserva = '';
+    this.mensagemSucesso = '';
+
+    void this.router.navigate(['/aluno/pagamento-pix'], {
+      queryParams: { instrutorId: this.instrutorId },
+      state: {
+        pacote: this.pacote,
+        instrutorId: this.instrutorId,
+        instrutorNome,
+        data: this.dataSelecionada,
+        horaInicio,
+        horaFim
       }
     });
   }

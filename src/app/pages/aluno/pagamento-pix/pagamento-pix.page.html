@@ -1,7 +1,7 @@
 <ion-header class="ion-no-border">
   <ion-toolbar class="pix-toolbar">
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/aluno/pacotes" text=""></ion-back-button>
+      <ion-back-button defaultHref="/aluno/agendamento-aulas" text=""></ion-back-button>
     </ion-buttons>
     <ion-title>Pagamento via Pix</ion-title>
   </ion-toolbar>
@@ -14,6 +14,15 @@
         <strong>Pacote de aulas — Categoria {{ pacote.categoria }}</strong>
         <p>Veículo: {{ pacote.veiculo }}</p>
         <p>Quantidade: {{ pacote.aulas }} aulas</p>
+        @if (instrutorNome || instrutorId) {
+          <p>Instrutor: {{ instrutorNome || ('ID ' + instrutorId) }}</p>
+        }
+        @if (data) {
+          <p>Data: {{ formatarData(data) }}</p>
+        }
+        @if (horaInicio) {
+          <p>Horário: {{ horaInicio }}{{ horaFim ? ' – ' + horaFim : '' }}</p>
+        }
         <p class="resumo-valor">Valor: R$ {{ formatarPreco(pacote.preco) }}</p>
       </section>
 

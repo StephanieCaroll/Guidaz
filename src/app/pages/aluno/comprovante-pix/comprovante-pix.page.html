@@ -45,6 +45,15 @@
           <strong>Pacote de aulas — Categoria {{ pacote.categoria }}</strong>
           <p>Veículo: {{ pacote.veiculo }}</p>
           <p>Quantidade: {{ pacote.aulas }} aulas</p>
+          @if (instrutorNome || instrutorId) {
+            <p>Instrutor: {{ instrutorNome || ('ID ' + instrutorId) }}</p>
+          }
+          @if (data) {
+            <p>Data: {{ formatarData(data) }}</p>
+          }
+          @if (horaInicio) {
+            <p>Horário: {{ horaInicio }}{{ horaFim ? ' – ' + horaFim : '' }}</p>
+          }
           <p class="resumo-valor">Valor: R$ {{ formatarPreco(pacote.preco) }}</p>
         </section>
 
@@ -84,6 +93,15 @@
           <strong>Pacote de aulas — Categoria {{ pacote.categoria }}</strong>
           <p>Veículo: {{ pacote.veiculo }}</p>
           <p>Quantidade: {{ pacote.aulas }} aulas</p>
+          @if (instrutorNome || instrutorId) {
+            <p>Instrutor: {{ instrutorNome || ('ID ' + instrutorId) }}</p>
+          }
+          @if (data) {
+            <p>Data: {{ formatarData(data) }}</p>
+          }
+          @if (horaInicio) {
+            <p>Horário: {{ horaInicio }}{{ horaFim ? ' – ' + horaFim : '' }}</p>
+          }
           <p class="resumo-valor">Valor: R$ {{ formatarPreco(pacote.preco) }}</p>
         </section>
 
@@ -130,5 +148,4 @@
       <span>Perfil</span>
     </a>
   </nav>
-
 </ion-footer>
