@@ -68,7 +68,7 @@ export class BottomNavComponent {
   }
 
   navegar(item: ItemNav): void {
-    if (item.id === this.activeTab) return;
+    if (this.router.url === item.rota) return;
     void this.router.navigateByUrl(item.rota);
   }
 

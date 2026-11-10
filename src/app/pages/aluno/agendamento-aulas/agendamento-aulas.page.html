@@ -1,0 +1,136 @@
+<ion-content [fullscreen]="true" class="page-container">
+  <!-- Cabeçalho compacto da tela, mantendo a identidade azul do aplicativo. -->
+  <div class="header-blue">
+    <button class="btn-back" type="button" aria-label="Voltar" (click)="voltar()">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+    </button>
+    <div>
+      <h1>Agendamento</h1>
+      <p>Escolha seu horário!</p>
+    </div>
+  </div>
+
+  <main class="content-wrapper">
+    <!-- Cartão de identificação do instrutor selecionado. -->
+    <section class="instructor-card">
+      <div class="avatar">
+        <ion-icon name="person-outline" aria-hidden="true"></ion-icon>
+      </div>
+      <div class="instructor-details">
+        <strong>{{ instrutor?.nome || (carregandoInstrutor ? 'Carregando instrutor...' : 'Instrutor') }}</strong>
+        <span>{{ instrutor?.categoriasLecionadas || 'Instrutor de Direção' }}</span>
+        <div class="rating">
+          <ion-icon name="star" aria-hidden="true"></ion-icon>
+          <span>{{ instrutor?.notaMedia ?? '—' }}</span>
+          <span>({{ instrutor?.totalAvaliacoes ?? 0 }} avaliações)</span>
+          <span *ngIf="erroInstrutor" class="instructor-error">{{ erroInstrutor }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seletor semanal no estilo do Figma. -->
+    <section class="date-section">
+      <div class="carousel">
+        <button
+          class="carousel-arrow"
+          type="button"
+          aria-label="Voltar dias"
+          (click)="moverCarrossel(-1)"
+        >
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </button>
+        <div class="days-strip" #daysCarousel>
+          <button
+            class="day-btn"
+            type="button"
+            *ngFor="let dia of diasDisponiveis"
+            [class.active]="dia.data === dataSelecionada"
+            [attr.aria-pressed]="dia.data === dataSelecionada"
+            (click)="selecionarDia(dia.data)"
+          >
+            <span>{{ dia.nome }}</span>
+            <strong>{{ dia.numero }}</strong>
+          </button>
+        </div>
+        <button
+          class="carousel-arrow"
+          type="button"
+          aria-label="Avançar dias"
+          (click)="moverCarrossel(1)"
+        >
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </button>
+      </div>
+      <button id="calendar-trigger" class="selected-date" type="button" aria-label="Escolher outra data">
+        {{ dataResumo }}
+      </button>
+      <ion-modal trigger="calendar-trigger" [keepContentsMounted]="true">
+        <ng-template>
+          <ion-datetime
+            id="data-aula"
+            presentation="date"
+            locale="pt-BR"
+            [min]="dataMinima"
+            [value]="dataSelecionada"
+            [showDefaultButtons]="true"
+            (ionChange)="selecionarData($event)"
+          ></ion-datetime>
+        </ng-template>
+      </ion-modal>
+    </section>
+
+    <!-- Horários livres com ação imediata para reservar cada faixa. -->
+    <section class="schedule-section">
+      <h2 class="section-title">Horários disponíveis</h2>
+      <div class="state-card" *ngIf="carregando">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <p>Buscando horários...</p>
+      </div>
+
+      <div class="state-card error-state" *ngIf="!carregando && erroHorarios">
+        <p>{{ erroHorarios }}</p>
+        <button class="outline-btn" type="button" (click)="carregarHorarios()">Tentar novamente</button>
+      </div>
+
+      <div class="slots-list" *ngIf="!carregando && !erroHorarios && horarios.length">
+        <div class="slot-row" *ngFor="let horario of horarios">
+          <div class="slot-time">
+            <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
+            <span>
+              {{ horario.hora }} – {{ horario.horaFim || calcularHoraFim(horario.hora) }}
+            </span>
+          </div>
+          <button
+            class="book-btn"
+            type="button"
+            [disabled]="reservando || horario.disponivel === false"
+            (click)="reservar(horario.hora)"
+          >
+            <ion-spinner *ngIf="horarioReservando === horario.hora" name="crescent"></ion-spinner>
+            <span>{{ horarioReservando === horario.hora ? 'Reservando' : 'Agendar' }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="state-card" *ngIf="!carregando && !erroHorarios && !horarios.length">
+        <p>Nenhum horário disponível para esta data.</p>
+      </div>
+    </section>
+
+    <!-- Resultado da reserva sem interromper a lista de horários. -->
+    <p class="success-message" *ngIf="mensagemSucesso" role="status">{{ mensagemSucesso }}</p>
+    <p class="error-message" *ngIf="erroReserva" role="alert">{{ erroReserva }}</p>
+
+    <!-- Nota de orientação no rodapé da área de conteúdo. -->
+    <aside class="important-card">
+      <ion-icon name="information-circle" aria-hidden="true"></ion-icon>
+      <div>
+        <strong>Importante</strong>
+        <p>Os horários podem sofrer alterações. Em caso de imprevistos, entre em contato com o instrutor.</p>
+      </div>
+    </aside>
+  </main>
+</ion-content>
+
+<!-- Reutiliza a barra inferior do projeto e destaca a aba Agenda. -->
+<app-bottom-nav activeTab="agenda"></app-bottom-nav>
