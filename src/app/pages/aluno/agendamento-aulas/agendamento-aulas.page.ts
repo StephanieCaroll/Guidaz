@@ -118,6 +118,11 @@ export class AgendamentoAulasPage {
     });
   }
 
+  // Abre a lista para o aluno escolher outro instrutor.
+  trocarInstrutor(): void {
+    void this.router.navigateByUrl('/aluno/instrutores');
+  }
+
   // Formata o dia selecionado no pequeno destaque acima da lista.
   get dataResumo(): string {
     const [ano, mes, dia] = this.dataSelecionada.split('-').map(Number);

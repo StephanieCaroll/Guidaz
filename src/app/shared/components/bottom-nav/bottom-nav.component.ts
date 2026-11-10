@@ -46,7 +46,7 @@ export class BottomNavComponent {
         id: 'agenda',
         chaveLabel: 'navAgenda',
         icone: 'calendar-outline',
-        rota: instrutor ? '/instrutor/agenda-disponibilidade' : '/aluno/agendamento-aulas'
+        rota: instrutor ? '/instrutor/agenda-disponibilidade' : '/aluno/instrutores'
       },
       {
         id: 'historico',

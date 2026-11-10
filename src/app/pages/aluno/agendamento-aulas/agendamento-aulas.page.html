@@ -17,7 +17,12 @@
         <ion-icon name="person-outline" aria-hidden="true"></ion-icon>
       </div>
       <div class="instructor-details">
-        <strong>{{ instrutor?.nome || (carregandoInstrutor ? 'Carregando instrutor...' : 'Instrutor') }}</strong>
+        <div class="instructor-name-row">
+          <strong>{{ instrutor?.nome || (carregandoInstrutor ? 'Carregando instrutor...' : 'Instrutor') }}</strong>
+          <button class="change-instructor-btn" type="button" (click)="trocarInstrutor()">
+            Trocar
+          </button>
+        </div>
         <span>{{ instrutor?.categoriasLecionadas || 'Instrutor de Direção' }}</span>
         <div class="rating">
           <ion-icon name="star" aria-hidden="true"></ion-icon>

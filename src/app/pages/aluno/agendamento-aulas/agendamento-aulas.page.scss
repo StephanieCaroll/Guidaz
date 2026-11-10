@@ -1,11 +1,28 @@
 :host {
   --azul: #1a5cff;
   --fundo: #f3f3fa;
+  --card: #ffffff;
+  --card-instrutor: #f0f0f5;
+  --card-aviso: #e4ebff;
+  --texto: #222222;
+  --texto-secundario: #5c6270;
+  --borda: #e0e0e5;
   font-family: 'Montserrat', system-ui, sans-serif;
+}
+
+:host-context(body.dark) {
+  --fundo: #0f1115;
+  --card: #1b1e25;
+  --card-instrutor: #242832;
+  --card-aviso: #1c2740;
+  --texto: #f3f4f6;
+  --texto-secundario: #b0b7c3;
+  --borda: #374151;
 }
 
 ion-content.page-container {
   --background: var(--fundo);
+  --color: var(--texto);
 }
 
 /* Faixa azul compacta, preservando o botão de retorno do aplicativo. */
@@ -57,7 +74,7 @@ ion-content.page-container {
   margin-bottom: 16px;
   padding: 9px 11px;
   border-radius: 20px;
-  background: #f0f0f5;
+  background: var(--card-instrutor);
   box-shadow: 0 4px 10px rgba(27, 38, 79, 0.08);
 }
 
@@ -68,7 +85,7 @@ ion-content.page-container {
   flex: none;
   place-items: center;
   border-radius: 50%;
-  background: #d7d7d7;
+  background: var(--borda);
   color: #fff;
   font-size: 17px;
 }
@@ -76,13 +93,21 @@ ion-content.page-container {
 .instructor-details {
   display: flex;
   min-width: 0;
+  flex: 1;
   flex-direction: column;
   gap: 2px;
-  color: #242424;
+  color: var(--texto);
   font-size: 9px;
+
+  .instructor-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
 
   strong {
     overflow: hidden;
+    min-width: 0;
     font-size: 10px;
     font-weight: 700;
     text-overflow: ellipsis;
@@ -90,15 +115,27 @@ ion-content.page-container {
   }
 
   > span {
-    color: #444;
+    color: var(--texto-secundario);
   }
+}
+
+.change-instructor-btn {
+  flex: none;
+  padding: 7px 12px;
+  border: 1px solid var(--azul);
+  border-radius: 16px;
+  background: var(--azul);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
 }
 
 .rating {
   display: flex;
   align-items: center;
   gap: 3px;
-  color: #686868;
+  color: var(--texto-secundario);
   font-size: 8px;
 
   ion-icon {
@@ -162,15 +199,15 @@ ion-content.page-container {
   justify-content: center;
   gap: 1px;
   padding: 3px 1px;
-  border: 1px solid #e0e0e4;
+  border: 1px solid var(--borda);
   border-radius: 8px;
-  background: #fff;
-  color: #555;
+  background: var(--card);
+  color: var(--texto-secundario);
   font: inherit;
   font-size: 8px;
 
   strong {
-    color: #202020;
+    color: var(--texto);
     font-size: 11px;
     line-height: 1.1;
   }
@@ -206,7 +243,7 @@ ion-content.page-container {
 
 .section-title {
   margin: 0 0 7px;
-  color: #222;
+  color: var(--texto);
   font-size: 13px;
   font-weight: 700;
 }
@@ -217,7 +254,7 @@ ion-content.page-container {
   align-items: center;
   gap: 7px;
   padding: 12px 8px;
-  color: #697087;
+  color: var(--texto-secundario);
   text-align: center;
 
   p {
@@ -234,50 +271,49 @@ ion-content.page-container {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  align-items: center;
 }
 
 .slot-row {
   display: flex;
+  width: 88%;
   min-height: 30px;
   align-items: center;
   justify-content: space-between;
-  padding: 3px 6px;
-  border: 1px solid #e0e0e5;
+  padding: 5px 8px;
+  border: 1px solid var(--borda);
   border-radius: 8px;
-  background: #fff;
-
-  &:first-child {
-    border-color: var(--azul);
-  }
+  background: var(--card);
 }
 
 .slot-time {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #333;
-  font-size: 9px;
+  color: var(--texto);
+  font-size: 12px;
+  font-weight: 500;
 
   ion-icon {
     color: var(--azul);
-    font-size: 13px;
+    font-size: 15px;
   }
 }
 
 .book-btn {
   display: flex;
-  min-width: 43px;
-  min-height: 20px;
+  min-width: 58px;
+  min-height: 28px;
   align-items: center;
   justify-content: center;
   gap: 3px;
-  padding: 2px 7px;
+  padding: 4px 10px;
   border: 0;
   border-radius: 12px;
   background: var(--azul);
   color: #fff;
   font: inherit;
-  font-size: 8px;
+  font-size: 10px;
 
   &:disabled {
     opacity: 0.65;
@@ -288,7 +324,7 @@ ion-content.page-container {
   padding: 7px 12px;
   border: 1px solid var(--azul);
   border-radius: 9px;
-  background: #fff;
+  background: var(--card);
   color: var(--azul);
   font: inherit;
   font-size: 10px;
@@ -302,8 +338,8 @@ ion-content.page-container {
   gap: 7px;
   padding: 10px;
   border-radius: 13px;
-  background: #e4ebff;
-  color: #5c6270;
+  background: var(--card-aviso);
+  color: var(--texto-secundario);
   font-size: 8px;
 
   > ion-icon {

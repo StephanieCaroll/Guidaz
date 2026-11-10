@@ -77,6 +77,6 @@ export class DetalheAulaPage {
   }
 
   agendar(): void {
-    void this.router.navigateByUrl('/aluno/agendamento-aulas');
+    void this.router.navigateByUrl('/aluno/instrutores');
   }
 }
