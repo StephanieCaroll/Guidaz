@@ -180,8 +180,9 @@ export class PerfilInstrutorPage implements OnInit {
 
   agendarAula() {
     if (this.instrutorId) {
-      this.router.navigate(['/aluno/agendamento-aulas'], {
-        queryParams: { instrutorId: this.instrutorId }
+      this.router.navigate(['/aluno/pacotes'], {
+        queryParams: { instrutorId: this.instrutorId },
+        state: { instrutorId: this.instrutorId, instrutorNome: this.instrutor?.nome }
       });
     }
   }

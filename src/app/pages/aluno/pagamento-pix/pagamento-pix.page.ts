@@ -50,7 +50,13 @@ export class PagamentoPixPage {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
-  readonly pacote = history.state['pacote'] as PacoteResumo | undefined;
+  pacote = history.state?.['pacote'] as PacoteResumo | undefined;
+  instrutorId = history.state?.['instrutorId'] as number | undefined;
+  instrutorNome = history.state?.['instrutorNome'] as string | undefined;
+  data = history.state?.['data'] as string | undefined;
+  horaInicio = history.state?.['horaInicio'] as string | undefined;
+  horaFim = history.state?.['horaFim'] as string | undefined;
+
   readonly chavePix = 'guidaz@exemplo.com';
 
   constructor() {
@@ -66,11 +72,38 @@ export class PagamentoPixPage {
     });
   }
 
+  ionViewWillEnter(): void {
+    if (history.state?.['pacote']) {
+      this.pacote = history.state['pacote'] as PacoteResumo;
+    }
+    if (history.state?.['instrutorId']) {
+      this.instrutorId = Number(history.state['instrutorId']);
+    }
+    if (typeof history.state?.['instrutorNome'] === 'string') {
+      this.instrutorNome = history.state['instrutorNome'];
+    }
+    if (typeof history.state?.['data'] === 'string') {
+      this.data = history.state['data'];
+    }
+    if (typeof history.state?.['horaInicio'] === 'string') {
+      this.horaInicio = history.state['horaInicio'];
+    }
+    if (typeof history.state?.['horaFim'] === 'string') {
+      this.horaFim = history.state['horaFim'];
+    }
+  }
+
   formatarPreco(valor: number): string {
     return valor.toLocaleString('pt-BR', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
+  }
+
+  formatarData(dataIso: string): string {
+    const partes = dataIso.split('-');
+    if (partes.length !== 3) return dataIso;
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
   }
 
   async copiarChavePix(): Promise<void> {
@@ -83,7 +116,13 @@ export class PagamentoPixPage {
   }
 
   voltarParaPacotes(): void {
-    void this.router.navigate(['/aluno/pacotes']);
+    void this.router.navigate(['/aluno/pacotes'], {
+      queryParams: this.instrutorId ? { instrutorId: this.instrutorId } : undefined,
+      state: {
+        instrutorId: this.instrutorId,
+        instrutorNome: this.instrutorNome,
+      },
+    });
   }
 
   informarComprovante(): void {
@@ -92,7 +131,14 @@ export class PagamentoPixPage {
     }
 
     void this.router.navigate(['/aluno/comprovante-pix'], {
-      state: { pacote: this.pacote },
+      state: {
+        pacote: this.pacote,
+        instrutorId: this.instrutorId,
+        instrutorNome: this.instrutorNome,
+        data: this.data,
+        horaInicio: this.horaInicio,
+        horaFim: this.horaFim,
+      },
     });
   }
 }

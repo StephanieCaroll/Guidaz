@@ -206,8 +206,6 @@ export class InstrutoresPage implements OnInit {
   }
 
   agendarAula(instrutor: InstrutorItem) {
-    this.router.navigate(['/aluno/agendamento-aulas'], {
-      queryParams: { instrutorId: instrutor.id }
-    });
+    this.verPerfil(instrutor);
   }
 }

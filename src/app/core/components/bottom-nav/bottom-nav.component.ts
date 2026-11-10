@@ -40,7 +40,7 @@ export class BottomNavComponent {
   return this.perfil === 'aluno'
     ? [
         { label: 'Início',    icone: 'home-outline',     rota: '/aluno/home' },
-        { label: 'Agenda',    icone: 'calendar-outline', rota: '/aluno/agendamento-aulas' },
+        { label: 'Agenda',    icone: 'calendar-outline', rota: '/aluno/instrutores' },
         { label: 'Historico', icone: 'trending-up',      rota: '/aluno/historico-aula' },
         { label: 'Perfil',    icone: 'person-outline',   rota: '/perfil' },
       ]

@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   IonBackButton,
   IonButtons,
@@ -43,6 +43,7 @@ export interface PacoteAula {
   ],
 })
 export class PacotesPage {
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
   readonly pacotes: PacoteAula[] = [
@@ -55,6 +56,8 @@ export class PacotesPage {
   ];
 
   readonly pacoteSelecionado = signal<PacoteAula>(this.pacotes[1]);
+  instrutorId: number | null = null;
+  instrutorNome: string | undefined;
 
   constructor() {
     addIcons({
@@ -64,6 +67,33 @@ export class PacotesPage {
       walletOutline,
       personOutline,
     });
+    this.lerDadosNavegacao();
+  }
+
+  ionViewWillEnter(): void {
+    this.lerDadosNavegacao();
+  }
+
+  private lerDadosNavegacao(): void {
+    const queryId = Number(this.route.snapshot.queryParamMap.get('instrutorId'));
+    const stateId = Number(history.state?.['instrutorId']);
+    const idValido = Number.isInteger(queryId) && queryId > 0
+      ? queryId
+      : (Number.isInteger(stateId) && stateId > 0 ? stateId : null);
+
+    this.instrutorId = idValido;
+
+    if (typeof history.state?.['instrutorNome'] === 'string') {
+      this.instrutorNome = history.state['instrutorNome'];
+    }
+
+    const pacoteAnterior = history.state?.['pacote'] as PacoteAula | undefined;
+    if (pacoteAnterior?.categoria) {
+      const encontrado = this.pacotes.find((p) => p.categoria === pacoteAnterior.categoria);
+      if (encontrado) {
+        this.pacoteSelecionado.set(encontrado);
+      }
+    }
   }
 
   selecionarPacote(pacote: PacoteAula): void {
@@ -79,6 +109,19 @@ export class PacotesPage {
 
   confirmarPacote(): void {
     const pacote = this.pacoteSelecionado();
-    void this.router.navigate(['/aluno/pagamento-pix'], { state: { pacote } });
+
+    if (!this.instrutorId) {
+      void this.router.navigate(['/aluno/instrutores']);
+      return;
+    }
+
+    void this.router.navigate(['/aluno/agendamento-aulas'], {
+      queryParams: { instrutorId: this.instrutorId },
+      state: {
+        pacote,
+        instrutorId: this.instrutorId,
+        instrutorNome: this.instrutorNome,
+      },
+    });
   }
 }
