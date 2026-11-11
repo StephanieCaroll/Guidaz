@@ -66,6 +66,11 @@ export const routes: Routes = [
         title: 'Gestão de alunos | Guidaz',
         loadComponent: () => import('./pages/instrutor/gestao-alunos/gestao-alunos.page').then((m) => m.GestaoAlunosPage),
       },
+      {
+        path: 'pedidos-pacote',
+        title: 'Pedidos de pacote | Guidaz',
+        loadComponent: () => import('./pages/instrutor/pedidos-pacote/pedidos-pacote.page').then((m) => m.PedidosPacotePage),
+      },
     ],
   },
 

@@ -1,0 +1,70 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="pedidos-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/instrutor/home" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>Pagamentos em análise</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="pedidos-content">
+  <div class="page-container">
+    @if (carregando()) {
+    <div class="estado"><ion-spinner name="crescent"></ion-spinner></div>
+    } @else if (erroLista()) {
+    <section class="card erro" role="alert">
+      <p>{{ erroLista() }}</p>
+      <button class="btn-secundario" type="button" (click)="carregar()">Tentar novamente</button>
+    </section>
+    } @else if (!pedidos().length) {
+    <section class="card">
+      <strong>Nenhum pedido em análise</strong>
+      <p>Quando um aluno informar o pagamento, o pedido aparecerá aqui.</p>
+    </section>
+    } @else {
+    @for (pedido of pedidos(); track pedido.id) {
+    <section class="card">
+      <strong>Pedido #{{ pedido.id }} — {{ pedido.nomePacote || ('Categoria ' + pedido.categoria) }}</strong>
+      <p>Aluno: #{{ pedido.alunoId }}</p>
+      @if (pedido.categoria) {
+      <p>Categoria: {{ pedido.categoria }}</p>
+      }
+      <p>Quantidade: {{ pedido.quantidadeAulas }} aulas</p>
+      <p class="valor">Valor: R$ {{ formatarPreco(pedido.precoTotal) }}</p>
+      <p>Horários:</p>
+      @for (horario of pedido.horarios; track $index) {
+      <p class="horario">{{ $index + 1 }}ª aula — {{ descreverHorario(horario) }}</p>
+      }
+
+      @if (rejeitandoId() === pedido.id) {
+      <label class="rotulo" [attr.for]="'motivo-' + pedido.id">Motivo da rejeição</label>
+      <textarea [attr.id]="'motivo-' + pedido.id" rows="3" maxlength="300" [(ngModel)]="motivo"
+        placeholder="Ex.: Comprovante não corresponde ao pagamento."></textarea>
+      @if (erroAcao()) {
+      <p class="erro-msg" role="alert">{{ erroAcao() }}</p>
+      }
+      <div class="acoes">
+        <button class="btn-secundario" type="button" [disabled]="processandoId() !== null"
+          (click)="cancelarRejeicao()">Cancelar</button>
+        <button class="btn-rejeitar" type="button" [disabled]="processandoId() !== null"
+          (click)="confirmarRejeicao(pedido)">
+          {{ processandoId() === pedido.id ? 'Rejeitando...' : 'Confirmar rejeição' }}
+        </button>
+      </div>
+      } @else {
+      @if (erroAcao() && erroAcaoId() === pedido.id) {
+      <p class="erro-msg" role="alert">{{ erroAcao() }}</p>
+      }
+      <div class="acoes">
+        <button class="btn-rejeitar" type="button" [disabled]="processandoId() !== null"
+          (click)="abrirRejeicao(pedido)">Rejeitar</button>
+        <button class="btn-principal" type="button" [disabled]="processandoId() !== null" (click)="aprovar(pedido)">
+          {{ processandoId() === pedido.id ? 'Aprovando...' : 'Aprovar' }}
+        </button>
+      </div>
+      }
+    </section>
+    }
+    }
+  </div>
+</ion-content>

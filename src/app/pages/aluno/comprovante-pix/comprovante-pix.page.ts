@@ -1,5 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { finalize } from 'rxjs';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
+import { PedidoPacoteService } from '../../../core/services/pedido-pacote.service';
+import { HorarioPedidoPacote, PedidoPacote } from '../../../core/models/pedido-pacote.model';
 import {
   IonBackButton,
   IonButtons,
@@ -31,7 +35,7 @@ interface PacoteResumo {
   preco: number;
 }
 
-type StatusComprovante = 'selecionar' | 'analise' | 'aprovado' | 'rejeitado';
+type StatusComprovante = 'selecionar' | 'analise';
 
 @Component({
   selector: 'app-comprovante-pix',
@@ -50,6 +54,11 @@ type StatusComprovante = 'selecionar' | 'analise' | 'aprovado' | 'rejeitado';
   ],
 })
 export class ComprovantePixPage {
+  private readonly auth = inject(AuthService);
+  private readonly pedidoService = inject(PedidoPacoteService);
+
+  pedidoId = history.state?.['pedidoId'] as number | undefined;
+  pedido = history.state?.['pedido'] as PedidoPacote | undefined;
   pacote = history.state?.['pacote'] as PacoteResumo | undefined;
   instrutorId = history.state?.['instrutorId'] as number | undefined;
   instrutorNome = history.state?.['instrutorNome'] as string | undefined;
@@ -57,8 +66,10 @@ export class ComprovantePixPage {
   horaInicio = history.state?.['horaInicio'] as string | undefined;
   horaFim = history.state?.['horaFim'] as string | undefined;
 
-  readonly arquivo = signal<File | null>(null);
+  readonly enviando = signal(false);
+  readonly erroEnvio = signal('');
   readonly status = signal<StatusComprovante>('selecionar');
+  readonly arquivo = signal<File | null>(null);
   readonly erroArquivo = signal('');
 
   constructor() {
@@ -77,6 +88,10 @@ export class ComprovantePixPage {
   }
 
   ionViewWillEnter(): void {
+    if (history.state?.['pedidoId']) {
+      this.pedidoId = Number(history.state['pedidoId']);
+      this.pedido = history.state['pedido'] as PedidoPacote | undefined;
+    }
     if (history.state?.['pacote']) {
       this.pacote = history.state['pacote'] as PacoteResumo;
     }
@@ -102,20 +117,19 @@ export class ComprovantePixPage {
     const arquivo = input.files?.[0] ?? null;
     this.erroArquivo.set('');
 
-    if (!arquivo) {
-      return;
-    }
+    if (!arquivo) return;
 
     const tipoAceito = arquivo.type.startsWith('image/') || arquivo.type === 'application/pdf';
     if (!tipoAceito) {
       this.erroArquivo.set('Escolha uma imagem ou um arquivo PDF.');
+      this.arquivo.set(null);
       input.value = '';
       return;
     }
 
-    const limiteBytes = 10 * 1024 * 1024;
-    if (arquivo.size > limiteBytes) {
+    if (arquivo.size > 10 * 1024 * 1024) {
       this.erroArquivo.set('O arquivo deve ter no máximo 10 MB.');
+      this.arquivo.set(null);
       input.value = '';
       return;
     }
@@ -124,13 +138,41 @@ export class ComprovantePixPage {
   }
 
   enviarComprovante(): void {
-    if (this.arquivo()) {
-      this.status.set('analise');
+    if (this.enviando() || !this.pedidoId) {
+      return;
     }
-  }
 
-  simularResultado(resultado: 'aprovado' | 'rejeitado'): void {
-    this.status.set(resultado);
+    if (!this.arquivo()) {
+      this.erroArquivo.set('Selecione o comprovante antes de continuar.');
+      return;
+    }
+
+    const alunoId = Number(this.auth.usuario()?.id);
+    if (!Number.isInteger(alunoId) || alunoId <= 0) {
+      this.erroEnvio.set('Não foi possível identificar o aluno logado. Entre novamente.');
+      return;
+    }
+
+    this.erroEnvio.set('');
+    this.enviando.set(true);
+
+    // O comprovante é simulado: apenas informamos à API que o pagamento foi realizado.
+    this.pedidoService.informarComprovante(this.pedidoId, alunoId).pipe(
+      finalize(() => this.enviando.set(false))
+    ).subscribe({
+      next: (pedido) => {
+        if (pedido?.status === 'EM_ANALISE') {
+          this.pedido = pedido;
+          this.status.set('analise');
+        } else {
+          this.erroEnvio.set(`A API retornou um status inesperado (${pedido?.status ?? 'vazio'}). Tente novamente.`);
+        }
+      },
+      error: (erro: Error) => {
+        console.error('Erro ao informar comprovante:', erro);
+        this.erroEnvio.set(erro.message);
+      }
+    });
   }
 
   formatarPreco(valor: number): string {
@@ -144,5 +186,9 @@ export class ComprovantePixPage {
     const partes = dataIso.split('-');
     if (partes.length !== 3) return dataIso;
     return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  }
+
+  descreverHorario(horario: HorarioPedidoPacote): string {
+    return `${this.formatarData(horario.data)} das ${horario.horaInicio.slice(0, 5)} às ${horario.horaFim.slice(0, 5)}`;
   }
 }

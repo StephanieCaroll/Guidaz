@@ -11,7 +11,7 @@
   <div class="page-container">
     @if (pacote) {
       @if (status() === 'selecionar') {
-        <p class="instrucoes">Envie uma imagem ou PDF do comprovante do pagamento.</p>
+        <p class="instrucoes">Selecione uma imagem ou PDF do comprovante do pagamento.</p>
 
         <section class="upload-card">
           <div class="upload-icon">
@@ -35,7 +35,7 @@
           <button class="btn-secundario" type="button" (click)="inputArquivo.click()">
             Selecionar arquivo
           </button>
-          <p class="formatos">Imagem ou PDF, até 10 MB.</p>
+          <p class="formatos">Imagem ou PDF, até 10 MB. O arquivo fica neste dispositivo e não é enviado à API.</p>
           @if (erroArquivo()) {
             <p class="erro-arquivo" role="alert">{{ erroArquivo() }}</p>
           }
@@ -45,6 +45,9 @@
           <strong>Pacote de aulas — Categoria {{ pacote.categoria }}</strong>
           <p>Veículo: {{ pacote.veiculo }}</p>
           <p>Quantidade: {{ pacote.aulas }} aulas</p>
+          @if (pedidoId) {
+            <p>Pedido: #{{ pedidoId }}</p>
+          }
           @if (instrutorNome || instrutorId) {
             <p>Instrutor: {{ instrutorNome || ('ID ' + instrutorId) }}</p>
           }
@@ -57,42 +60,37 @@
           <p class="resumo-valor">Valor: R$ {{ formatarPreco(pacote.preco) }}</p>
         </section>
 
+        @if (erroEnvio()) {
+          <p class="erro-arquivo" role="alert">{{ erroEnvio() }}</p>
+        }
+
         <button
           class="btn-principal"
           type="button"
-          [disabled]="!arquivo()"
+          [disabled]="enviando() || !pedidoId || !arquivo()"
           (click)="enviarComprovante()"
         >
-          Enviar comprovante
+          {{ enviando() ? "Confirmando pagamento..." : "Enviar comprovante" }}
         </button>
-        <p class="nota-demo">Demonstração: o arquivo fica nesta tela e não é enviado a um servidor.</p>
+        @if (!pedidoId) {
+          <p class="erro-arquivo" role="alert">Pedido não encontrado. Volte ao agendamento e selecione o horário novamente.</p>
+        }
       } @else {
-        <section class="estado-card" [class.aprovado]="status() === 'aprovado'" [class.rejeitado]="status() === 'rejeitado'">
-          @if (status() === 'analise') {
-            <div class="status-icon status-analise">
-              <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
-            </div>
-            <p class="mensagem-status">Seu comprovante foi enviado nesta simulação e seria analisado pelo instrutor.</p>
-            <span class="status-pill status-pill-analise">Em análise</span>
-          } @else if (status() === 'aprovado') {
-            <div class="status-icon status-aprovado">
-              <ion-icon name="checkmark-circle-outline" aria-hidden="true"></ion-icon>
-            </div>
-            <p class="mensagem-status">Comprovante aprovado na simulação.</p>
-            <span class="status-pill status-pill-aprovado">Aprovado</span>
-          } @else {
-            <div class="status-icon status-rejeitado">
-              <ion-icon name="close-circle-outline" aria-hidden="true"></ion-icon>
-            </div>
-            <p class="mensagem-status">Comprovante não aprovado na simulação. Confira o arquivo e tente novamente.</p>
-            <span class="status-pill status-pill-rejeitado">Não aprovado</span>
-          }
+        <section class="estado-card">
+          <div class="status-icon status-analise">
+            <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
+          </div>
+          <p class="mensagem-status">Pagamento informado. Aguarde a análise do instrutor.</p>
+          <span class="status-pill status-pill-analise">Em análise</span>
         </section>
 
         <section class="resumo-card">
           <strong>Pacote de aulas — Categoria {{ pacote.categoria }}</strong>
           <p>Veículo: {{ pacote.veiculo }}</p>
           <p>Quantidade: {{ pacote.aulas }} aulas</p>
+          @if (pedidoId) {
+            <p>Pedido: #{{ pedidoId }}</p>
+          }
           @if (instrutorNome || instrutorId) {
             <p>Instrutor: {{ instrutorNome || ('ID ' + instrutorId) }}</p>
           }
@@ -105,19 +103,6 @@
           <p class="resumo-valor">Valor: R$ {{ formatarPreco(pacote.preco) }}</p>
         </section>
 
-        @if (status() === 'analise') {
-          <button class="btn-principal" type="button" (click)="simularResultado('aprovado')">
-            Simular confirmação
-          </button>
-          <button class="btn-secundario botao-segundo" type="button" (click)="simularResultado('rejeitado')">
-            Simular rejeição
-          </button>
-          <p class="nota-demo">Demonstração: em produção, a análise seria feita pelo instrutor.</p>
-        } @else {
-          <button class="btn-secundario" type="button" (click)="status.set('selecionar')">
-            Voltar ao comprovante
-          </button>
-        }
       }
     } @else {
       <section class="resumo-card sem-pacote">

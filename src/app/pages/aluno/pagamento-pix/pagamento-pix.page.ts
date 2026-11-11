@@ -22,6 +22,7 @@ import {
   walletOutline,
 } from 'ionicons/icons';
 import { ToastService } from '../../../core/services/toast.service';
+import { HorarioPedidoPacote, PedidoPacote } from '../../../core/models/pedido-pacote.model';
 
 interface PacoteResumo {
   categoria: string;
@@ -57,6 +58,9 @@ export class PagamentoPixPage {
   horaInicio = history.state?.['horaInicio'] as string | undefined;
   horaFim = history.state?.['horaFim'] as string | undefined;
 
+  pedidoId = history.state?.['pedidoId'] as number | undefined;
+  pedido = history.state?.['pedido'] as PedidoPacote | undefined;
+
   readonly chavePix = 'guidaz@exemplo.com';
 
   constructor() {
@@ -73,6 +77,10 @@ export class PagamentoPixPage {
   }
 
   ionViewWillEnter(): void {
+    if (history.state?.['pedidoId']) {
+      this.pedidoId = Number(history.state['pedidoId']);
+      this.pedido = history.state['pedido'] as PedidoPacote | undefined;
+    }
     if (history.state?.['pacote']) {
       this.pacote = history.state['pacote'] as PacoteResumo;
     }
@@ -100,6 +108,13 @@ export class PagamentoPixPage {
     });
   }
 
+  horariosDoPedido(): HorarioPedidoPacote[] {
+    return this.pedido?.horarios ?? [];
+  }
+
+  descreverHorario(h: HorarioPedidoPacote): string {
+    return `${this.formatarData(h.data)} das ${h.horaInicio.slice(0, 5)} às ${h.horaFim.slice(0, 5)}`;
+  }
   formatarData(dataIso: string): string {
     const partes = dataIso.split('-');
     if (partes.length !== 3) return dataIso;
@@ -126,12 +141,14 @@ export class PagamentoPixPage {
   }
 
   informarComprovante(): void {
-    if (!this.pacote) {
+    if (!this.pacote || !this.pedidoId) {
       return;
     }
 
     void this.router.navigate(['/aluno/comprovante-pix'], {
       state: {
+        pedidoId: this.pedidoId,
+        pedido: this.pedido,
         pacote: this.pacote,
         instrutorId: this.instrutorId,
         instrutorNome: this.instrutorNome,

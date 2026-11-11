@@ -23,6 +23,15 @@
         @if (horaInicio) {
           <p>Horário: {{ horaInicio }}{{ horaFim ? ' – ' + horaFim : '' }}</p>
         }
+        @if (pedidoId) {
+          <p>Pedido: #{{ pedidoId }}</p>
+        }
+        @if (horariosDoPedido().length) {
+          <p>Aulas reservadas:</p>
+          @for (horario of horariosDoPedido(); track $index) {
+            <p>{{ $index + 1 }}ª aula — {{ descreverHorario(horario) }}</p>
+          }
+        }
         <p class="resumo-valor">Valor: R$ {{ formatarPreco(pacote.preco) }}</p>
       </section>
 
@@ -45,9 +54,12 @@
         <span>Copiar chave Pix</span>
       </button>
 
-      <button class="btn-principal" type="button" (click)="informarComprovante()">
+      <button class="btn-principal" type="button" [disabled]="!pedidoId" (click)="informarComprovante()">
         Já realizei o pagamento
       </button>
+      @if (!pedidoId) {
+        <p role="alert">Pedido não encontrado. Volte e selecione o horário novamente para reservar suas aulas.</p>
+      }
     } @else {
       <section class="sem-pacote-card">
         <h2>Nenhum pacote selecionado</h2>

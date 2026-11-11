@@ -8,6 +8,7 @@ import { arrowBackOutline, chevronBackOutline, chevronForwardOutline, informatio
 import { finalize, timeout } from 'rxjs';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { PedidoPacoteService } from '../../../core/services/pedido-pacote.service';
 import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
 import { environment } from '../../../../environments/environment';
 
@@ -57,6 +58,7 @@ export class AgendamentoAulasPage {
   private readonly router = inject(Router);
   private readonly navCtrl = inject(NavController);
   private readonly auth = inject(AuthService);
+  private readonly pedidoService = inject(PedidoPacoteService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly apiUrl = environment.apiUrl;
 
@@ -241,18 +243,50 @@ export class AgendamentoAulasPage {
     const horaFim = this.calcularHoraFim(horaInicio);
     const instrutorNome = this.instrutor?.nome || this.instrutorNome;
 
+    const alunoId = Number(this.auth.usuario()?.id);
+    if (!Number.isInteger(alunoId) || alunoId <= 0) {
+      this.erroReserva = 'Não foi possível identificar o aluno logado. Entre novamente.';
+      return;
+    }
+
+    const instrutorId = this.instrutorId;
+    const pacote = this.pacote;
+    const data = this.dataSelecionada;
+
     this.erroReserva = '';
     this.mensagemSucesso = '';
+    this.reservando = true;
+    this.horarioReservando = horaInicio;
 
-    void this.router.navigate(['/aluno/pagamento-pix'], {
-      queryParams: { instrutorId: this.instrutorId },
-      state: {
-        pacote: this.pacote,
-        instrutorId: this.instrutorId,
-        instrutorNome,
-        data: this.dataSelecionada,
-        horaInicio,
-        horaFim
+    // Cria o pedido agora para que o back-end reserve os horários antes do pagamento.
+    this.pedidoService.criar(
+      { alunoId, instrutorId, dataPrimeiraAula: data, horaInicio },
+      pacote.categoria
+    ).pipe(
+      finalize(() => {
+        this.reservando = false;
+        this.horarioReservando = null;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: (pedido) => {
+        void this.router.navigate(['/aluno/pagamento-pix'], {
+          queryParams: { instrutorId },
+          state: {
+            pacote,
+            instrutorId,
+            instrutorNome,
+            data,
+            horaInicio,
+            horaFim,
+            pedidoId: pedido.id,
+            pedido
+          }
+        });
+      },
+      error: (erro: Error) => {
+        console.error('Erro ao criar pedido do pacote:', erro);
+        this.erroReserva = erro.message;
       }
     });
   }
