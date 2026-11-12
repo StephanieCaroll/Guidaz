@@ -1,12 +1,12 @@
 <ion-content [fullscreen]="true" class="page-container">
-  <!-- Top Banner Header -->
-  <div class="header-banner">
-    <button type="button" class="back-btn" (click)="voltar()">
-      <ion-icon name="arrow-back-outline"></ion-icon>
+  <!-- Top Banner Header com o Botão de Voltar Restaurado e Alinhado -->
+  <div class="header-banner" style="display: flex; align-items: center; gap: 16px; padding: 24px 32px;">
+    <button type="button" class="back-btn" (click)="voltar()" style="background: rgba(255, 255, 255, 0.2); border: none; border-radius: 50%; width: 40px; height: 40px; min-width: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; transition: background 0.2s;">
+      <ion-icon name="arrow-back-outline" style="font-size: 20px;"></ion-icon>
     </button>
-    <div class="header-text">
-      <h1>Disponibilidade</h1>
-      <p>Planeje seus horários!</p>
+    <div class="header-text" style="display: flex; flex-direction: column;">
+      <h1 style="margin: 0; font-size: 1.5rem; font-weight: 700; color: white; line-height: 1.2;">Disponibilidade</h1>
+      <p style="margin: 4px 0 0 0; font-size: 0.9rem; color: rgba(255, 255, 255, 0.85);">Planeje seus horários!</p>
     </div>
   </div>
 
@@ -15,7 +15,7 @@
       Gerencie seus horários de aula. Adicione, edite ou bloqueie os horários em que você está disponível.
     </p>
 
-    <!-- Card de Perfil do Instrutor -->
+    <!-- Card de Perfil do Instrutor / Contexto do Aluno -->
     <div class="instructor-card">
       <div class="avatar-box">
         <ion-avatar>
@@ -44,6 +44,64 @@
           (click)="selecionarDia(dia.valor)">
           {{ dia.nome }}
         </button>
+      </div>
+    </div>
+
+    <!-- 🎯 Seção de Foco Pedagógico da Aula (As 8 Funcionalidades) -->
+    <div class="section-container" style="background: white; border-radius: 16px; padding: 16px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+      <h3 class="section-title" style="margin-bottom: 4px;"> Foco Pedagógico da Aula</h3>
+      <p class="section-subtitle" style="margin-bottom: 12px;">Selecione o objetivo de treino com base no desempenho do aluno:</p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        
+        <!-- 1. Vias Públicas -->
+        <div (click)="selecionarFoco('vias')" [style.border]="focoSelecionado === 'vias' ? '2px solid #2563eb' : '1px solid #e2e8f0'" [style.background]="focoSelecionado === 'vias' ? '#eff6ff' : '#f8fafc'" style="padding: 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+          <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b;">1. Vias Públicas</div>
+          <div style="font-size: 0.7rem; color: #64748b;">Ruas, avenidas e rodovias</div>
+        </div>
+
+        <!-- 2. Manejos Específicos -->
+        <div (click)="selecionarFoco('manejo')" [style.border]="focoSelecionado === 'manejo' ? '2px solid #2563eb' : '1px solid #e2e8f0'" [style.background]="focoSelecionado === 'manejo' ? '#eff6ff' : '#f8fafc'" style="padding: 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+          <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b;">2. Manejos Específicos</div>
+          <div style="font-size: 0.7rem; color: #64748b;">Marchas, embreagem ou moto</div>
+        </div>
+
+        <!-- 3. Baliza e Estacionamento -->
+        <div (click)="selecionarFoco('baliza')" [style.border]="focoSelecionado === 'baliza' ? '2px solid #2563eb' : '1px solid #e2e8f0'" [style.background]="focoSelecionado === 'baliza' ? '#eff6ff' : '#f8fafc'" style="padding: 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+          <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b;">3. Baliza e Estacionamento</div>
+          <div style="font-size: 0.7rem; color: #64748b;">Vagas paralelas e garagens</div>
+        </div>
+
+        <!-- 4. Simulado Detran -->
+        <div (click)="selecionarFoco('detran')" [style.border]="focoSelecionado === 'detran' ? '2px solid #2563eb' : '1px solid #e2e8f0'" [style.background]="focoSelecionado === 'detran' ? '#eff6ff' : '#f8fafc'" style="padding: 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+          <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b;">4. Simulado Detran</div>
+          <div style="font-size: 0.7rem; color: #64748b;">Percurso e exigências da prova</div>
+        </div>
+
+        <!-- 5. Superação de Medos -->
+        <div (click)="selecionarFoco('fobia')" [style.border]="focoSelecionado === 'fobia' ? '2px solid #2563eb' : '1px solid #e2e8f0'" [style.background]="focoSelecionado === 'fobia' ? '#eff6ff' : '#f8fafc'" style="padding: 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+          <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b;">5. Superação de Medos</div>
+          <div style="font-size: 0.7rem; color: #64748b;">Amaxofobia e insegurança</div>
+        </div>
+
+        <!-- 6. Trânsito Pesado -->
+        <div (click)="selecionarFoco('pesado')" [style.border]="focoSelecionado === 'pesado' ? '2px solid #2563eb' : '1px solid #e2e8f0'" [style.background]="focoSelecionado === 'pesado' ? '#eff6ff' : '#f8fafc'" style="padding: 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+          <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b;">6. Trânsito Pesado</div>
+          <div style="font-size: 0.7rem; color: #64748b;">Horários de pico e rodovias</div>
+        </div>
+
+        <!-- 7. Subidas e Rampas -->
+        <div (click)="selecionarFoco('rampa')" [style.border]="focoSelecionado === 'rampa' ? '2px solid #2563eb' : '1px solid #e2e8f0'" [style.background]="focoSelecionado === 'rampa' ? '#eff6ff' : '#f8fafc'" style="padding: 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+          <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b;">7. Subidas e Rampas</div>
+          <div style="font-size: 0.7rem; color: #64748b;">Controle de aclives/declives</div>
+        </div>
+
+        <!-- 8. Rotinas Personalizadas -->
+        <div (click)="selecionarFoco('rotina')" [style.border]="focoSelecionado === 'rotina' ? '2px solid #2563eb' : '1px solid #e2e8f0'" [style.background]="focoSelecionado === 'rotina' ? '#eff6ff' : '#f8fafc'" style="padding: 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+          <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b;">8. Rotinas Personalizadas</div>
+          <div style="font-size: 0.7rem; color: #64748b;">Trajeto casa-trabalho/escola</div>
+        </div>
+
       </div>
     </div>
 

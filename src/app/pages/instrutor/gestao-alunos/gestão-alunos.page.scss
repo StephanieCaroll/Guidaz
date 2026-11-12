@@ -1,0 +1,41 @@
+.header-banner {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 24px 32px !important;
+  background-color: #2563eb !important;
+  color: white !important;
+
+  .back-btn {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: none !important;
+    border-radius: 50% !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    color: white !important;
+  }
+
+  .header-text {
+    display: flex !important;
+    flex-direction: column !important;
+
+    h1 {
+      margin: 0 !important;
+      font-size: 1.5rem !important;
+      font-weight: 700 !important;
+      color: white !important;
+      line-height: 1.2 !important;
+    }
+
+    p {
+      margin: 4px 0 0 0 !important;
+      font-size: 0.9rem !important;
+      color: rgba(255, 255, 255, 0.85) !important;
+    }
+  }
+}

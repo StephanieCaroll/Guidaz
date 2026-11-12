@@ -1,6 +1,7 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ViewWillEnter } from '@ionic/angular';
 import {
   IonContent,
@@ -36,7 +37,17 @@ export interface DiaSemanaItem {
   ]
 })
 export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
   instrutorId: number = 1;
+  alunoIdSelecionado: number | null = null;
+  alunoNomeSelecionado: string = '';
+  alunoCategoriaSelecionada: string = '';
+
+  // Propriedade para controlar o Foco Pedagógico da Aula (As 8 Funcionalidades)
+  focoSelecionado: string = 'vias';
+
   nomeInstrutor: string = 'Carregando...';
   instrutorEspecialidade: string = 'Instrutor de Direção';
   notaInstrutor: number = 5.0;
@@ -99,13 +110,41 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
   }
 
   ngOnInit() {
+    this.capturarParametrosRota();
     this.carregarPerfilInstrutor();
     this.carregarDados();
   }
 
   ionViewWillEnter() {
+    this.capturarParametrosRota();
     this.carregarPerfilInstrutor();
     this.carregarDados();
+  }
+
+  private capturarParametrosRota() {
+    const alunoIdParam = this.route.snapshot.queryParamMap.get('alunoId');
+    const alunoNomeParam = this.route.snapshot.queryParamMap.get('alunoNome');
+    const alunoCategoriaParam = this.route.snapshot.queryParamMap.get('alunoCategoria');
+
+    if (alunoIdParam) {
+      this.alunoIdSelecionado = Number(alunoIdParam);
+    }
+    
+    if (alunoNomeParam) {
+      this.alunoNomeSelecionado = alunoNomeParam;
+      this.nomeInstrutor = `Aluno: ${this.alunoNomeSelecionado}`;
+    }
+
+    if (alunoCategoriaParam) {
+      this.alunoCategoriaSelecionada = alunoCategoriaParam;
+      this.instrutorEspecialidade = `Categoria: ${this.alunoCategoriaSelecionada}`;
+    }
+  }
+
+  // Método para atualizar o foco pedagógico selecionado
+  selecionarFoco(foco: string) {
+    this.focoSelecionado = foco;
+    this.cdr.detectChanges();
   }
 
   voltar() {
@@ -113,6 +152,11 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
   }
 
   carregarPerfilInstrutor() {
+    // Se o ecrã foi aberto com o contexto do aluno, evitamos sobrescrever com os dados do instrutor
+    if (this.alunoNomeSelecionado) {
+      return;
+    }
+
     this.agendaService.getInstrutorInfo(this.instrutorId).subscribe({
       next: (info: InstrutorInfo) => {
         if (info && info.nome) {
@@ -366,9 +410,12 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
         this.disponabilidadesSalvas = [...res];
         this.disponabilidades = [...res];
         this.sincronizarBotoesDias();
-        this.toastService.mostrar('Disponibilidades salvas com sucesso!', 'ok');
+        this.toastService.mostrar('Aula agendada e disponibilidades salvas com sucesso!', 'ok');
         this.salvando = false;
         this.cdr.detectChanges();
+
+        // Redireciona para a home do instrutor após salvar com sucesso
+        this.router.navigate(['/instrutor/home']);
       },
       error: (err: any) => {
         console.error('Erro ao salvar disponibilidades:', err);

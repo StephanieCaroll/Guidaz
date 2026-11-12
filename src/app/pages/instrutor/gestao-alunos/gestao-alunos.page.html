@@ -1,0 +1,50 @@
+<ion-content [fullscreen]="true" class="page-container">
+  <!-- Top Banner Header (Usa a classe .header-banner do teu SCSS) -->
+  <div class="header-banner">
+    <button type="button" class="back-btn" (click)="voltar()">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+    </button>
+    <div class="header-text">
+      <h1>Alunos</h1>
+      <p>Gerenciamento de alunos e turmas</p>
+    </div>
+  </div>
+
+  <div class="content-wrapper">
+    <!-- Barra de Pesquisa -->
+    <div class="search-bar-container" style="padding: 16px 24px 0 24px;">
+      <div class="search-bar" style="display: flex; align-items: center; background: white; border-radius: 12px; padding: 0 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+        <ion-icon name="search-outline" style="color: #94a3b8; font-size: 18px; margin-right: 12px;"></ion-icon>
+        <input type="text" [(ngModel)]="termoBusca" placeholder="Pesquisar por nome ou categoria" style="width: 100%; border: none; outline: none; padding: 14px 0; font-size: 0.95rem; background: transparent;" />
+        <ion-icon name="options-outline" style="color: #64748b; font-size: 20px; cursor: pointer;"></ion-icon>
+      </div>
+    </div>
+
+    <!-- Lista de Alunos -->
+    <div class="alunos-container" style="padding: 24px;">
+      <div class="aluno-card" *ngFor="let aluno of alunosFiltrados">
+        <div class="aluno-avatar">
+          <div class="avatar-placeholder"></div>
+        </div>
+        <div class="aluno-details">
+          <div class="aluno-header-info">
+            <h3>{{ aluno.nome }}</h3>
+            <span class="status-badge" [class.ativo]="aluno.status === 'Ativo'" [class.concluido]="aluno.status === 'Concluído'">
+              • {{ aluno.status }}
+            </span>
+          </div>
+          <p class="aluno-categoria">Categoria: {{ aluno.categoria }}</p>
+          <div class="progress-bar-wrapper">
+            <div class="progress-fill" [style.width.%]="(aluno.aulasFeitas / aluno.totalAulas) * 100"></div>
+          </div>
+          <span class="progress-text">{{ aluno.aulasFeitas }}/{{ aluno.totalAulas }}</span>
+        </div>
+        <div class="aluno-action">
+          <button type="button" class="btn-agendar-aula" (click)="agendarAula(aluno)">
+            Agendar aula
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>
