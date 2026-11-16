@@ -1,0 +1,275 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap');
+
+$azul: #1a6bff;
+$fundo: #f2f2f7;
+$verde: #3be03b;
+$vermelho: #ff2d2d;
+$cinza: #7a7a7a;
+
+:host {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.hist {
+  --background: #{$fundo};
+}
+
+.hist__container {
+  padding: 24px 22px calc(96px + env(safe-area-inset-bottom));
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.erro {
+  background: #ffe5e5;
+  color: #b00020;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+/* Card azul de resumo */
+.resumo {
+  background: $azul;
+  color: #fff;
+  border-radius: 24px;
+  padding: 20px 22px 18px;
+  box-shadow: 0 8px 18px rgba(26, 107, 255, 0.22);
+
+  &__topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__rotulo {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  &__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 12px;
+
+    ion-icon {
+      color: #ffd43b;
+      font-size: 13px;
+    }
+  }
+
+  &__total {
+    font-size: 20px;
+    font-weight: 800;
+    margin: 14px 0 12px;
+  }
+
+  &__stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+}
+
+.barra {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 10px;
+  overflow: hidden;
+
+  &__preenchida {
+    height: 100%;
+    min-width: 10px;
+    background: $verde;
+    border-radius: 10px;
+    transition: width 0.4s ease;
+  }
+}
+
+/* Lista */
+.lista {
+  margin-top: 28px;
+
+  &__titulo {
+    font-size: 20px;
+    font-weight: 600;
+    color: #111;
+    margin: 0 0 16px 4px;
+  }
+
+  &__grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+.busca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 10px 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  margin-bottom: 14px;
+
+  ion-icon {
+    font-size: 18px;
+    color: $cinza;
+  }
+
+  input {
+    border: 0;
+    outline: none;
+    background: transparent;
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #111;
+  }
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-bottom: 16px;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.chip {
+  border: 1px solid #d0d0d8;
+  background: #fff;
+  color: #333;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &--ativo {
+    background: $azul;
+    border-color: $azul;
+    color: #fff;
+  }
+}
+
+.card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 14px 16px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  position: relative;
+  cursor: pointer;
+
+  &__data {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: $azul;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 10px;
+  }
+
+  &__menu {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: $azul;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  &__titulo {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111;
+    margin: 10px 0 4px;
+  }
+
+  &__aluno {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: $cinza;
+    margin: 0 0 8px;
+  }
+
+  &__rodape {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #222;
+
+    .status__ponto {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: $azul;
+    }
+
+    &.status--concluida .status__ponto {
+      background: $verde;
+    }
+
+    &.status--cancelada .status__ponto,
+    &.status--falta .status__ponto {
+      background: $vermelho;
+    }
+  }
+
+  &__nota {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #111;
+
+    ion-icon {
+      color: #f5b400;
+      font-size: 14px;
+    }
+  }
+}
+
+.vazio {
+  text-align: center;
+  color: $cinza;
+  font-size: 13px;
+  margin-top: 24px;
+}

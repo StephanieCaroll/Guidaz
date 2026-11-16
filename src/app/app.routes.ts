@@ -2,7 +2,6 @@ import { Routes } from '@angular/router';
 import { authGuard, perfilGuard, visitanteGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-  
   {
     path: '',
     loadComponent: () => import('./pages/auth/splash/splash.page').then(m => m.SplashPage)
@@ -43,13 +42,22 @@ export const routes: Routes = [
   // ---------- Área do Instrutor ----------
   {
     path: 'instrutor',
-    // canActivate: [authGuard, perfilGuard('instrutor')], // <-- Comentado temporariamente para testes
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'home' },
       {
         path: 'home',
         title: 'Início | Guidaz',
         loadComponent: () => import('./pages/instrutor/home-instrutor/home-instrutor.page').then((m) => m.HomeInstrutorPage),
+      },
+      {
+        path: 'calendario',
+        title: 'Calendário de aulas | Guidaz',
+        loadComponent: () => import('./pages/aluno/calendario-aulas/calendario-aulas.page').then((m) => m.CalendarioAulasPage),
+      },
+      {
+        path: 'detalhe-aula',
+        title: 'Detalhe da aula | Guidaz',
+        loadComponent: () => import('./pages/aluno/detalhe-aula/detalhe-aula.page').then((m) => m.DetalheAulaPage),
       },
       {
         path: 'progresso-instrutor',
@@ -84,6 +92,11 @@ export const routes: Routes = [
         path: 'home',
         title: 'Início | Guidaz',
         loadComponent: () => import('./pages/aluno/home-aluno/home-aluno.page').then((m) => m.HomeAlunoPage),
+      },
+      {
+        path: 'calendario',
+        title: 'Calendário de aulas | Guidaz',
+        loadComponent: () => import('./pages/aluno/calendario-aulas/calendario-aulas.page').then((m) => m.CalendarioAulasPage),
       },
       {
         path: 'instrutores',

@@ -23,13 +23,14 @@ import {
   personOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../../core/services/auth.service';
+import { AulaHistoricoApi, AulaService } from '../../../core/services/aula.service';
 import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
 import { environment } from '../../../../environments/environment';
 
-/* Tipos */
 interface DiaCalendario {
   data: Date;
   chave: string;
+  iso: string;
   nome: string;
   numero: number;
 }
@@ -43,9 +44,8 @@ interface Aula {
 
 type Filtro = 'todas' | 'completa' | 'incompleta';
 
-/* Constantes */
-const ITEM_W = 50; // largura (px) de cada dia no calendário.
-const LOTE = 30; // quantos dias carrega por vez ao chegar nas pontas
+const ITEM_W = 50;
+const LOTE = 30;
 
 const SEMANA_CURTA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
 const MESES_CURTOS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -54,7 +54,6 @@ const MESES_LONGOS = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
-/* Funções de data */
 function zerarHora(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
@@ -69,6 +68,13 @@ function chaveDia(d: Date): string {
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
+function isoDia(d: Date): string {
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
 @Component({
   selector: 'app-home-aluno',
   templateUrl: './home-aluno.page.html',
@@ -80,21 +86,24 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
   @ViewChild('calendario') calendario!: ElementRef<HTMLDivElement>;
 
   private readonly auth = inject(AuthService);
+  private readonly aulaService = inject(AulaService);
 
   nomeAluno = '';
   fotoUrl = '';
   temFoto = false;
   temNotificacao = true;
 
-  /* Calendário */
   hoje = zerarHora(new Date());
   selecionado = this.hoje;
   dias: DiaCalendario[] = [];
   mesAno = '';
 
-  progresso = { categoria: 'Categoria B', realizadas: 6, total: 10 };
+  progresso = { categoria: 'Categoria B', realizadas: 0, total: 0 };
 
+  // Próximas 3 aulas para exibir nos cards
   aulas: Aula[] = [];
+  // Conjunto com todas as datas ISO (YYYY-MM-DD) que possuem aula marcada
+  diasComAula = new Set<string>();
 
   filtro: Filtro = 'todas';
   filtroAberto = false;
@@ -104,7 +113,6 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
     { id: 'incompleta', label: 'Incompletas' }
   ];
 
-  /* Popover Editar / Deletar */
   menuAbertoId: string | null = null;
 
   constructor(
@@ -125,16 +133,18 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
 
   ngOnInit() {
     this.carregarUsuario();
-    this.aulas = this.gerarAulasExemplo();
-    // começa com 30 dias antes e 60 dias depois de hoje
     this.dias = this.gerarFaixa(somarDias(this.hoje, -LOTE), LOTE + 60);
+    this.carregarDadosAluno();
   }
 
-  /** Roda toda vez que a página é aberta */
   ionViewWillEnter() {
     this.carregarUsuario();
+    this.carregarDadosAluno();
     this.auth.buscarDoBanco().subscribe({
-      next: () => this.carregarUsuario(),
+      next: () => {
+        this.carregarUsuario();
+        this.carregarDadosAluno();
+      },
       error: (err) => console.error('Erro ao recarregar usuário na home:', err)
     });
   }
@@ -146,10 +156,12 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
     });
   }
 
-  /** Pega os dados de quem logou direto do AuthService e processa a foto */
   private carregarUsuario() {
     const u: any = this.auth.usuario();
     this.nomeAluno = u?.nome ?? u?.nomeCompleto ?? u?.name ?? '';
+    if (u?.categoriaPretendida) {
+      this.progresso.categoria = `Categoria ${u.categoriaPretendida}`;
+    }
 
     const raw = u?.fotoUrl || u?.foto || '';
     if (raw) {
@@ -164,6 +176,61 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
       this.fotoUrl = '';
       this.temFoto = false;
     }
+  }
+
+  private carregarDadosAluno() {
+    const alunoId = Number(this.auth.usuario()?.id);
+    if (!Number.isInteger(alunoId) || alunoId <= 0) return;
+
+    // 1. Próximas 3 aulas para os cards
+    this.aulaService.proximasAluno(alunoId, 3).subscribe({
+      next: (lista) => {
+        this.aulas = (lista || []).slice(0, 3).map(item => this.mapearAula(item));
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Erro ao carregar próximas aulas do aluno:', err)
+    });
+
+    // 2. Todas as aulas do aluno para pintar as bolinhas verdes no calendário
+    this.aulaService.historicoAluno(alunoId).subscribe({
+      next: (todas) => {
+        const datas = new Set<string>();
+        for (const item of todas || []) {
+          if (item.status === 'CANCELADA') continue;
+          const iso = item.dataAula || (item.dataHora ? item.dataHora.slice(0, 10) : '');
+          if (iso) datas.add(iso);
+        }
+        this.diasComAula = datas;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Erro ao carregar datas com aula:', err)
+    });
+
+    // 3. Resumo de progresso
+    this.aulaService.resumoHoras(alunoId).subscribe({
+      next: (resumo) => {
+        this.progresso = {
+          categoria: resumo.categoriaPrincipal || this.progresso.categoria,
+          realizadas: Math.round(resumo.horasRealizadas || 0),
+          total: Math.round(resumo.horasContratadas || 0)
+        };
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Erro ao carregar resumo de horas:', err)
+    });
+  }
+
+  private mapearAula(item: AulaHistoricoApi): Aula {
+    const dataIso = item.dataHora || (item.dataAula ? `${item.dataAula}T${item.horaInicio || '00:00:00'}` : '');
+    const dataObj = dataIso ? new Date(dataIso) : new Date();
+    const horaTxt = item.horaInicio ? item.horaInicio.slice(0, 5) : dataIso.slice(11, 16);
+
+    return {
+      id: item.id,
+      data: dataObj,
+      titulo: horaTxt ? `${item.titulo} (${horaTxt})` : item.titulo,
+      status: item.status === 'CONCLUIDA' ? 'Completa' : 'Incompleta'
+    };
   }
 
   onImgError(event: Event) {
@@ -191,6 +258,7 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
       lista.push({
         data,
         chave: chaveDia(data),
+        iso: isoDia(data),
         nome: SEMANA_CURTA[data.getDay()],
         numero: data.getDate()
       });
@@ -210,7 +278,10 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
     return this.selecionadoChave === chaveDia(this.hoje);
   }
 
-  /** Chamado a cada rolagem: carrega mais dias nas pontas e atualiza o mês */
+  diaTemAula(dia: DiaCalendario): boolean {
+    return this.diasComAula.has(dia.iso);
+  }
+
   onScroll() {
     const el = this.calendario.nativeElement;
     const margem = ITEM_W * 5;
@@ -256,6 +327,12 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
 
   selecionarDia(dia: DiaCalendario) {
     this.selecionado = dia.data;
+    // Se o dia tem bolinha verde (possui aula), vai direto para a tela do calendário mensal nesse dia
+    if (this.diaTemAula(dia)) {
+      void this.router.navigate(['/aluno/calendario'], {
+        queryParams: { data: dia.iso }
+      });
+    }
   }
 
   irParaHoje() {
@@ -265,15 +342,15 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
 
   /* AULAS */
 
-  /** Card "Próxima Aula": a primeira aula da lista */
   get proximaAula(): Aula | null {
     return this.aulas.length ? this.aulas[0] : null;
   }
 
   get aulasFiltradas(): Aula[] {
-    if (this.filtro === 'todas') return this.aulas;
+    const base = this.aulas.slice(0, 3);
+    if (this.filtro === 'todas') return base;
     const alvo = this.filtro === 'completa' ? 'Completa' : 'Incompleta';
-    return this.aulas.filter(a => a.status === alvo);
+    return base.filter(a => a.status === alvo);
   }
 
   get filtroTexto(): string {
@@ -290,6 +367,13 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
     return a.id;
   }
 
+  abrirDetalhesAula(aula: Aula) {
+    this.fecharMenu();
+    void this.router.navigate(['/aluno/detalhe-aula'], {
+      queryParams: { id: aula.id }
+    });
+  }
+
   /* FILTRO */
 
   toggleFiltro() {
@@ -304,12 +388,12 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
 
   /* POPOVER EDITAR / DELETAR */
 
-  toggleMenu(chave: string) {
+  toggleMenu(chave: string, ev?: Event) {
+    ev?.stopPropagation();
     this.filtroAberto = false;
     this.menuAbertoId = this.menuAbertoId === chave ? null : chave;
   }
 
-  /** Fecha qualquer popover aberto (menu da aula e filtro) */
   fecharMenu() {
     this.menuAbertoId = null;
     this.filtroAberto = false;
@@ -319,14 +403,18 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
     return this.menuAbertoId !== null || this.filtroAberto;
   }
 
-  editarAula(aula: Aula) {
-    this.fecharMenu();
-    console.log('Editar', aula);
+  editarAula(aula: Aula, ev?: Event) {
+    ev?.stopPropagation();
+    this.abrirDetalhesAula(aula);
   }
 
-  deletarAula(aula: Aula) {
+  deletarAula(aula: Aula, ev?: Event) {
+    ev?.stopPropagation();
     this.fecharMenu();
-    this.aulas = this.aulas.filter(a => a.id !== aula.id);
+    this.aulaService.cancelarAula(aula.id).subscribe({
+      next: () => this.carregarDadosAluno(),
+      error: (err) => console.error('Erro ao cancelar aula:', err)
+    });
   }
 
   /* ATALHOS / NOTIFICAÇÕES */
@@ -338,14 +426,5 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
   abrirNotificacoes() {
     this.temNotificacao = false;
     this.router.navigateByUrl('/notificacoes');
-  }
-
-  /* DADOS DE EXEMPLO */
-
-  private gerarAulasExemplo(): Aula[] {
-    return [
-      { id: 1, data: new Date(2021, 11, 10), titulo: 'Aula Prática - Categoria B', status: 'Completa' },
-      { id: 2, data: new Date(2026, 0, 22), titulo: 'Aula Prática - Categoria A', status: 'Incompleta' }
-    ];
   }
 }

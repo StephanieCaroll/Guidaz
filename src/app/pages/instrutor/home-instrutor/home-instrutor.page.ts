@@ -23,13 +23,14 @@ import {
   personOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../../core/services/auth.service';
+import { AulaHistoricoApi, AulaService } from '../../../core/services/aula.service';
 import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
 import { environment } from '../../../../environments/environment';
 
-/* Tipos */
 interface DiaCalendario {
   data: Date;
   chave: string;
+  iso: string;
   nome: string;
   numero: number;
 }
@@ -44,9 +45,8 @@ interface Aula {
   status: 'Agendada' | 'Concluída' | 'Cancelada';
 }
 
-/* Constantes */
-const ITEM_W = 50; // largura (px) de cada dia no calendário. Tem que ser igual no SCSS
-const LOTE = 30; // quantos dias carrega por vez ao chegar nas pontas
+const ITEM_W = 50;
+const LOTE = 30;
 
 const SEMANA_CURTA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
 const MESES_CURTOS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -55,7 +55,6 @@ const MESES_LONGOS = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
-/* Funções de data */
 function zerarHora(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
@@ -70,6 +69,13 @@ function chaveDia(d: Date): string {
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
+function isoDia(d: Date): string {
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
 @Component({
   selector: 'app-home-instrutor',
   templateUrl: './home-instrutor.page.html',
@@ -81,6 +87,7 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
   @ViewChild('calendario') calendario!: ElementRef<HTMLDivElement>;
 
   private readonly auth = inject(AuthService);
+  private readonly aulaService = inject(AulaService);
 
   nomeInstrutor = '';
   fotoUrl = '';
@@ -91,9 +98,10 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
   dias: DiaCalendario[] = [];
   mesAno = '';
   resumo = { titulo: 'Hoje', quantidade: 0, previstos: 0 };
-  mini = { alunos: 18, pendentes: 3, media: 4.9 };
+  mini = { alunos: 0, pendentes: 0, media: 5.0 };
   aulas: Aula[] = [];
   proximasAulas: Aula[] = [];
+  diasComAula = new Set<string>();
   menuAbertoId: number | null = null;
 
   constructor(
@@ -114,32 +122,26 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
 
   ngOnInit() {
     this.carregarUsuario();
-    this.aulas = this.gerarAulasExemplo();
-    // começa com 30 dias antes e 60 dias depois de hoje
     this.dias = this.gerarFaixa(somarDias(this.hoje, -LOTE), LOTE + 60);
-    this.atualizarResumo();
-    this.atualizarProximas();
+    this.carregarDadosInstrutor();
   }
 
-  /** Roda toda vez que a página é aberta */
   ionViewWillEnter() {
     this.carregarUsuario();
+    this.carregarDadosInstrutor();
   }
 
   ngAfterViewInit() {
-    // posiciona o calendário de forma que "hoje" fique no começo
     setTimeout(() => {
       this.rolarParaDia(this.hoje, false);
       this.atualizarMes();
     });
   }
 
-  /* Média com vírgula (4,9) sem depender de locale */
   get mediaTexto(): string {
     return this.mini.media.toFixed(1).replace('.', ',');
   }
 
-  /** Pega os dados de quem logou direto do AuthService e processa a foto */
   private carregarUsuario() {
     const u: any = this.auth.usuario();
     this.nomeInstrutor = u?.nome ?? u?.nomeCompleto ?? u?.name ?? '';
@@ -159,6 +161,70 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
     }
   }
 
+  private carregarDadosInstrutor() {
+    const instrutorId = Number(this.auth.usuario()?.id);
+    if (!Number.isInteger(instrutorId) || instrutorId <= 0) return;
+
+    // 1. Todas as aulas para o calendário (bolinhas verdes) e resumo do dia
+    this.aulaService.historicoInstrutor(instrutorId).subscribe({
+      next: (lista) => {
+        this.aulas = (lista || []).map(item => this.mapearAula(item));
+        const datas = new Set<string>();
+        for (const item of lista || []) {
+          if (item.status === 'CANCELADA') continue;
+          const iso = item.dataAula || (item.dataHora ? item.dataHora.slice(0, 10) : '');
+          if (iso) datas.add(iso);
+        }
+        this.diasComAula = datas;
+        this.atualizarResumo();
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Erro ao carregar aulas do instrutor:', err)
+    });
+
+    // 2. Próximas 3 aulas agendadas
+    this.aulaService.proximasInstrutor(instrutorId, 3).subscribe({
+      next: (lista) => {
+        this.proximasAulas = (lista || []).slice(0, 3).map(item => this.mapearAula(item));
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Erro ao carregar próximas aulas:', err)
+    });
+
+    // 3. Resumo geral
+    this.aulaService.resumoInstrutor(instrutorId).subscribe({
+      next: (res) => {
+        this.mini = {
+          alunos: res.totalAlunos ?? 0,
+          pendentes: res.pedidosPendentes ?? 0,
+          media: res.mediaAvaliacoes ?? 5.0
+        };
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Erro ao carregar resumo do instrutor:', err)
+    });
+  }
+
+  private mapearAula(item: AulaHistoricoApi): Aula {
+    const dataIso = item.dataHora || (item.dataAula ? `${item.dataAula}T${item.horaInicio || '00:00:00'}` : '');
+    const dataObj = dataIso ? new Date(dataIso) : new Date();
+    const horaTxt = item.horaInicio ? item.horaInicio.slice(0, 5) : dataIso.slice(11, 16);
+
+    let statusFormatado: 'Agendada' | 'Concluída' | 'Cancelada' = 'Agendada';
+    if (item.status === 'CONCLUIDA') statusFormatado = 'Concluída';
+    if (item.status === 'CANCELADA') statusFormatado = 'Cancelada';
+
+    return {
+      id: item.id,
+      data: dataObj,
+      hora: horaTxt || '08:00',
+      titulo: horaTxt ? `${item.titulo} (${horaTxt})` : item.titulo,
+      aluno: item.alunoNome || item.nomeOutraPessoa || 'Aluno',
+      valor: 120,
+      status: statusFormatado
+    };
+  }
+
   onImgError(event: Event) {
     this.temFoto = false;
     (event.target as HTMLImageElement).style.display = 'none';
@@ -173,6 +239,7 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
       lista.push({
         data,
         chave: chaveDia(data),
+        iso: isoDia(data),
         nome: SEMANA_CURTA[data.getDay()],
         numero: data.getDate()
       });
@@ -192,7 +259,10 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
     return this.selecionadoChave === chaveDia(this.hoje);
   }
 
-  /** Chamado a cada rolagem: carrega mais dias nas pontas e atualiza o mês */
+  diaTemAula(dia: DiaCalendario): boolean {
+    return this.diasComAula.has(dia.iso);
+  }
+
   onScroll() {
     const el = this.calendario.nativeElement;
     const margem = ITEM_W * 5;
@@ -210,7 +280,6 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
     const inicio = somarDias(this.dias[0].data, -LOTE);
     this.dias = [...this.gerarFaixa(inicio, LOTE), ...this.dias];
     this.cdr.detectChanges();
-    // compensa a rolagem para a tela não "pular"
     el.scrollLeft += LOTE * ITEM_W;
   }
 
@@ -240,6 +309,11 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
   selecionarDia(dia: DiaCalendario) {
     this.selecionado = dia.data;
     this.atualizarResumo();
+    if (this.diaTemAula(dia)) {
+      void this.router.navigate(['/instrutor/calendario'], {
+        queryParams: { data: dia.iso }
+      });
+    }
   }
 
   irParaHoje() {
@@ -275,20 +349,21 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
     };
   }
 
-  private atualizarProximas() {
-    this.proximasAulas = this.aulas
-      .filter(a => a.status === 'Agendada' && a.data >= this.hoje)
-      .sort((a, b) => a.data.getTime() - b.data.getTime() || a.hora.localeCompare(b.hora))
-      .slice(0, 2);
-  }
-
   formatarData(d: Date): string {
     return `${d.getDate()} ${MESES_CURTOS[d.getMonth()]} ${d.getFullYear()}`;
   }
 
+  abrirDetalhesAula(aula: Aula) {
+    this.fecharMenu();
+    void this.router.navigate(['/instrutor/detalhe-aula'], {
+      queryParams: { id: aula.id }
+    });
+  }
+
   /* POPOVER EDITAR / DELETAR */
 
-  toggleMenu(aula: Aula) {
+  toggleMenu(aula: Aula, ev?: Event) {
+    ev?.stopPropagation();
     this.menuAbertoId = this.menuAbertoId === aula.id ? null : aula.id;
   }
 
@@ -296,16 +371,22 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
     this.menuAbertoId = null;
   }
 
-  editarAula(aula: Aula) {
+  editarAula(aula: Aula, ev?: Event) {
+    ev?.stopPropagation();
     this.fecharMenu();
-    console.log('Editar', aula);
+    this.aulaService.concluirAula(aula.id).subscribe({
+      next: () => this.carregarDadosInstrutor(),
+      error: (err) => console.error('Erro ao concluir aula:', err)
+    });
   }
 
-  deletarAula(aula: Aula) {
+  deletarAula(aula: Aula, ev?: Event) {
+    ev?.stopPropagation();
     this.fecharMenu();
-    this.aulas = this.aulas.filter(a => a.id !== aula.id);
-    this.atualizarResumo();
-    this.atualizarProximas();
+    this.aulaService.cancelarAula(aula.id).subscribe({
+      next: () => this.carregarDadosInstrutor(),
+      error: (err) => console.error('Erro ao cancelar aula:', err)
+    });
   }
 
   /* ATALHOS / NOTIFICAÇÕES */
@@ -317,22 +398,5 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
   abrirNotificacoes() {
     this.temNotificacao = false;
     this.router.navigateByUrl('/notificacoes');
-  }
-
-  /* DADOS DE EXEMPLO */
-
-  private gerarAulasExemplo(): Aula[] {
-    const h = this.hoje;
-    return [
-      { id: 1, data: h, hora: '08:00', titulo: 'Aula Prática - Categoria B', aluno: 'Mariana Alves', valor: 120, status: 'Agendada' },
-      { id: 2, data: h, hora: '10:00', titulo: 'Baliza e Estacionamento', aluno: 'Lucas Lima', valor: 120, status: 'Agendada' },
-      { id: 3, data: h, hora: '14:00', titulo: 'Direção em Via Urbana', aluno: 'Pedro Santos', valor: 120, status: 'Agendada' },
-      { id: 4, data: h, hora: '16:00', titulo: 'Aula Prática - Categoria B', aluno: 'Júlia Rocha', valor: 120, status: 'Agendada' },
-      { id: 5, data: somarDias(h, 1), hora: '09:00', titulo: 'Aula Prática - Categoria A', aluno: 'Ana Souza', valor: 100, status: 'Agendada' },
-      { id: 6, data: somarDias(h, 1), hora: '11:00', titulo: 'Direção Defensiva', aluno: 'Carlos Melo', valor: 120, status: 'Agendada' },
-      { id: 7, data: somarDias(h, 3), hora: '15:00', titulo: 'Baliza e Estacionamento', aluno: 'Mariana Alves', valor: 120, status: 'Agendada' },
-      { id: 8, data: somarDias(h, 5), hora: '08:00', titulo: 'Aula Prática - Categoria B', aluno: 'Lucas Lima', valor: 120, status: 'Agendada' },
-      { id: 9, data: somarDias(h, -2), hora: '10:00', titulo: 'Aula Prática - Categoria B', aluno: 'Pedro Santos', valor: 120, status: 'Concluída' }
-    ];
   }
 }

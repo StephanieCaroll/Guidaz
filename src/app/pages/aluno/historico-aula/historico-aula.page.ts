@@ -1,7 +1,7 @@
-import { Component, computed, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { IonContent, IonIcon, IonFooter } from '@ionic/angular/standalone';
+import { IonContent, IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
   searchOutline, calendarOutline, ellipsisVertical, personOutline,
@@ -12,6 +12,7 @@ import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom
 import {
   AulaService, AulaHistoricoApi, ResumoHoras
 } from '../../../core/services/aula.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 type StatusAula = 'agendada' | 'concluida' | 'cancelada' | 'falta';
 type FiltroStatus = 'todas' | StatusAula;
@@ -42,8 +43,10 @@ const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'O
   imports: [CommonModule, IonContent, IonIcon, BottomNavComponent]
 })
 export class HistoricoAulaPage {
-  // TODO: trocar pelo id do aluno logado quando o login estiver pronto
-  private readonly alunoId = 1;
+  private readonly router = inject(Router);
+  private readonly aulaService = inject(AulaService);
+  private readonly auth = inject(AuthService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly busca = signal('');
   readonly filtro = signal<FiltroStatus>('todas');
@@ -58,8 +61,7 @@ export class HistoricoAulaPage {
 
   readonly estrelas = [1, 2, 3, 4, 5];
 
-  // Categoria ainda não vem do back (fica fixa por enquanto)
-  readonly categoria = 'B';
+  categoria = 'B';
 
   // Card azul: vem de GET /horas/aluno/{id}
   readonly resumo = signal<ResumoHoras>({
@@ -81,40 +83,71 @@ export class HistoricoAulaPage {
     );
   });
 
-  constructor(private router: Router, private aulaService: AulaService) {
+  constructor() {
     addIcons({
       searchOutline, calendarOutline, ellipsisVertical, personOutline,
       star, starOutline
     });
   }
 
+  private get alunoId(): number {
+    return Number(this.auth.usuario()?.id) || 0;
+  }
+
   // Roda toda vez que a tela abre (mantém os dados atualizados)
   ionViewWillEnter(): void {
+    const u: any = this.auth.usuario();
+    if (u?.categoriaPretendida) {
+      this.categoria = u.categoriaPretendida;
+    }
     this.carregar();
   }
 
   private carregar(): void {
+    const id = this.alunoId;
+    if (!Number.isInteger(id) || id <= 0) {
+      this.erro.set('Usuário não identificado. Faça login novamente.');
+      return;
+    }
+
     this.erro.set('');
 
-    this.aulaService.resumoHoras(this.alunoId).subscribe({
-      next: r => this.resumo.set(r),
+    this.aulaService.resumoHoras(id).subscribe({
+      next: r => {
+        this.resumo.set(r);
+        if (r.categoriaPrincipal) {
+          this.categoria = r.categoriaPrincipal.replace(/Categoria\s*/i, '').trim() || 'B';
+        }
+        this.cdr.detectChanges();
+      },
       error: () => this.erro.set('Não foi possível carregar o progresso.')
     });
 
-    this.aulaService.historicoAluno(this.alunoId).subscribe({
-      next: lista => this.aulas.set(lista.map(a => this.converter(a))),
+    this.aulaService.historicoAluno(id).subscribe({
+      next: lista => {
+        this.aulas.set((lista || []).map(a => this.converter(a)));
+        this.cdr.detectChanges();
+      },
       error: () => this.erro.set('Não foi possível carregar as aulas.')
     });
   }
 
   // Converte o formato do back para o formato que a tela já usava
   private converter(a: AulaHistoricoApi): AulaHistorico {
+    const rawStatus = (a.status || 'AGENDADA').toUpperCase();
+    let status: StatusAula = 'agendada';
+    if (rawStatus === 'CONCLUIDA') status = 'concluida';
+    else if (rawStatus === 'CANCELADA') status = 'cancelada';
+    else if (rawStatus === 'FALTA' || rawStatus === 'FALTA_ALUNO') status = 'falta';
+
+    const iso = a.dataAula || (a.dataHora ? a.dataHora.substring(0, 10) : '2026-01-01');
+
     return {
       id: a.id,
-      data: a.dataHora.substring(0, 10), // "2023-09-18T09:00:00" -> "2023-09-18"
+      data: iso,
       titulo: a.titulo,
-      instrutor: a.nomeOutraPessoa,
-      status: a.status.toLowerCase() as StatusAula,
+      instrutor: a.instrutorNome || a.nomeOutraPessoa || 'Instrutor',
+      status,
       minhaNota: a.minhaNota
     };
   }
@@ -134,10 +167,13 @@ export class HistoricoAulaPage {
 
   avaliar(aula: AulaHistorico, nota: number, ev: Event): void {
     ev.stopPropagation(); // não abre o detalhe do card
-    if (aula.status !== 'concluida' ) { return; } // só 1 vez
+    if (aula.status !== 'concluida') { return; }
+
+    const id = this.alunoId;
+    if (!Number.isInteger(id) || id <= 0) return;
 
     this.aulaService.avaliar(aula.id, {
-      usuarioId: this.alunoId,
+      usuarioId: id,
       tipoAvaliador: 'ALUNO',
       nota
     }).subscribe({
@@ -149,8 +185,9 @@ export class HistoricoAulaPage {
   }
 
   abrirDetalhe(aula: AulaHistorico): void {
-    // TODO: confira se essa rota existe no app.routes.ts
-    void this.router.navigateByUrl('/aluno/historico-aula');
+    void this.router.navigate(['/aluno/detalhe-aula'], {
+      queryParams: { id: aula.id }
+    });
   }
 
   trackAula(_: number, a: AulaHistorico): number {

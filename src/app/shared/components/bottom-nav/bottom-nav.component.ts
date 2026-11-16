@@ -46,7 +46,7 @@ export class BottomNavComponent {
         id: 'agenda',
         chaveLabel: 'navAgenda',
         icone: 'calendar-outline',
-        rota: instrutor ? '/instrutor/agenda-disponibilidade' : '/aluno/instrutores'
+        rota: instrutor ? '/instrutor/calendario' : '/aluno/calendario'
       },
       {
         id: 'historico',
@@ -68,7 +68,8 @@ export class BottomNavComponent {
   }
 
   navegar(item: ItemNav): void {
-    if (this.router.url === item.rota) return;
+    const urlAtualSemQuery = this.router.url.split('?')[0];
+    if (urlAtualSemQuery === item.rota) return;
     void this.router.navigateByUrl(item.rota);
   }
 

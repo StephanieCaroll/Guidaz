@@ -13,6 +13,7 @@ import { addIcons } from 'ionicons';
 import { arrowBackOutline, addOutline, banOutline, trashOutline, informationCircleOutline } from 'ionicons/icons';
 
 import { AgendaService, DisponibilidadeInstrutor, BloqueioAgenda, InstrutorInfo } from '../../../core/services/agenda.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 
 export interface DiaSemanaItem {
@@ -39,16 +40,17 @@ export interface DiaSemanaItem {
 export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
 
-  instrutorId: number = 1;
+  instrutorId: number | null = null;
   alunoIdSelecionado: number | null = null;
   alunoNomeSelecionado: string = '';
   alunoCategoriaSelecionada: string = '';
 
-  // Propriedade para controlar o Foco Pedagógico da Aula (As 8 Funcionalidades)
+  // Propriedade para controlar o Foco Pedagógico da Aula
   focoSelecionado: string = 'vias';
 
-  nomeInstrutor: string = 'Carregando...';
+  nomeInstrutor: string = 'Instrutor';
   instrutorEspecialidade: string = 'Instrutor de Direção';
   notaInstrutor: number = 5.0;
   instrutorQtdAvaliacoes: number = 0;
@@ -110,15 +112,50 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
   }
 
   ngOnInit() {
+    this.inicializarTela();
+  }
+
+  ionViewWillEnter() {
+    this.inicializarTela();
+    this.auth.buscarDoBanco().subscribe({
+      next: () => {
+        this.resolverInstrutorLogado();
+        this.carregarPerfilInstrutor();
+      },
+      error: () => { /* mantém dados da sessão local */ }
+    });
+  }
+
+  private inicializarTela() {
+    this.resolverInstrutorLogado();
     this.capturarParametrosRota();
+
+    if (!this.instrutorId) {
+      this.toastService.mostrar('Sessão do instrutor não encontrada. Faça login novamente.', 'erro');
+      void this.router.navigateByUrl('/login', { replaceUrl: true });
+      return;
+    }
+
     this.carregarPerfilInstrutor();
     this.carregarDados();
   }
 
-  ionViewWillEnter() {
-    this.capturarParametrosRota();
-    this.carregarPerfilInstrutor();
-    this.carregarDados();
+  private resolverInstrutorLogado() {
+    const usuario: any = this.auth.usuario();
+    const idLogado = Number(usuario?.id);
+
+    if (Number.isInteger(idLogado) && idLogado > 0) {
+      this.instrutorId = idLogado;
+    } else {
+      this.instrutorId = null;
+    }
+
+    if (!this.alunoNomeSelecionado && usuario) {
+      this.nomeInstrutor = usuario.nome || usuario.nomeCompleto || 'Instrutor';
+      if (usuario.categoriasLecionadas) {
+        this.instrutorEspecialidade = `Categorias: ${usuario.categoriasLecionadas}`;
+      }
+    }
   }
 
   private capturarParametrosRota() {
@@ -126,22 +163,19 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
     const alunoNomeParam = this.route.snapshot.queryParamMap.get('alunoNome');
     const alunoCategoriaParam = this.route.snapshot.queryParamMap.get('alunoCategoria');
 
-    if (alunoIdParam) {
-      this.alunoIdSelecionado = Number(alunoIdParam);
-    }
-    
-    if (alunoNomeParam) {
-      this.alunoNomeSelecionado = alunoNomeParam;
+    this.alunoIdSelecionado = alunoIdParam ? Number(alunoIdParam) : null;
+    this.alunoNomeSelecionado = alunoNomeParam || '';
+    this.alunoCategoriaSelecionada = alunoCategoriaParam || '';
+
+    if (this.alunoNomeSelecionado) {
       this.nomeInstrutor = `Aluno: ${this.alunoNomeSelecionado}`;
     }
 
-    if (alunoCategoriaParam) {
-      this.alunoCategoriaSelecionada = alunoCategoriaParam;
+    if (this.alunoCategoriaSelecionada) {
       this.instrutorEspecialidade = `Categoria: ${this.alunoCategoriaSelecionada}`;
     }
   }
 
-  // Método para atualizar o foco pedagógico selecionado
   selecionarFoco(foco: string) {
     this.focoSelecionado = foco;
     this.cdr.detectChanges();
@@ -152,8 +186,7 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
   }
 
   carregarPerfilInstrutor() {
-    // Se o ecrã foi aberto com o contexto do aluno, evitamos sobrescrever com os dados do instrutor
-    if (this.alunoNomeSelecionado) {
+    if (!this.instrutorId || this.alunoNomeSelecionado) {
       return;
     }
 
@@ -161,7 +194,7 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
       next: (info: InstrutorInfo) => {
         if (info && info.nome) {
           this.nomeInstrutor = info.nome;
-          this.instrutorEspecialidade = info.especialidade || 'Instrutor de Direção';
+          this.instrutorEspecialidade = info.especialidade || this.instrutorEspecialidade;
           this.notaInstrutor = info.avaliacao || 5.0;
           this.instrutorQtdAvaliacoes = info.qtdAvaliacoes || 0;
         }
@@ -174,11 +207,14 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
   }
 
   carregarDados() {
+    if (!this.instrutorId) return;
     this.carregarDisponibilidades();
     this.carregarBloqueios();
   }
 
   carregarDisponibilidades() {
+    if (!this.instrutorId) return;
+
     this.carregando = true;
     this.cdr.detectChanges();
 
@@ -200,6 +236,8 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
   }
 
   carregarBloqueios() {
+    if (!this.instrutorId) return;
+
     this.agendaService.getBloqueios(this.instrutorId).subscribe({
       next: (res: BloqueioAgenda[]) => {
         this.bloqueios = [...res];
@@ -234,6 +272,8 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
   }
 
   toggleDiaSemana(dia: DiaSemanaItem) {
+    if (!this.instrutorId) return;
+
     dia.selecionado = !dia.selecionado;
     if (!dia.selecionado) {
       this.disponabilidadesSalvas = this.disponabilidadesSalvas.filter(d => d.diaSemana !== dia.valor);
@@ -286,6 +326,8 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
   }
 
   confirmarAdicionarHorario() {
+    if (!this.instrutorId) return;
+
     const startMin = this.timeToMinutes(this.horaInicio);
     const endMin = this.timeToMinutes(this.horaFim);
 
@@ -326,6 +368,8 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
   }
 
   cadastrarBloqueio() {
+    if (!this.instrutorId) return;
+
     const startMin = this.timeToMinutes(this.horaBloqueioInicio);
     const endMin = this.timeToMinutes(this.horaBloqueioFim);
 
@@ -396,25 +440,28 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
   }
 
   salvarAlteracoes() {
+    if (!this.instrutorId) return;
+
     this.salvando = true;
     this.cdr.detectChanges();
 
+    const instrutorAtualId = this.instrutorId;
     const payload = this.disponabilidadesSalvas.map(d => ({
       ...d,
+      instrutorId: instrutorAtualId,
       horaInicio: this.formatarTimeParaBackend(d.horaInicio),
       horaFim: this.formatarTimeParaBackend(d.horaFim)
     }));
 
-    this.agendaService.salvarDisponibilidades(this.instrutorId, payload).subscribe({
+    this.agendaService.salvarDisponibilidades(instrutorAtualId, payload).subscribe({
       next: (res: DisponibilidadeInstrutor[]) => {
         this.disponabilidadesSalvas = [...res];
         this.disponabilidades = [...res];
         this.sincronizarBotoesDias();
-        this.toastService.mostrar('Aula agendada e disponibilidades salvas com sucesso!', 'ok');
+        this.toastService.mostrar('Disponibilidades salvas com sucesso!', 'ok');
         this.salvando = false;
         this.cdr.detectChanges();
 
-        // Redireciona para a home do instrutor após salvar com sucesso
         this.router.navigate(['/instrutor/home']);
       },
       error: (err: any) => {

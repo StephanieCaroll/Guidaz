@@ -8,6 +8,7 @@ import { arrowBackOutline, chevronBackOutline, chevronForwardOutline, informatio
 import { finalize, timeout } from 'rxjs';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { AulaService } from '../../../core/services/aula.service';
 import { PedidoPacoteService } from '../../../core/services/pedido-pacote.service';
 import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
 import { environment } from '../../../../environments/environment';
@@ -58,6 +59,7 @@ export class AgendamentoAulasPage {
   private readonly router = inject(Router);
   private readonly navCtrl = inject(NavController);
   private readonly auth = inject(AuthService);
+  private readonly aulaService = inject(AulaService);
   private readonly pedidoService = inject(PedidoPacoteService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly apiUrl = environment.apiUrl;
@@ -65,7 +67,7 @@ export class AgendamentoAulasPage {
   @ViewChild('daysCarousel') private daysCarousel?: ElementRef<HTMLDivElement>;
 
   instrutorId: number | null = null;
-  alunoId: number | null = null; // ID do aluno recebido via Gestão de Alunos
+  alunoId: number | null = null;
   instrutor: InstrutorResumo | null = null;
   instrutorNome: string | undefined;
   pacote: PacoteResumo | undefined;
@@ -96,22 +98,17 @@ export class AgendamentoAulasPage {
     });
   }
 
-  // Lê os parâmetros da rota (suportando tanto o fluxo do aluno quanto o fluxo do instrutor)
   ionViewWillEnter(): void {
     const queryAlunoId = Number(this.route.snapshot.queryParamMap.get('alunoId'));
     const stateAlunoId = Number(history.state?.['alunoId']);
-    this.alunoId = Number.isInteger(queryAlunoId) && queryAlunoId > 0 
-      ? queryAlunoId 
+    this.alunoId = Number.isInteger(queryAlunoId) && queryAlunoId > 0
+      ? queryAlunoId
       : (Number.isInteger(stateAlunoId) && stateAlunoId > 0 ? stateAlunoId : null);
 
-    // Se o fluxo partiu do instrutor gerenciando um aluno:
     if (this.alunoId) {
-      console.log('Painel do Instrutor - Agendando para o Aluno ID:', this.alunoId);
-      // Aqui o instrutor logado é o próprio utilizador atual do AuthService
       const usuarioLogado = this.auth.usuario();
-      this.instrutorId = usuarioLogado ? Number(usuarioLogado.id) : 1; // Fallback seguro para o ID do instrutor
+      this.instrutorId = usuarioLogado ? Number(usuarioLogado.id) : 1;
     } else {
-      // Fluxo original do aluno escolhendo instrutor
       const queryId = Number(this.route.snapshot.queryParamMap.get('instrutorId'));
       const stateId = Number(history.state?.['instrutorId']);
       const id = Number.isInteger(queryId) && queryId > 0
@@ -240,21 +237,20 @@ export class AgendamentoAulasPage {
   reservar(horaInicio: string): void {
     if (!this.instrutorId || this.reservando) return;
 
-    // Se estiver no fluxo do instrutor agendando para o aluno:
+    // Fluxo do instrutor agendando diretamente para o aluno
     if (this.alunoId) {
       this.reservando = true;
+      this.erroReserva = '';
+      this.mensagemSucesso = '';
       this.horarioReservando = horaInicio;
 
-      // Endpoint direto do instrutor para agendar a aula para o aluno selecionado
-      const payload = {
+      this.aulaService.agendarAula({
         alunoId: this.alunoId,
         instrutorId: this.instrutorId,
-        data: this.dataSelecionada,
-        horaInicio: horaInicio,
+        dataAula: this.dataSelecionada,
+        horaInicio,
         horaFim: this.calcularHoraFim(horaInicio)
-      };
-
-      this.http.post(`${this.apiUrl}/agendamentos/instrutor`, payload).pipe(
+      }).pipe(
         finalize(() => {
           this.reservando = false;
           this.horarioReservando = null;
@@ -263,20 +259,19 @@ export class AgendamentoAulasPage {
       ).subscribe({
         next: () => {
           this.mensagemSucesso = 'Aula agendada com sucesso para o aluno!';
-          // Redireciona de volta para a gestão de alunos ou para a agenda do instrutor após breve momento
           setTimeout(() => {
             void this.router.navigateByUrl('/instrutor/gestao-alunos');
-          }, 1500);
+          }, 1200);
         },
         error: (erro) => {
           console.error('Erro ao agendar aula pelo instrutor:', erro);
-          this.erroReserva = 'Não foi possível concluir o agendamento. Tente novamente.';
+          this.erroReserva = erro?.error?.erro || 'Não foi possível concluir o agendamento. Tente novamente.';
         }
       });
       return;
     }
 
-    // Fluxo original do Aluno (com pacote e Pix)
+    // Fluxo do Aluno (com pacote e Pix)
     if (!this.pacote) {
       void this.router.navigate(['/aluno/pacotes'], {
         queryParams: { instrutorId: this.instrutorId },
