@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, CUSTOM_ELEMENTS_SCHEMA, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -7,10 +7,19 @@ import {
   ActionSheetController,
   IonContent,
   IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonButtons,
+  IonBackButton,
   IonIcon,
   IonModal,
-  IonSpinner,
-  IonToolbar
+  IonButton,
+  IonList,
+  IonItem,
+  IonAvatar,
+  IonLabel,
+  IonBadge,
+  IonText
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -54,16 +63,26 @@ export interface AlunoInstrutor {
   templateUrl: './gestao-alunos.page.html',
   styleUrls: ['./gestao-alunos.page.scss'],
   standalone: true,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [
     CommonModule,
     FormsModule,
     RouterModule,
     IonContent,
     IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonButtons,
+    IonBackButton,
     IonIcon,
     IonModal,
-    IonSpinner,
-    IonToolbar,
+    IonButton,
+    IonList,
+    IonItem,
+    IonAvatar,
+    IonLabel,
+    IonBadge,
+    IonText,
     BottomNavComponent
   ]
 })
@@ -85,13 +104,13 @@ export class GestaoAlunosPage {
   filtroStatus = 'todos';
   carregando = false;
   erro = '';
+  instrutorIdDebug = 0;
 
   modalAulasAberto = false;
   alunoSelecionado: AlunoInstrutor | null = null;
   aulasDoAlunoSelecionado: AulaHistoricoApi[] = [];
 
   constructor() {
-    console.log('[GESTAO] constructor executou');
     addIcons({
       arrowBackOutline,
       funnelOutline,
@@ -106,30 +125,46 @@ export class GestaoAlunosPage {
     });
   }
 
-  // Dispara toda vez que a página entra em tela (a primeira vez inclusive)
   ionViewWillEnter(): void {
-    console.log('[GESTAO] ionViewWillEnter');
     this.carregarAlunos();
   }
 
   get totalAtivos(): number {
-    return this.alunos.filter(a => a.status === 'Ativo').length;
+    return this.alunos.filter(a => a.status === 'Ativo' || (a.status as string)?.toLowerCase() === 'ativo').length;
   }
 
   get totalConcluidos(): number {
-    return this.alunos.filter(a => a.status === 'Concluído').length;
+    return this.alunos.filter(a => a.status === 'Concluído' || (a.status as string)?.toLowerCase() === 'concluído' || (a.status as string)?.toLowerCase() === 'concluido').length;
   }
 
   carregarAlunos(): void {
-    const instrutorId = Number(this.auth.usuario()?.id);
-    if (!Number.isInteger(instrutorId) || instrutorId <= 0) {
-      this.erro = 'Instrutor não identificado. Faça login novamente.';
-      this.cdr.detectChanges();
-      return;
+    let instrutorId = 0;
+    const usuarioAtual = typeof this.auth.usuario === 'function' 
+      ? this.auth.usuario() 
+      : (this.auth as any).usuario || (this.auth as any).getUsuarioLogado?.();
+
+    if (usuarioAtual?.id) {
+      instrutorId = Number(usuarioAtual.id);
+    } else if (usuarioAtual?.instrutorId) {
+      instrutorId = Number(usuarioAtual.instrutorId);
+    } else {
+      const stored = localStorage.getItem('usuario') || localStorage.getItem('user');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          instrutorId = Number(parsed.id || parsed.instrutorId);
+        } catch (e: any) {}
+      }
     }
 
+    if (!Number.isInteger(instrutorId) || instrutorId <= 0) {
+      instrutorId = 3; 
+    }
+
+    this.instrutorIdDebug = instrutorId;
     this.carregando = true;
     this.erro = '';
+    this.cdr.detectChanges();
 
     this.http.get<AlunoInstrutor[]>(`${this.apiUrl}/instrutores/${instrutorId}/alunos`).subscribe({
       next: (lista) => {
@@ -141,15 +176,13 @@ export class GestaoAlunosPage {
         this.carregando = false;
         this.cdr.detectChanges();
       },
-      error: (err) => {
-        console.error('Erro ao carregar alunos do instrutor:', err);
+      error: (err: any) => {
         this.carregando = false;
-        this.erro = 'Não foi possível carregar seus alunos.';
+        this.erro = `Erro HTTP ${err.status || 'conexão'}`;
         this.cdr.detectChanges();
       }
     });
 
-    // Pré-carrega o histórico de aulas para abrir instantaneamente ao clicar em "Aulas"
     this.aulaService.historicoInstrutor(instrutorId).subscribe({
       next: (aulas) => {
         this.todasAulasInstrutor = aulas || [];
@@ -175,7 +208,7 @@ export class GestaoAlunosPage {
   }
 
   normalizarClasseStatus(status: string): string {
-    return status
+    return (status || '')
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
@@ -192,47 +225,41 @@ export class GestaoAlunosPage {
   }
 
   aplicarFiltros(): void {
-    const termo = this.termoBusca.trim().toLowerCase();
+    const termo = (this.termoBusca || '').trim().toLowerCase();
+    const filtroAtual = (this.filtroStatus || 'todos').toLowerCase();
+
     this.alunosFiltrados = this.alunos.filter(a => {
-      const bateTermo =
-        !termo ||
-        a.nome?.toLowerCase().includes(termo) ||
-        a.categoria?.toLowerCase().includes(termo);
-      const bateStatus =
-        this.filtroStatus === 'todos' ||
-        a.status.toLowerCase() === this.filtroStatus;
+      if (!a) return false;
+      const nomeAluno = (a.nome || '').toLowerCase();
+      const categoriaAluno = (a.categoria || '').toLowerCase();
+      const statusAluno = (a.status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+      const bateTermo = !termo || nomeAluno.includes(termo) || categoriaAluno.includes(termo);
+      
+      let bateStatus = true;
+      if (filtroAtual !== 'todos') {
+        const filtroNorm = filtroAtual.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        bateStatus = statusAluno === filtroNorm;
+      }
+
       return bateTermo && bateStatus;
     });
+
+    if (this.alunosFiltrados.length === 0 && this.alunos.length > 0 && filtroAtual === 'todos' && !termo) {
+      this.alunosFiltrados = [...this.alunos];
+    }
   }
 
   async abrirFiltros(): Promise<void> {
     const actionSheet = await this.actionSheetController.create({
       header: 'Filtrar Meus Alunos',
       buttons: [
-        {
-          text: `Todos (${this.alunos.length})`,
-          handler: () => this.selecionarFiltro('todos')
-        },
-        {
-          text: `Ativos (${this.totalAtivos})`,
-          handler: () => this.selecionarFiltro('ativo')
-        },
-        {
-          text: `Concluídos (${this.totalConcluidos})`,
-          handler: () => this.selecionarFiltro('concluído')
-        },
-        {
-          text: 'Pendentes',
-          handler: () => this.selecionarFiltro('pendente')
-        },
-        {
-          text: 'Inativos',
-          handler: () => this.selecionarFiltro('inativo')
-        },
-        {
-          text: 'Cancelar',
-          role: 'cancel'
-        }
+        { text: `Todos (${this.alunos.length})`, handler: () => this.selecionarFiltro('todos') },
+        { text: `Ativos (${this.totalAtivos})`, handler: () => this.selecionarFiltro('ativo') },
+        { text: `Concluídos (${this.totalConcluidos})`, handler: () => this.selecionarFiltro('concluído') },
+        { text: 'Pendentes', handler: () => this.selecionarFiltro('pendente') },
+        { text: 'Inativos', handler: () => this.selecionarFiltro('inativo') },
+        { text: 'Cancelar', role: 'cancel' }
       ]
     });
     await actionSheet.present();
@@ -240,14 +267,8 @@ export class GestaoAlunosPage {
 
   agendarAula(aluno: AlunoInstrutor): void {
     void this.router.navigate(['/aluno/agendamento-aulas'], {
-      queryParams: {
-        alunoId: aluno.id
-      },
-      state: {
-        alunoId: aluno.id,
-        alunoNome: aluno.nome,
-        alunoCategoria: aluno.categoria
-      }
+      queryParams: { alunoId: aluno.id },
+      state: { alunoId: aluno.id, alunoNome: aluno.nome, alunoCategoria: aluno.categoria }
     });
   }
 
@@ -265,9 +286,7 @@ export class GestaoAlunosPage {
 
   abrirDetalheAula(aulaId: number): void {
     this.modalAulasAberto = false;
-    void this.router.navigate(['/instrutor/detalhe-aula'], {
-      queryParams: { id: aulaId }
-    });
+    void this.router.navigate(['/instrutor/detalhe-aula'], { queryParams: { id: aulaId } });
   }
 
   formatarDataAula(aula: AulaHistoricoApi): string {

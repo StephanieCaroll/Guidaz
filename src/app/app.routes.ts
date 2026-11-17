@@ -72,7 +72,7 @@ export const routes: Routes = [
       {
         path: 'gestao-alunos',
         title: 'Gestão de alunos | Guidaz',
-        // TEMPORÁRIO: logs para diagnóstico
+       
         loadComponent: () =>
           import('./pages/instrutor/gestao-alunos/gestao-alunos.page')
             .then((m) => {
