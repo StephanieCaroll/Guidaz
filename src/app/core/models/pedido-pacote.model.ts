@@ -7,7 +7,11 @@ export type StatusPedidoPacote =
 
 export interface PacoteApi {
   id: number;
+  nome?: string;
   categoria?: string;
+  quantidadeAulas?: number;
+  preco?: number;
+  instrutorId?: number | null;
   [campo: string]: unknown;
 }
 
@@ -25,13 +29,14 @@ export interface HorarioPedidoPacote {
   horaFim: string;    // HH:mm[:ss]
 }
 
-/** Formato retornado pelos endpoints de /pedidos-pacote. */
 export interface PedidoPacote {
   id: number;
   status: StatusPedidoPacote;
   horarios: HorarioPedidoPacote[];
   alunoId?: number;
+  alunoNome?: string;
   instrutorId?: number;
+  instrutorNome?: string;
   pacoteId?: number;
   nomePacote?: string;
   categoria?: string;

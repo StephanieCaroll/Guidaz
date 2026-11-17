@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Montserrat:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600;700;800&display=swap');
 
 $azul: #1a6bff;
-$fundo: #f2f2f7;
-$cinza-texto: #7a7a7a;
-$sombra-card: 0 6px 16px rgba(0, 0, 0, 0.07);
+$fundo: #f2f4f9;
+$cinza-texto: #6b7280;
+$sombra-card: 0 6px 16px rgba(17, 34, 68, 0.06);
 
 :host {
   font-family: 'Montserrat', sans-serif;
@@ -21,26 +21,29 @@ button {
   --background: #{$fundo};
 }
 
-/* Header Personalizado Azul */
+/* Header Personalizado Azul com título perfeitamente centralizado */
 .custom-header {
-  background: $azul;
-  padding: calc(16px + env(safe-area-inset-top)) 20px 24px 20px;
+  background: linear-gradient(135deg, #1a6bff 0%, #0d47c4 100%);
+  padding: calc(16px + env(safe-area-inset-top)) 20px 22px 20px;
   display: flex;
   align-items: center;
-  position: relative;
   justify-content: center;
+  position: relative;
+  border-bottom-left-radius: 22px;
+  border-bottom-right-radius: 22px;
 
-  .back-btn {
+  .back-btn,
+  .refresh-btn {
     position: absolute;
-    left: 20px;
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     background: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
+    z-index: 2;
 
     ion-icon {
       font-size: 20px;
@@ -48,104 +51,399 @@ button {
     }
 
     &:active {
-      opacity: 0.85;
+      transform: scale(0.95);
+      opacity: 0.9;
     }
+  }
+
+  .back-btn {
+    left: 20px;
+  }
+
+  .refresh-btn {
+    right: 20px;
   }
 
   .header-title {
     font-family: 'Montserrat', sans-serif;
-    font-size: 24px;
+    font-size: 21px;
     font-weight: 800;
     color: #ffffff;
     margin: 0;
+    text-align: center;
+    letter-spacing: -0.2px;
   }
 }
 
 /* Conteúdo da Página */
 .page-content {
-  padding: 20px 22px calc(90px + env(safe-area-inset-bottom));
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 20px calc(95px + env(safe-area-inset-bottom));
 }
 
-.notification-group {
-  margin-bottom: 24px;
+.estado-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 56px 24px;
+  color: $cinza-texto;
 
-  .group-title {
-    font-size: 14px;
-    font-weight: 800;
-    color: #000000;
-    margin: 0 0 14px 6px;
-    letter-spacing: 0.5px;
+  &__icone {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #eaf2ff;
+    color: $azul;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+
+    ion-icon {
+      font-size: 30px;
+    }
+  }
+
+  h3 {
+    margin: 0 0 6px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
   }
 }
 
-/* Card de Notificação */
+.notification-group {
+  margin-bottom: 22px;
+
+  .group-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #374151;
+    margin: 0 0 12px 4px;
+    letter-spacing: 0.8px;
+  }
+}
+
+/* Card de Notificação como button nativo para clique 100% responsivo */
 .notification-card {
+  width: 100%;
+  text-align: left;
   background: #ffffff;
-  border-radius: 20px;
-  padding: 14px 18px;
-  margin-bottom: 12px;
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin-bottom: 11px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   box-shadow: $sombra-card;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  > * {
+    pointer-events: none;
+  }
+
+  &:active {
+    transform: scale(0.985);
+  }
+
+  &.nao-lida {
+    border-left: 4px solid $azul;
+    background: #ffffff;
+  }
+
+  &.lida {
+    opacity: 0.85;
+  }
 
   .icon-box {
     width: 44px;
     height: 44px;
-    border-radius: 50%;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 
     ion-icon {
-      font-size: 24px;
+      font-size: 22px;
       stroke-width: 32px;
     }
 
-    /* Cores fiéis à imagem */
     &.cancelada {
-      background: #ff9500;
+      background: #fff1e0;
       ion-icon {
-        color: #000000;
+        color: #ea580c;
       }
     }
 
     &.agendada {
-      background: #4ed3ff;
+      background: #e6f4ff;
       ion-icon {
-        color: #000000;
+        color: #0284c7;
       }
     }
 
     &.pagamento {
-      background: #73f055;
+      background: #e8f9ee;
       ion-icon {
-        color: #000000;
+        color: #16a34a;
       }
     }
   }
 
   .card-content {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 4px;
 
+    .card-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
     .card-title {
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 700;
-      color: #000000;
+      color: #111827;
       margin: 0;
-      line-height: 1.2;
+      line-height: 1.25;
+    }
+
+    .card-time {
+      font-size: 11px;
+      font-weight: 600;
+      color: #9ca3af;
+      white-space: nowrap;
     }
 
     .card-desc {
       font-family: 'Inter', sans-serif;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 400;
       color: $cinza-texto;
       margin: 0;
-      line-height: 1.3;
+      line-height: 1.35;
     }
   }
+
+  .card-arrow {
+    font-size: 18px;
+    color: #9ca3af;
+    flex-shrink: 0;
+  }
+}
+
+/* Estilos do Modal de Detalhes do Pedido Pix */
+.modal-toolbar {
+  --background: #{$azul};
+  --color: #ffffff;
+
+  ion-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  ion-button {
+    --color: #ffffff;
+  }
+}
+
+.modal-body {
+  --background: #{$fundo};
+  font-family: 'Montserrat', sans-serif;
+}
+
+.pedido-detalhe-box {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.status-pill {
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #e6f4ff;
+  color: #0284c7;
+
+  &.em_analise {
+    background: #fef3c7;
+    color: #b45309;
+  }
+
+  &.aprovado {
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  &.rejeitado,
+  &.cancelado {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+}
+
+.info-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: $sombra-card;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.info-linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: #4b5563;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  strong {
+    color: #111827;
+    text-align: right;
+  }
+
+  .valor-destaque {
+    color: $azul;
+    font-size: 15px;
+    font-weight: 800;
+  }
+}
+
+.subtitulo-modal {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.horario-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0f6ff;
+  color: #1e40af;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.aviso-pendente {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.botoes-duplos {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-aprovar,
+.btn-rejeitar,
+.btn-modal-secundario {
+  flex: 1;
+  height: 46px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  ion-icon {
+    font-size: 18px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
+.btn-aprovar {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.btn-rejeitar {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.btn-modal-secundario {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+.rejeicao-box {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #374151;
+  }
+
+  textarea {
+    width: 100%;
+    border-radius: 12px;
+    border: 1.5px solid #d1d5db;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    color: #111827;
+    resize: none;
+
+    &:focus {
+      outline: none;
+      border-color: $azul;
+    }
+  }
+}
+
+.btn-link-todos {
+  margin-top: 4px;
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: $azul;
+  padding: 8px;
 }

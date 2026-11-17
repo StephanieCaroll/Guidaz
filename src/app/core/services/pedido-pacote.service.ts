@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map, switchMap, timeout } from 'rxjs/operators';
@@ -6,15 +6,44 @@ import { catchError, map, switchMap, timeout } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { CriarPedidoPacoteRequest, PacoteApi, PedidoPacote } from '../models/pedido-pacote.model';
 
+export interface SalvarPacotePayload {
+  instrutorId: number;
+  nome: string;
+  categoria: string;
+  quantidadeAulas: number;
+  preco: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PedidoPacoteService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
 
-  /** Busca o id do pacote na API casando pela categoria usada na tela de pacotes. */
-  buscarPacoteId(categoria: string): Observable<number> {
-    return this.http.get<PacoteApi[]>(`${this.apiUrl}/pacotes`).pipe(
+  /** GET /pacotes?instrutorId=...: lista pacotes padrão mesclados com os personalizados do instrutor. */
+  listarPacotes(instrutorId?: number | null): Observable<PacoteApi[]> {
+    let params = new HttpParams();
+    if (instrutorId && instrutorId > 0) {
+      params = params.set('instrutorId', String(instrutorId));
+    }
+
+    return this.http.get<PacoteApi[]>(`${this.apiUrl}/pacotes`, { params }).pipe(
       timeout(15000),
+      map((lista) => (Array.isArray(lista) ? lista : [])),
+      catchError((erro) => throwError(() => this.traduzirErro(erro, 'carregar os pacotes')))
+    );
+  }
+
+  /** PUT /pacotes/{id}: permite ao instrutor editar quantidade de aulas e preço do pacote. */
+  atualizarPacote(pacoteId: number, payload: SalvarPacotePayload): Observable<PacoteApi> {
+    return this.http.put<PacoteApi>(`${this.apiUrl}/pacotes/${pacoteId}`, payload).pipe(
+      timeout(15000),
+      catchError((erro) => throwError(() => this.traduzirErro(erro, 'atualizar o pacote')))
+    );
+  }
+
+  /** Busca o id do pacote na API casando pela categoria usada na tela de pacotes. */
+  buscarPacoteId(categoria: string, instrutorId?: number | null): Observable<number> {
+    return this.listarPacotes(instrutorId).pipe(
       map((pacotes) => {
         const encontrado = pacotes.find(
           (p) => String(p.categoria ?? '').toUpperCase() === categoria.toUpperCase()
@@ -23,14 +52,21 @@ export class PedidoPacoteService {
           throw new Error(`Pacote da categoria ${categoria} não encontrado na API.`);
         }
         return encontrado.id;
-      }),
-      catchError((erro) => throwError(() => this.traduzirErro(erro, 'carregar o pacote')))
+      })
+    );
+  }
+
+  /** GET /pedidos-pacote/{id}: busca detalhes de um pedido específico. */
+  buscarPorId(pedidoId: number): Observable<PedidoPacote> {
+    return this.http.get<PedidoPacote>(`${this.apiUrl}/pedidos-pacote/${pedidoId}`).pipe(
+      timeout(15000),
+      catchError((erro) => throwError(() => this.traduzirErro(erro, 'buscar os detalhes do pedido')))
     );
   }
 
   /** POST /pedidos-pacote: cria o pedido e reserva as aulas semanais geradas pelo back-end. */
   criar(dados: Omit<CriarPedidoPacoteRequest, 'pacoteId'>, categoria: string): Observable<PedidoPacote> {
-    return this.buscarPacoteId(categoria).pipe(
+    return this.buscarPacoteId(categoria, dados.instrutorId).pipe(
       switchMap((pacoteId) =>
         this.http.post<PedidoPacote>(`${this.apiUrl}/pedidos-pacote`, { ...dados, pacoteId })
       ),
@@ -55,10 +91,15 @@ export class PedidoPacoteService {
       );
   }
 
-  /** GET /pedidos-pacote/instrutor/{id}?status=EM_ANALISE */
-  listarPorInstrutor(instrutorId: number, status: string = 'EM_ANALISE'): Observable<PedidoPacote[]> {
+  /** GET /pedidos-pacote/instrutor/{id}?status=... (se status for vazio/TODOS, traz todos) */
+  listarPorInstrutor(instrutorId: number, status?: string): Observable<PedidoPacote[]> {
+    let params = new HttpParams();
+    if (status && status !== 'TODOS') {
+      params = params.set('status', status);
+    }
+
     return this.http
-      .get<PedidoPacote[]>(`${this.apiUrl}/pedidos-pacote/instrutor/${instrutorId}`, { params: { status } })
+      .get<PedidoPacote[]>(`${this.apiUrl}/pedidos-pacote/instrutor/${instrutorId}`, { params })
       .pipe(
         timeout(15000),
         map((lista) => {
@@ -88,7 +129,7 @@ export class PedidoPacoteService {
         catchError((erro) => throwError(() => this.traduzirErro(erro, 'rejeitar o pedido')))
       );
   }
-  /** Converte erros HTTP/rede em uma mensagem clara (lança Error com texto exibível). */
+
   private traduzirErro(erro: unknown, acao: string): Error {
     if (erro instanceof HttpErrorResponse) {
       if (erro.status === 0) {

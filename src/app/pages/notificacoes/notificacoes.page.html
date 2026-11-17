@@ -1,18 +1,52 @@
 <ion-header class="ion-no-border">
   <div class="custom-header">
-    <button class="back-btn" type="button" (click)="voltar()">
+    <button class="back-btn" type="button" aria-label="Voltar" (click)="voltar()">
       <ion-icon name="arrow-back-outline"></ion-icon>
     </button>
+
     <h1 class="header-title">Notificações</h1>
+
+    <button
+      class="refresh-btn"
+      type="button"
+      aria-label="Atualizar notificações"
+      (click)="carregarNotificacoes()"
+    >
+      <ion-icon name="refresh-outline"></ion-icon>
+    </button>
   </div>
 </ion-header>
 
 <ion-content class="bg-light">
+  <ion-refresher slot="fixed" (ionRefresh)="recarregar($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
   <div class="page-content">
+    <div *ngIf="carregando" class="estado-vazio">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Carregando notificações...</p>
+    </div>
+
+    <div *ngIf="!carregando && grupos.length === 0" class="estado-vazio">
+      <div class="estado-vazio__icone">
+        <ion-icon name="notifications-off-outline"></ion-icon>
+      </div>
+      <h3>Nenhuma notificação por enquanto</h3>
+      <p>Quando houver novidades sobre suas aulas ou pacotes, elas aparecerão aqui.</p>
+    </div>
+
     <div class="notification-group" *ngFor="let grupo of grupos">
       <h2 class="group-title">{{ grupo.titulo }}</h2>
 
-      <div class="notification-card" *ngFor="let item of grupo.itens">
+      <button
+        type="button"
+        class="notification-card"
+        *ngFor="let item of grupo.itens"
+        [class.nao-lida]="!item.lida"
+        [class.lida]="item.lida"
+        (click)="aoClicarNotificacao(item)"
+      >
         <div class="icon-box" [ngClass]="item.tipo">
           <ion-icon *ngIf="item.tipo === 'cancelada'" name="close-outline"></ion-icon>
           <ion-icon *ngIf="item.tipo === 'agendada'" name="calendar-outline"></ion-icon>
@@ -20,13 +54,144 @@
         </div>
 
         <div class="card-content">
-          <h3 class="card-title">{{ item.titulo }}</h3>
+          <div class="card-top">
+            <h3 class="card-title">{{ item.titulo }}</h3>
+            <span class="card-time" *ngIf="item.horaTexto">{{ item.horaTexto }}</span>
+          </div>
           <p class="card-desc">{{ item.descricao }}</p>
         </div>
-      </div>
+
+        <ion-icon name="chevron-forward-outline" class="card-arrow"></ion-icon>
+      </button>
     </div>
   </div>
+
+  <!-- Modal de Análise do Pedido / Comprovante Pix -->
+  <ion-modal [isOpen]="modalPedidoAberto" (didDismiss)="fecharModalPedido()">
+    <ng-template>
+      <ion-header class="ion-no-border">
+        <ion-toolbar class="modal-toolbar">
+          <ion-title>Detalhes do Pedido Pix</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="fecharModalPedido()">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="modal-body">
+        <div *ngIf="carregandoPedido" class="estado-vazio">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Carregando dados do pedido...</p>
+        </div>
+
+        <div *ngIf="!carregandoPedido && !pedidoSelecionado" class="estado-vazio">
+          <h3>Pedido não encontrado</h3>
+          <p>Não foi possível carregar os detalhes deste pedido agora.</p>
+          <button type="button" class="btn-modal-secundario" (click)="irParaTodosPedidos()">
+            Ver todos os pedidos
+          </button>
+        </div>
+
+        <div *ngIf="!carregandoPedido && pedidoSelecionado" class="pedido-detalhe-box">
+          <div class="status-pill" [ngClass]="pedidoSelecionado.status.toLowerCase()">
+            {{ traduzirStatusPedido(pedidoSelecionado.status) }}
+          </div>
+
+          <div class="info-card">
+            <div class="info-linha">
+              <span><ion-icon name="person-outline"></ion-icon> Aluno</span>
+              <strong>{{ pedidoSelecionado.alunoNome }}</strong>
+            </div>
+
+            <div class="info-linha">
+              <span><ion-icon name="receipt-outline"></ion-icon> Pacote</span>
+              <strong>{{ pedidoSelecionado.nomePacote }} ({{ pedidoSelecionado.quantidadeAulas }} aulas)</strong>
+            </div>
+
+            <div class="info-linha">
+              <span><ion-icon name="cash-outline"></ion-icon> Valor Pix</span>
+              <strong class="valor-destaque">R$ {{ formatarPreco(pedidoSelecionado.precoTotal) }}</strong>
+            </div>
+
+            <div class="info-linha" *ngIf="pedidoSelecionado.comprovanteInformadoEm">
+              <span><ion-icon name="time-outline"></ion-icon> Comprovante informado em</span>
+              <strong>{{ formatarDataBr(pedidoSelecionado.comprovanteInformadoEm) }}</strong>
+            </div>
+          </div>
+
+          <div class="info-card" *ngIf="pedidoSelecionado.horarios?.length">
+            <h4 class="subtitulo-modal">Horários reservados neste pacote</h4>
+            <div class="horario-chip" *ngFor="let h of pedidoSelecionado.horarios">
+              <ion-icon name="calendar-outline"></ion-icon>
+              <span>{{ h.data }} • {{ h.horaInicio }} às {{ h.horaFim }}</span>
+            </div>
+          </div>
+
+          <div class="aviso-pendente" *ngIf="pedidoSelecionado.status === 'PENDENTE_PAGAMENTO'">
+            O aluno criou o pedido, mas ainda não clicou em <strong>"Já fiz o Pix / Enviar comprovante"</strong>. Assim que ele enviar, os botões de aprovar e rejeitar ficarão ativos aqui.
+          </div>
+
+          <div *ngIf="pedidoSelecionado.status === 'EM_ANALISE'" class="acoes-aprovacao">
+            <div *ngIf="!exibirCampoRejeicao" class="botoes-duplos">
+              <button
+                type="button"
+                class="btn-rejeitar"
+                [disabled]="processandoAcao"
+                (click)="exibirCampoRejeicao = true"
+              >
+                <ion-icon name="close-circle-outline"></ion-icon>
+                <span>Rejeitar</span>
+              </button>
+
+              <button
+                type="button"
+                class="btn-aprovar"
+                [disabled]="processandoAcao"
+                (click)="aprovarPedidoSelecionado()"
+              >
+                <ion-icon name="checkmark-circle-outline"></ion-icon>
+                <span>{{ processandoAcao ? 'Aprovando...' : 'Aceitar Pix' }}</span>
+              </button>
+            </div>
+
+            <div *ngIf="exibirCampoRejeicao" class="rejeicao-box">
+              <label>Motivo da rejeição (será enviado ao aluno)</label>
+              <textarea
+                rows="3"
+                maxlength="200"
+                placeholder="Ex: Comprovante não localizado na conta Pix."
+                [(ngModel)]="motivoRejeicao"
+              ></textarea>
+              <div class="botoes-duplos">
+                <button
+                  type="button"
+                  class="btn-modal-secundario"
+                  [disabled]="processandoAcao"
+                  (click)="exibirCampoRejeicao = false"
+                >
+                  Voltar
+                </button>
+                <button
+                  type="button"
+                  class="btn-rejeitar"
+                  [disabled]="processandoAcao"
+                  (click)="confirmarRejeicaoPedido()"
+                >
+                  <span>{{ processandoAcao ? 'Enviando...' : 'Confirmar rejeição' }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" class="btn-link-todos" (click)="irParaTodosPedidos()">
+            Abrir tela completa de pedidos
+          </button>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 </ion-content>
 
-<!-- Menu inferior mantido para consistência de navegação -->
 <app-bottom-nav activeTab="inicio"></app-bottom-nav>

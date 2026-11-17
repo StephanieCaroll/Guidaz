@@ -1,68 +1,176 @@
 <ion-header class="ion-no-border">
   <ion-toolbar class="pacotes-toolbar">
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/aluno/instrutores" text=""></ion-back-button>
+      <ion-back-button [defaultHref]="isInstrutor() ? '/instrutor/home' : '/aluno/instrutores'" text=""></ion-back-button>
     </ion-buttons>
-    <ion-title>Pacotes de Aulas</ion-title>
+    <ion-title>{{ isInstrutor() ? 'Meus Pacotes' : 'Pacotes de Aulas' }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="pacotes-content">
+  <div class="hero-banner">
+    <div class="hero-banner__info">
+      <span class="hero-pill">
+        <ion-icon name="sparkles-outline"></ion-icon>
+        {{ isInstrutor() ? 'Tabela personalizada' : 'Pacotes promocionais' }}
+      </span>
+      <h1>{{ isInstrutor() ? 'Configure seus pacotes' : 'Escolha seu pacote ideal' }}</h1>
+      <p>
+        {{ isInstrutor()
+          ? 'Defina nome, quantidade de aulas e valores para cada categoria.'
+          : 'Mais aulas com economia e horários reservados toda semana.' }}
+      </p>
+    </div>
+  </div>
+
   <div class="page-container">
 
     <section class="card-section">
-      <h2 class="section-title">Escolha o pacote por categoria</h2>
-      <p class="section-subtitle">Selecione a categoria desejada para ver o pacote de aulas.</p>
-
-      <div class="categorias-grid">
-        @for (item of pacotes; track item.categoria) {
-          <button
-            type="button"
-            class="categoria-card"
-            [class.selecionado]="pacoteSelecionado().categoria === item.categoria"
-            (click)="selecionarPacote(item)"
-          >
-            <div class="cat-badge">Categoria {{ item.categoria }}</div>
-            <strong class="cat-nome">{{ item.veiculo }}</strong>
-            <span class="cat-aulas">Pacote de {{ item.aulas }} aulas</span>
-            <strong class="cat-preco">R$ {{ formatarPreco(item.preco) }}</strong>
-          </button>
-        }
+      <div class="section-header-row">
+        <div>
+          <h2 class="section-title">Categorias disponíveis</h2>
+          <p class="section-subtitle">
+            {{ isInstrutor() ? 'Toque em um card ou no lápis para editar.' : 'Toque para selecionar o pacote.' }}
+          </p>
+        </div>
       </div>
+
+      @if (carregando()) {
+        <div class="loading-box">
+          <ion-spinner name="crescent"></ion-spinner>
+          <span>Carregando pacotes...</span>
+        </div>
+      } @else {
+        <div class="categorias-grid">
+          @for (item of pacotes(); track item.categoria) {
+            <div
+              role="button"
+              tabindex="0"
+              class="categoria-card"
+              [class.selecionado]="pacoteSelecionado().categoria === item.categoria"
+              (click)="selecionarPacote(item)"
+            >
+              <div class="card-top-row">
+                <span class="cat-badge">Cat. {{ item.categoria }}</span>
+                @if (isInstrutor()) {
+                  <button
+                    type="button"
+                    class="card-edit-btn"
+                    aria-label="Editar pacote"
+                    (click)="editarCardDireto($event, item)"
+                  >
+                    <ion-icon name="create-outline"></ion-icon>
+                  </button>
+                } @else if (item.personalizado) {
+                  <span class="tag-custom">Especial</span>
+                }
+              </div>
+
+              <div class="cat-icon-circle">
+                <ion-icon [name]="iconeCategoria(item.categoria)"></ion-icon>
+              </div>
+
+              <strong class="cat-nome">{{ item.nomeExibicao }}</strong>
+              <span class="cat-aulas">{{ item.aulas }} {{ item.aulas === 1 ? 'aula prática' : 'aulas práticas' }}</span>
+
+              <div class="cat-preco-box">
+                <strong class="cat-preco">R$ {{ formatarPreco(item.preco) }}</strong>
+                <small class="cat-unit">R$ {{ formatarPreco(precoPorAula(item)) }}/aula</small>
+              </div>
+            </div>
+          }
+        </div>
+      }
     </section>
 
     <section class="card-section resumo-card">
-      <h2 class="section-title">Resumo do pacote</h2>
+      <div class="resumo-header">
+        <div>
+          <h2 class="section-title">
+            {{ isInstrutor() ? 'Personalizar pacote' : 'Resumo do pacote' }}
+          </h2>
+          <p class="resumo-sub">Categoria {{ pacoteSelecionado().categoria }} • {{ pacoteSelecionado().veiculo }}</p>
+        </div>
 
-      <div class="resumo-linha">
-        <span>Categoria</span>
-        <strong>Categoria {{ pacoteSelecionado().categoria }} ({{ pacoteSelecionado().veiculo }})</strong>
+        @if (isInstrutor() && !modoEdicao()) {
+          <button type="button" class="btn-editar-inline" (click)="ativarEdicao()">
+            <ion-icon name="create-outline"></ion-icon>
+            <span>Editar</span>
+          </button>
+        }
       </div>
 
-      <div class="resumo-linha">
-        <span>Quantidade de aulas</span>
-        <strong>{{ pacoteSelecionado().aulas }} aulas</strong>
-      </div>
+      @if (isInstrutor() && modoEdicao()) {
+        <div class="form-edicao">
+          <label class="campo-edicao">
+            <span>Título do pacote</span>
+            <input type="text" maxlength="60" placeholder="Ex: Pacote Carro Intensivo" [(ngModel)]="editNome" />
+          </label>
 
-      <hr class="resumo-divisor" />
+          <div class="campos-duplos">
+            <label class="campo-edicao">
+              <span>Qtd. de aulas</span>
+              <input type="number" min="1" max="50" [(ngModel)]="editAulas" />
+            </label>
 
-      <div class="resumo-total">
-        <span>Valor do pacote</span>
-        <strong>R$ {{ formatarPreco(pacoteSelecionado().preco) }}</strong>
-      </div>
+            <label class="campo-edicao">
+              <span>Valor total (R$)</span>
+              <input type="number" min="1" step="0.01" [(ngModel)]="editPreco" />
+            </label>
+          </div>
 
-      <button type="button" class="btn-confirmar" (click)="confirmarPacote()">
-        <ion-icon name="checkmark-circle-outline"></ion-icon>
-        <span>Continuar</span>
-      </button>
+          <div class="preview-unitario" *ngIf="editAulas > 0 && editPreco > 0">
+            Valor médio por aula: <strong>R$ {{ formatarPreco(editPreco / editAulas) }}</strong>
+          </div>
+
+          <div class="acoes-edicao">
+            <button type="button" class="btn-cancelar" (click)="modoEdicao.set(false)" [disabled]="salvando()">
+              Cancelar
+            </button>
+            <button type="button" class="btn-confirmar" (click)="salvarEdicaoPacote()" [disabled]="salvando()">
+              <ion-icon name="save-outline"></ion-icon>
+              <span>{{ salvando() ? 'Salvando...' : 'Salvar pacote' }}</span>
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="resumo-linha">
+          <span>Pacote</span>
+          <strong>{{ pacoteSelecionado().nomeExibicao }}</strong>
+        </div>
+
+        <div class="resumo-linha">
+          <span>Quantidade de aulas</span>
+          <strong>{{ pacoteSelecionado().aulas }} {{ pacoteSelecionado().aulas === 1 ? 'aula' : 'aulas' }}</strong>
+        </div>
+
+        <div class="resumo-linha">
+          <span>Valor por aula</span>
+          <strong>R$ {{ formatarPreco(precoPorAula(pacoteSelecionado())) }}</strong>
+        </div>
+
+        <hr class="resumo-divisor" />
+
+        <div class="resumo-total">
+          <span>Total do pacote</span>
+          <strong>R$ {{ formatarPreco(pacoteSelecionado().preco) }}</strong>
+        </div>
+
+        @if (!isInstrutor()) {
+          <button type="button" class="btn-confirmar" (click)="confirmarPacote()">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            <span>Agendar aulas deste pacote</span>
+          </button>
+        }
+      }
     </section>
 
   </div>
 </ion-content>
 
 <ion-footer class="ion-no-border">
-  <nav class="bottom-bar" aria-label="Navegação do aluno">
-    <a routerLink="/aluno/home" class="nav-item">
+  <nav class="bottom-bar" aria-label="Navegação">
+    <a [routerLink]="isInstrutor() ? '/instrutor/home' : '/aluno/home'" class="nav-item">
       <ion-icon name="home-outline"></ion-icon>
       <span>Início</span>
     </a>
@@ -70,10 +178,12 @@
       <ion-icon name="layers-outline"></ion-icon>
       <span>Pacotes</span>
     </a>
-    <a routerLink="/aluno/saldo-aulas" class="nav-item">
-      <ion-icon name="wallet-outline"></ion-icon>
-      <span>Saldo</span>
-    </a>
+    @if (!isInstrutor()) {
+      <a routerLink="/aluno/saldo-aulas" class="nav-item">
+        <ion-icon name="wallet-outline"></ion-icon>
+        <span>Saldo</span>
+      </a>
+    }
     <a routerLink="/perfil" class="nav-item">
       <ion-icon name="person-outline"></ion-icon>
       <span>Perfil</span>

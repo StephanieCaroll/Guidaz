@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -79,8 +79,9 @@ export class AulaService {
     return this.http.post<AulaHistoricoApi>(`${this.api}/aulas`, payload);
   }
 
-  buscarPorId(aulaId: number): Observable<AulaHistoricoApi> {
-    return this.http.get<AulaHistoricoApi>(`${this.api}/aulas/${aulaId}`);
+  buscarPorId(aulaId: number, perfil: 'ALUNO' | 'INSTRUTOR' = 'ALUNO'): Observable<AulaHistoricoApi> {
+    const params = new HttpParams().set('perfil', perfil);
+    return this.http.get<AulaHistoricoApi>(`${this.api}/aulas/${aulaId}`, { params });
   }
 
   resumoHoras(alunoId: number): Observable<ResumoHoras> {

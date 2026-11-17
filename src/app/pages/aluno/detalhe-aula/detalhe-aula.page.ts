@@ -1,15 +1,18 @@
 import { ChangeDetectorRef, Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { IonContent, IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
-  arrowBackOutline, bookmarkOutline, bookmark, star, timeOutline,
+  arrowBackOutline, bookmarkOutline, bookmark, star, starOutline, timeOutline,
   pricetagOutline, layersOutline, checkmarkCircle, chevronForward,
-  calendarOutline, personOutline, closeCircleOutline
+  calendarOutline, personOutline, closeCircleOutline, sendOutline
 } from 'ionicons/icons';
 
 import { AulaHistoricoApi, AulaService } from '../../../core/services/aula.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
 import { environment } from '../../../../environments/environment';
 
@@ -18,6 +21,7 @@ interface DetalheAula {
   instrutorId?: number;
   alunoId?: number;
   statusRaw?: string;
+  minhaNota: number | null;
   tipo: string;
   titulo: string;
   disponivel: boolean;
@@ -39,19 +43,27 @@ interface DetalheAula {
   templateUrl: './detalhe-aula.page.html',
   styleUrls: ['./detalhe-aula.page.scss'],
   standalone: true,
-  imports: [CommonModule, IonContent, IonIcon, BottomNavComponent]
+  imports: [CommonModule, FormsModule, IonContent, IonIcon, BottomNavComponent]
 })
 export class DetalheAulaPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
   private readonly aulaService = inject(AulaService);
+  private readonly authService = inject(AuthService);
+  private readonly toastService = inject(ToastService);
   private readonly cdr = inject(ChangeDetectorRef);
 
   readonly favorito = signal(false);
   processando = false;
+  enviandoAvaliacao = false;
+
+  notaSelecionada = 5;
+  comentarioAvaliacao = '';
+  readonly estrelas = [1, 2, 3, 4, 5];
 
   aula: DetalheAula = {
+    minhaNota: null,
     tipo: 'Aula Prática',
     titulo: 'Aula Prática',
     disponivel: true,
@@ -75,18 +87,26 @@ export class DetalheAulaPage implements OnInit {
 
   constructor() {
     addIcons({
-      arrowBackOutline, bookmarkOutline, bookmark, star, timeOutline,
+      arrowBackOutline, bookmarkOutline, bookmark, star, starOutline, timeOutline,
       pricetagOutline, layersOutline, checkmarkCircle, chevronForward,
-      calendarOutline, personOutline, closeCircleOutline
+      calendarOutline, personOutline, closeCircleOutline, sendOutline
     });
   }
 
   get isInstrutor(): boolean {
-    return this.router.url.startsWith('/instrutor');
+    return this.router.url.startsWith('/instrutor') || this.authService.usuario()?.perfil === 'instrutor';
   }
 
   get podeAlterarStatus(): boolean {
     return this.aula.statusRaw === 'AGENDADA';
+  }
+
+  get podeAvaliar(): boolean {
+    return this.aula.statusRaw === 'CONCLUIDA' && this.aula.minhaNota === null;
+  }
+
+  get jaAvaliada(): boolean {
+    return this.aula.statusRaw === 'CONCLUIDA' && this.aula.minhaNota !== null;
   }
 
   ngOnInit(): void {
@@ -101,7 +121,8 @@ export class DetalheAulaPage implements OnInit {
     const id = Number(this.route.snapshot.queryParamMap.get('id'));
     if (!Number.isInteger(id) || id <= 0) return;
 
-    this.aulaService.buscarPorId(id).subscribe({
+    const perfil = this.isInstrutor ? 'INSTRUTOR' : 'ALUNO';
+    this.aulaService.buscarPorId(id, perfil).subscribe({
       next: (dados: AulaHistoricoApi) => {
         const fotoPessoa = this.normalizarFoto(
           this.isInstrutor ? dados.alunoFoto : dados.instrutorFoto
@@ -135,11 +156,12 @@ export class DetalheAulaPage implements OnInit {
           instrutorId: dados.instrutorId,
           alunoId: dados.alunoId,
           statusRaw: dados.status,
+          minhaNota: dados.minhaNota ?? null,
           tipo: 'Aula Prática',
           titulo: dados.titulo,
           disponivel: dados.status === 'AGENDADA',
           nota: dados.minhaNota ?? 5.0,
-          avaliacoes: 1,
+          avaliacoes: dados.minhaNota ? 1 : 0,
           categoria: dados.categoria || 'B',
           duracaoMin: 60,
           valor: 120,
@@ -197,30 +219,68 @@ export class DetalheAulaPage implements OnInit {
 
   concluirAula(): void {
     if (!this.aula.id || this.processando) return;
+    if (!window.confirm('Confirmar conclusão desta aula?')) return;
+
     this.processando = true;
     this.aulaService.concluirAula(this.aula.id).subscribe({
       next: () => {
         this.processando = false;
+        void this.toastService.mostrar('Aula marcada como concluída!', 'ok');
         this.carregarAula();
       },
       error: (err) => {
         this.processando = false;
-        console.error('Erro ao concluir aula:', err);
+        const msg = err?.error?.message || 'Não foi possível concluir a aula.';
+        void this.toastService.mostrar(msg, 'erro');
       }
     });
   }
 
   cancelarAula(): void {
     if (!this.aula.id || this.processando) return;
+    if (!window.confirm('Tem certeza que deseja cancelar esta aula?')) return;
+
     this.processando = true;
     this.aulaService.cancelarAula(this.aula.id).subscribe({
       next: () => {
         this.processando = false;
+        void this.toastService.mostrar('Aula cancelada com sucesso.', 'ok');
         this.location.back();
       },
       error: (err) => {
         this.processando = false;
-        console.error('Erro ao cancelar aula:', err);
+        const msg = err?.error?.message || 'Não foi possível cancelar a aula.';
+        void this.toastService.mostrar(msg, 'erro');
+      }
+    });
+  }
+
+  selecionarNota(estrela: number): void {
+    this.notaSelecionada = estrela;
+  }
+
+  enviarAvaliacao(): void {
+    if (!this.aula.id || this.enviandoAvaliacao) return;
+    const usuario = this.authService.usuario();
+    const usuarioId = Number(usuario?.id);
+
+    this.enviandoAvaliacao = true;
+    this.aulaService.avaliar(this.aula.id, {
+      usuarioId: Number.isInteger(usuarioId) && usuarioId > 0 ? usuarioId : undefined,
+      tipoAvaliador: this.isInstrutor ? 'INSTRUTOR' : 'ALUNO',
+      nota: this.notaSelecionada,
+      comentario: this.comentarioAvaliacao.trim() || undefined
+    }).subscribe({
+      next: () => {
+        this.enviandoAvaliacao = false;
+        this.comentarioAvaliacao = '';
+        void this.toastService.mostrar('Avaliação enviada! Obrigado pelo feedback.', 'ok');
+        this.carregarAula();
+      },
+      error: (err) => {
+        this.enviandoAvaliacao = false;
+        const msg = err?.error?.message || 'Não foi possível registrar sua avaliação.';
+        void this.toastService.mostrar(msg, 'erro');
       }
     });
   }
