@@ -1,7 +1,7 @@
 import { createAnimation, AnimationBuilder } from '@ionic/angular';
 
 export const fadeAnimation: AnimationBuilder = (_baseEl: any, opts: any) => {
-  const DURACAO = 800;
+  const DURACAO = 250;
   const root = createAnimation();
 
   if (opts.enteringEl) {

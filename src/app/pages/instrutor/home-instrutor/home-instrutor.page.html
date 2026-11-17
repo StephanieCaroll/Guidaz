@@ -107,13 +107,31 @@
 
       <!-- Popover Concluir / Cancelar -->
       <div class="popover" *ngIf="menuAbertoId === aula.id" (click)="$event.stopPropagation()">
-        <button class="popover-item" type="button" (click)="editarAula(aula, $event)">
-          <ion-icon name="create-outline"></ion-icon>
+        <button
+          *ngIf="aula.status === 'Agendada'"
+          class="popover-item"
+          type="button"
+          (click)="editarAula(aula, $event)"
+        >
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
           <span>Concluir</span>
         </button>
-        <button class="popover-item" type="button" (click)="deletarAula(aula, $event)">
+        <button
+          *ngIf="aula.status === 'Agendada'"
+          class="popover-item"
+          type="button"
+          (click)="deletarAula(aula, $event)"
+        >
           <ion-icon name="trash-outline"></ion-icon>
           <span>Cancelar</span>
+        </button>
+        <button
+          class="popover-item"
+          type="button"
+          (click)="abrirDetalhesAula(aula)"
+        >
+          <ion-icon name="create-outline"></ion-icon>
+          <span>Detalhes</span>
         </button>
       </div>
     </div>

@@ -1,50 +1,230 @@
-<ion-content [fullscreen]="true" class="page-container">
-  <!-- Top Banner Header (Usa a classe .header-banner do teu SCSS) -->
-  <div class="header-banner">
-    <button type="button" class="back-btn" (click)="voltar()">
-      <ion-icon name="arrow-back-outline"></ion-icon>
-    </button>
-    <div class="header-text">
-      <h1>Alunos</h1>
-      <p>Gerenciamento de alunos e turmas</p>
-    </div>
-  </div>
-
-  <div class="content-wrapper">
-    <!-- Barra de Pesquisa -->
-    <div class="search-bar-container" style="padding: 16px 24px 0 24px;">
-      <div class="search-bar" style="display: flex; align-items: center; background: white; border-radius: 12px; padding: 0 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
-        <ion-icon name="search-outline" style="color: #94a3b8; font-size: 18px; margin-right: 12px;"></ion-icon>
-        <input type="text" [(ngModel)]="termoBusca" placeholder="Pesquisar por nome ou categoria" style="width: 100%; border: none; outline: none; padding: 14px 0; font-size: 0.95rem; background: transparent;" />
-        <ion-icon name="options-outline" style="color: #64748b; font-size: 20px; cursor: pointer;"></ion-icon>
+<ion-header class="ion-no-border">
+  <ion-toolbar class="alunos-toolbar">
+    <div class="header-top">
+      <button type="button" class="back-btn" (click)="voltar()" aria-label="Voltar">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </button>
+      <div class="header-text">
+        <h1>Meus Alunos</h1>
+        <p>Acompanhe progresso, pacotes e agende aulas</p>
       </div>
     </div>
 
-    <!-- Lista de Alunos -->
-    <div class="alunos-container" style="padding: 24px;">
-      <div class="aluno-card" *ngFor="let aluno of alunosFiltrados">
-        <div class="aluno-avatar">
-          <div class="avatar-placeholder"></div>
-        </div>
-        <div class="aluno-details">
-          <div class="aluno-header-info">
-            <h3>{{ aluno.nome }}</h3>
-            <span class="status-badge" [class.ativo]="aluno.status === 'Ativo'" [class.concluido]="aluno.status === 'Concluído'">
-              • {{ aluno.status }}
-            </span>
+    <!-- Busca + Filtro -->
+    <div class="search-row">
+      <div class="search-box">
+        <ion-icon name="search-outline"></ion-icon>
+        <input
+          type="text"
+          [(ngModel)]="termoBusca"
+          (ngModelChange)="aplicarFiltros()"
+          placeholder="Buscar aluno por nome ou categoria..."
+        />
+        <button
+          *ngIf="termoBusca"
+          type="button"
+          class="clear-btn"
+          (click)="limparBusca()"
+          aria-label="Limpar busca"
+        >
+          <ion-icon name="close-circle"></ion-icon>
+        </button>
+      </div>
+
+      <button
+        type="button"
+        class="filter-btn"
+        [class.filter-active]="filtroStatus !== 'todos'"
+        (click)="abrirFiltros()"
+        aria-label="Filtrar por status"
+      >
+        <ion-icon name="funnel-outline"></ion-icon>
+      </button>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="alunos-content">
+  <div class="content-wrapper">
+    <!-- Resumo rápido -->
+    <div class="stats-bar" *ngIf="!carregando && alunos.length > 0">
+      <button
+        type="button"
+        class="stat-pill"
+        [class.active]="filtroStatus === 'todos'"
+        (click)="selecionarFiltro('todos')"
+      >
+        <strong>{{ alunos.length }}</strong>
+        <span>Todos</span>
+      </button>
+      <button
+        type="button"
+        class="stat-pill"
+        [class.active]="filtroStatus === 'ativo'"
+        (click)="selecionarFiltro('ativo')"
+      >
+        <strong>{{ totalAtivos }}</strong>
+        <span>Ativos</span>
+      </button>
+      <button
+        type="button"
+        class="stat-pill"
+        [class.active]="filtroStatus === 'concluído'"
+        (click)="selecionarFiltro('concluído')"
+      >
+        <strong>{{ totalConcluidos }}</strong>
+        <span>Concluídos</span>
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div class="state-box" *ngIf="carregando">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+      <p>Carregando seus alunos...</p>
+    </div>
+
+    <!-- Erro -->
+    <div class="state-box error" *ngIf="!carregando && erro">
+      <p>{{ erro }}</p>
+      <button type="button" class="btn-retry" (click)="carregarAlunos()">Tentar novamente</button>
+    </div>
+
+    <!-- Lista de Alunos do Instrutor -->
+    <div class="alunos-list" *ngIf="!carregando && !erro && alunosFiltrados.length > 0">
+      <article class="aluno-card" *ngFor="let aluno of alunosFiltrados">
+        <div class="card-top">
+          <div class="aluno-avatar">
+            <img
+              *ngIf="aluno.fotoResolvida"
+              [src]="aluno.fotoResolvida"
+              [alt]="aluno.nome"
+              (error)="aluno.fotoResolvida = undefined"
+            />
+            <span *ngIf="!aluno.fotoResolvida">{{ iniciais(aluno.nome) }}</span>
           </div>
-          <p class="aluno-categoria">Categoria: {{ aluno.categoria }}</p>
-          <div class="progress-bar-wrapper">
-            <div class="progress-fill" [style.width.%]="(aluno.aulasFeitas / aluno.totalAulas) * 100"></div>
+
+          <div class="aluno-main">
+            <div class="name-row">
+              <h3>{{ aluno.nome }}</h3>
+              <span
+                class="status-badge"
+                [ngClass]="'status-' + normalizarClasseStatus(aluno.status)"
+              >
+                <i class="dot"></i>{{ aluno.status }}
+              </span>
+            </div>
+
+            <div class="meta-row">
+              <span class="cat-tag">Cat. {{ aluno.categoria }}</span>
+              <span class="meta-sep">•</span>
+              <span>{{ aluno.aulasAgendadas }} agendada(s)</span>
+              <span *ngIf="aluno.aulasRestantes > 0" class="restantes-tag">
+                • {{ aluno.aulasRestantes }} a marcar
+              </span>
+            </div>
           </div>
-          <span class="progress-text">{{ aluno.aulasFeitas }}/{{ aluno.totalAulas }}</span>
         </div>
-        <div class="aluno-action">
-          <button type="button" class="btn-agendar-aula" (click)="agendarAula(aluno)">
-            Agendar aula
+
+        <!-- Barra de progresso do pacote -->
+        <div class="progress-section">
+          <div class="progress-labels">
+            <span>Progresso do pacote</span>
+            <strong>{{ aluno.aulasConcluidas }}/{{ aluno.aulasContratadas }} aulas ({{ aluno.progressoPercentual }}%)</strong>
+          </div>
+          <div class="progress-track">
+            <div
+              class="progress-fill"
+              [class.completed]="aluno.progressoPercentual >= 100"
+              [style.width.%]="aluno.progressoPercentual"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Próxima aula agendada -->
+        <div class="next-lesson-banner" *ngIf="aluno.proximaAula">
+          <ion-icon name="calendar-outline"></ion-icon>
+          <span>Próxima aula: <strong>{{ aluno.proximaAula }}</strong></span>
+        </div>
+
+        <!-- Ações de gerenciamento -->
+        <div class="card-actions">
+          <button
+            type="button"
+            class="btn-action secondary"
+            (click)="abrirHistoricoAluno(aluno)"
+          >
+            <ion-icon name="list-outline"></ion-icon>
+            <span>Aulas ({{ aluno.aulasConcluidas + aluno.aulasAgendadas }})</span>
+          </button>
+
+          <button
+            *ngIf="aluno.telefone"
+            type="button"
+            class="btn-action whatsapp"
+            (click)="abrirWhatsApp(aluno)"
+            aria-label="Conversar no WhatsApp"
+          >
+            <ion-icon name="logo-whatsapp"></ion-icon>
+          </button>
+
+          <button
+            type="button"
+            class="btn-action primary"
+            (click)="agendarAula(aluno)"
+          >
+            <ion-icon name="add-circle-outline"></ion-icon>
+            <span>Agendar aula</span>
           </button>
         </div>
-      </div>
+      </article>
+    </div>
+
+    <!-- Vazio -->
+    <div class="state-box" *ngIf="!carregando && !erro && alunosFiltrados.length === 0">
+      <ion-icon name="people-outline" class="empty-icon"></ion-icon>
+      <h3>{{ alunos.length === 0 ? 'Nenhum aluno vinculado ainda' : 'Nenhum aluno encontrado' }}</h3>
+      <p>
+        {{
+          alunos.length === 0
+            ? 'Assim que um aluno contratar um pacote ou agendar uma aula com você, ele aparecerá aqui.'
+            : 'Tente alterar a busca ou o filtro selecionado.'
+        }}
+      </p>
     </div>
   </div>
 </ion-content>
+
+<!-- Modal com as aulas daquele aluno com este instrutor -->
+<ion-modal [isOpen]="modalAulasAberto" (didDismiss)="fecharModalAulas()" [initialBreakpoint]="0.7" [breakpoints]="[0, 0.7, 0.95]">
+  <ng-template>
+    <div class="modal-sheet" *ngIf="alunoSelecionado">
+      <div class="modal-header">
+        <div>
+          <h2>Aulas de {{ alunoSelecionado.nome }}</h2>
+          <p>Categoria {{ alunoSelecionado.categoria }} • {{ alunoSelecionado.aulasConcluidas }}/{{ alunoSelecionado.aulasContratadas }} concluídas</p>
+        </div>
+        <button type="button" class="close-modal-btn" (click)="fecharModalAulas()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-lesson" *ngFor="let aula of aulasDoAlunoSelecionado" (click)="abrirDetalheAula(aula.id)">
+          <div class="modal-lesson-info">
+            <strong>{{ aula.titulo }}</strong>
+            <span>{{ formatarDataAula(aula) }}</span>
+          </div>
+          <span class="lesson-pill" [ngClass]="'pill-' + aula.status.toLowerCase()">
+            {{ labelStatusAula(aula.status) }}
+          </span>
+        </div>
+
+        <p class="modal-empty" *ngIf="aulasDoAlunoSelecionado.length === 0">
+          Nenhuma aula registrada para este aluno ainda.
+        </p>
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<app-bottom-nav activeTab="inicio"></app-bottom-nav>

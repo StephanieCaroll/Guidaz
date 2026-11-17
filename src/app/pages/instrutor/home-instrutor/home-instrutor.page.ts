@@ -20,10 +20,12 @@ import {
   chevronForwardOutline,
   createOutline,
   trashOutline,
-  personOutline
+  personOutline,
+  checkmarkCircleOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { AulaHistoricoApi, AulaService } from '../../../core/services/aula.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
 import { environment } from '../../../../environments/environment';
 
@@ -88,6 +90,7 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
 
   private readonly auth = inject(AuthService);
   private readonly aulaService = inject(AulaService);
+  private readonly toastService = inject(ToastService);
 
   nomeInstrutor = '';
   fotoUrl = '';
@@ -103,6 +106,7 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
   proximasAulas: Aula[] = [];
   diasComAula = new Set<string>();
   menuAbertoId: number | null = null;
+  processandoAcao = false;
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -116,7 +120,8 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
       chevronForwardOutline,
       createOutline,
       trashOutline,
-      personOutline
+      personOutline,
+      checkmarkCircleOutline
     });
   }
 
@@ -360,7 +365,7 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
     });
   }
 
-  /* POPOVER EDITAR / DELETAR */
+  /* POPOVER CONCLUIR / CANCELAR */
 
   toggleMenu(aula: Aula, ev?: Event) {
     ev?.stopPropagation();
@@ -374,18 +379,42 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
   editarAula(aula: Aula, ev?: Event) {
     ev?.stopPropagation();
     this.fecharMenu();
+    if (this.processandoAcao) return;
+    if (!window.confirm(`Confirmar conclusão da aula de ${aula.aluno}?`)) return;
+
+    this.processandoAcao = true;
     this.aulaService.concluirAula(aula.id).subscribe({
-      next: () => this.carregarDadosInstrutor(),
-      error: (err) => console.error('Erro ao concluir aula:', err)
+      next: () => {
+        this.processandoAcao = false;
+        void this.toastService.mostrar('Aula marcada como concluída!', 'ok');
+        this.carregarDadosInstrutor();
+      },
+      error: (err) => {
+        this.processandoAcao = false;
+        const msg = err?.error?.message || 'Não foi possível concluir a aula.';
+        void this.toastService.mostrar(msg, 'erro');
+      }
     });
   }
 
   deletarAula(aula: Aula, ev?: Event) {
     ev?.stopPropagation();
     this.fecharMenu();
+    if (this.processandoAcao) return;
+    if (!window.confirm(`Tem certeza que deseja cancelar a aula de ${aula.aluno}?`)) return;
+
+    this.processandoAcao = true;
     this.aulaService.cancelarAula(aula.id).subscribe({
-      next: () => this.carregarDadosInstrutor(),
-      error: (err) => console.error('Erro ao cancelar aula:', err)
+      next: () => {
+        this.processandoAcao = false;
+        void this.toastService.mostrar('Aula cancelada com sucesso.', 'ok');
+        this.carregarDadosInstrutor();
+      },
+      error: (err) => {
+        this.processandoAcao = false;
+        const msg = err?.error?.message || 'Não foi possível cancelar a aula.';
+        void this.toastService.mostrar(msg, 'erro');
+      }
     });
   }
 

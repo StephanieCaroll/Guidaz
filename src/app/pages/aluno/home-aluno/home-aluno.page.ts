@@ -24,6 +24,7 @@ import {
 } from 'ionicons/icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { AulaHistoricoApi, AulaService } from '../../../core/services/aula.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
 import { environment } from '../../../../environments/environment';
 
@@ -87,6 +88,7 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
 
   private readonly auth = inject(AuthService);
   private readonly aulaService = inject(AulaService);
+  private readonly toastService = inject(ToastService);
 
   nomeAluno = '';
   fotoUrl = '';
@@ -100,9 +102,7 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
 
   progresso = { categoria: 'Categoria B', realizadas: 0, total: 0 };
 
-  // Próximas 3 aulas para exibir nos cards
   aulas: Aula[] = [];
-  // Conjunto com todas as datas ISO (YYYY-MM-DD) que possuem aula marcada
   diasComAula = new Set<string>();
 
   filtro: Filtro = 'todas';
@@ -114,6 +114,7 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
   ];
 
   menuAbertoId: string | null = null;
+  cancelando = false;
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -327,7 +328,6 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
 
   selecionarDia(dia: DiaCalendario) {
     this.selecionado = dia.data;
-    // Se o dia tem bolinha verde (possui aula), vai direto para a tela do calendário mensal nesse dia
     if (this.diaTemAula(dia)) {
       void this.router.navigate(['/aluno/calendario'], {
         queryParams: { data: dia.iso }
@@ -386,7 +386,7 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
     this.filtroAberto = false;
   }
 
-  /* POPOVER EDITAR / DELETAR */
+  /* POPOVER DETALHES / CANCELAR */
 
   toggleMenu(chave: string, ev?: Event) {
     ev?.stopPropagation();
@@ -411,9 +411,21 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
   deletarAula(aula: Aula, ev?: Event) {
     ev?.stopPropagation();
     this.fecharMenu();
+    if (this.cancelando) return;
+    if (!window.confirm('Tem certeza que deseja cancelar esta aula?')) return;
+
+    this.cancelando = true;
     this.aulaService.cancelarAula(aula.id).subscribe({
-      next: () => this.carregarDadosAluno(),
-      error: (err) => console.error('Erro ao cancelar aula:', err)
+      next: () => {
+        this.cancelando = false;
+        void this.toastService.mostrar('Aula cancelada com sucesso.', 'ok');
+        this.carregarDadosAluno();
+      },
+      error: (err) => {
+        this.cancelando = false;
+        const msg = err?.error?.message || 'Não foi possível cancelar a aula.';
+        void this.toastService.mostrar(msg, 'erro');
+      }
     });
   }
 

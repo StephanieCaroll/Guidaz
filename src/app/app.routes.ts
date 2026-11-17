@@ -72,7 +72,17 @@ export const routes: Routes = [
       {
         path: 'gestao-alunos',
         title: 'Gestão de alunos | Guidaz',
-        loadComponent: () => import('./pages/instrutor/gestao-alunos/gestao-alunos.page').then((m) => m.GestaoAlunosPage),
+        // TEMPORÁRIO: logs para diagnóstico
+        loadComponent: () =>
+          import('./pages/instrutor/gestao-alunos/gestao-alunos.page')
+            .then((m) => {
+              console.log('[ROTA] chunk carregado', m);
+              return m.GestaoAlunosPage;
+            })
+            .catch((e) => {
+              console.error('[ROTA] falha no chunk', e);
+              throw e;
+            }),
       },
       {
         path: 'pedidos-pacote',
