@@ -9,68 +9,104 @@
         <p>Acompanhe progresso, pacotes e agende aulas</p>
       </div>
     </div>
+
+    <!-- Barra de Pesquisa com texto em branco -->
+    <div class="search-row">
+      <div class="search-box">
+        <ion-icon name="search-outline"></ion-icon>
+        <input 
+          type="text" 
+          [(ngModel)]="termoBusca" 
+          (input)="aplicarFiltros()" 
+          placeholder="Pesquisar aluno..." 
+        />
+        <button type="button" class="clear-btn" *ngIf="termoBusca" (click)="termoBusca=''; aplicarFiltros()">
+          <ion-icon name="close-circle"></ion-icon>
+        </button>
+      </div>
+      <button type="button" class="filter-btn" [class.filter-active]="filtroStatus !== 'todos'" (click)="abrirFiltros()">
+        <ion-icon name="funnel-outline"></ion-icon>
+      </button>
+    </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="alunos-content" style="padding: 16px;">
-  
-  <!-- Lista Tradicional de Alunos -->
-  <div class="alunos-list" *ngIf="alunosFiltrados.length > 0; else semAlunos">
-    <article class="aluno-card" *ngFor="let aluno of alunosFiltrados" style="background: #ffffff; padding: 15px; margin-bottom: 12px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-      <div class="card-top" style="display: flex; align-items: center; gap: 12px;">
-        <div class="aluno-avatar" style="width: 48px; height: 48px; background: #3880ff; color: white; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: bold;">
-          <span>{{ iniciais(aluno.nome) }}</span>
+<ion-content [fullscreen]="true" class="alunos-content">
+  <div class="content-wrapper">
+    
+    <!-- Lista de Alunos -->
+    <div class="alunos-list" *ngIf="alunosFiltrados.length > 0; else semAlunos">
+      <article class="aluno-card" *ngFor="let aluno of alunosFiltrados">
+        
+        <div class="card-top">
+          <div class="aluno-avatar">
+            <img *ngIf="aluno.fotoResolvida" [src]="aluno.fotoResolvida" alt="Foto" />
+            <span *ngIf="!aluno.fotoResolvida">{{ iniciais(aluno.nome) }}</span>
+          </div>
+
+          <div class="aluno-main">
+            <div class="name-row">
+              <h3>{{ aluno.nome }}</h3>
+              <span class="status-badge" [ngClass]="'status-' + normalizarClasseStatus(aluno.status)">
+                <span class="dot"></span>
+                {{ aluno.status }}
+              </span>
+            </div>
+            <div class="meta-row">
+              <span class="cat-tag">Categoria {{ aluno.categoria }}</span>
+              <span>•</span>
+              <span class="restantes-tag">{{ aluno.aulasRestantes || 0 }} aulas restantes</span>
+            </div>
+          </div>
+
+          <!-- Botão WhatsApp rápido -->
+          <button type="button" class="btn-action whatsapp" (click)="abrirWhatsApp(aluno)" title="Abrir WhatsApp">
+            <ion-icon name="logo-whatsapp"></ion-icon>
+          </button>
         </div>
 
-        <div class="aluno-main" style="flex: 1;">
-          <h3 style="margin: 0; font-size: 16px; color: #333;">{{ aluno.nome }}</h3>
-          <p style="margin: 4px 0 0 0; font-size: 14px; color: #666;">Categoria {{ aluno.categoria }} • Status: <strong>{{ aluno.status }}</strong></p>
-          <p style="margin: 2px 0 0 0; font-size: 13px; color: #888;">{{ aluno.email }} | {{ aluno.telefone }}</p>
+        <!-- Barra de Progresso -->
+        <div class="progress-section">
+          <div class="progress-labels">
+            <span>Progresso: {{ aluno.aulasConcluidas || 0 }}/{{ aluno.aulasContratadas || 0 }} aulas</span>
+            <strong>{{ aluno.progressoPercentual || 0 }}%</strong>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" [style.width.%]="aluno.progressoPercentual || 0" [class.completed]="aluno.progressoPercentual >= 100"></div>
+          </div>
         </div>
-      </div>
 
-      <!-- Barra de progresso -->
-      <div class="progress-section" style="margin-top: 12px;">
-        <div class="progress-labels" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
-          <span>Progresso: {{ aluno.aulasConcluidas }}/{{ aluno.aulasContratadas }} aulas</span>
-          <strong>{{ aluno.progressoPercentual }}%</strong>
+        <!-- Próxima Aula (se houver) -->
+        <div class="next-lesson-banner" *ngIf="aluno.proximaAula">
+          <ion-icon name="calendar-outline"></ion-icon>
+          <span>Próxima: <strong>{{ aluno.proximaAula }}</strong></span>
         </div>
-        <div class="progress-track" style="background: #eee; height: 8px; border-radius: 4px; overflow: hidden;">
-          <div class="progress-fill" [style.width.%]="aluno.progressoPercentual" style="background: #3880ff; height: 100%;"></div>
+
+        <!-- Ações: Ver Aulas e Agendar via WhatsApp -->
+        <div class="card-actions">
+          <button type="button" class="btn-action secondary" (click)="verAulasWhatsApp(aluno)">
+            <ion-icon name="list-outline"></ion-icon>
+            Ver Aulas 
+          </button>
+          <button type="button" class="btn-action primary" (click)="agendarWhatsApp(aluno)">
+            <ion-icon name="calendar-outline"></ion-icon>
+            Agendar
+          </button>
         </div>
-      </div>
 
-      <!-- Ações -->
-      <div class="card-actions" style="margin-top: 12px; display: flex; gap: 8px;">
-        <button type="button" (click)="abrirHistoricoAluno(aluno)" style="flex: 1; padding: 8px; background: #f4f5f8; color: #1e293b; border: none; border-radius: 4px; font-weight: 500;">
-          Ver Aulas
-        </button>
-        <button type="button" (click)="agendarAula(aluno)" style="flex: 1; padding: 8px; background: #3880ff; color: white; border: none; border-radius: 4px; font-weight: 500;">
-          Agendar
-        </button>
-      </div>
-    </article>
-  </div>
-
-  <!-- Estado Vazio -->
-  <ng-template #semAlunos>
-    <div style="text-align: center; padding: 40px; color: #666;">
-      <h3>Nenhum aluno na lista filtrada.</h3>
-      <p>O array veio vazio ou os filtros ocultaram os itens.</p>
+      </article>
     </div>
-  </ng-template>
 
+    <!-- Estado Vazio -->
+    <ng-template #semAlunos>
+      <div class="state-box">
+        <ion-icon name="people-outline" class="empty-icon"></ion-icon>
+        <h3>Nenhum aluno encontrado</h3>
+        <p>Não há alunos correspondentes aos filtros ou à busca atual.</p>
+      </div>
+    </ng-template>
+
+  </div>
 </ion-content>
-
-<!-- Modal com as aulas -->
-<ion-modal [isOpen]="modalAulasAberto" (didDismiss)="fecharModalAulas()">
-  <ng-template>
-    <ion-content class="ion-padding" *ngIf="alunoSelecionado">
-      <h2>Aulas de {{ alunoSelecionado.nome }}</h2>
-      <p>Total de aulas concluídas: {{ alunoSelecionado.aulasConcluidas }}</p>
-      <ion-button expand="block" (click)="fecharModalAulas()">Fechar</ion-button>
-    </ion-content>
-  </ng-template>
-</ion-modal>
 
 <app-bottom-nav activeTab="inicio"></app-bottom-nav>

@@ -1,16 +1,17 @@
 <ion-content [fullscreen]="true" class="page-container">
-  <!-- Cabeçalho compacto da tela, mantendo a identidade azul do aplicativo. -->
+  <!-- Cabeçalho -->
   <div class="header-blue">
     <button class="btn-back" type="button" aria-label="Voltar" (click)="voltar()">
       <ion-icon name="arrow-back-outline"></ion-icon>
     </button>
-    <div>
+    <div class="header-titles">
       <h1>Agendamento</h1>
       <p>Escolha seu horário!</p>
     </div>
   </div>
 
   <main class="content-wrapper">
+
     <!-- Cartão de identificação do instrutor selecionado. -->
     <section class="instructor-card">
       <div class="avatar">
@@ -23,17 +24,19 @@
             Trocar
           </button>
         </div>
-        <span>{{ instrutor?.categoriasLecionadas || 'Instrutor de Direção' }}</span>
+        <span class="instructor-category">{{ instrutor?.categoriasLecionadas || 'Instrutor de Direção' }}</span>
         <div class="rating">
-          <ion-icon name="star" aria-hidden="true"></ion-icon>
-          <span>{{ instrutor?.notaMedia ?? '—' }}</span>
-          <span>({{ instrutor?.totalAvaliacoes ?? 0 }} avaliações)</span>
+          <span class="rating-pill">
+            <ion-icon name="star" aria-hidden="true"></ion-icon>
+            <span>{{ instrutor?.notaMedia ?? '—' }}</span>
+          </span>
+          <span class="rating-count">({{ instrutor?.totalAvaliacoes ?? 0 }} avaliações)</span>
           <span *ngIf="erroInstrutor" class="instructor-error">{{ erroInstrutor }}</span>
         </div>
       </div>
     </section>
 
-    <!-- Seletor semanal no estilo do Figma. -->
+    <!-- Seletor semanal -->
     <section class="date-section">
       <div class="carousel">
         <button
@@ -67,7 +70,8 @@
         </button>
       </div>
       <button id="calendar-trigger" class="selected-date" type="button" aria-label="Escolher outra data">
-        {{ dataResumo }}
+        <ion-icon name="calendar-outline" aria-hidden="true"></ion-icon>
+        <span>{{ dataResumo }}</span>
       </button>
       <ion-modal trigger="calendar-trigger" [keepContentsMounted]="true">
         <ng-template>
@@ -84,15 +88,17 @@
       </ion-modal>
     </section>
 
-    <!-- Horários livres com ação imediata para reservar cada faixa. -->
+    <!-- Horários livres -->
     <section class="schedule-section">
       <h2 class="section-title">Horários disponíveis</h2>
+
       <div class="state-card" *ngIf="carregando">
         <ion-spinner name="crescent" color="primary"></ion-spinner>
         <p>Buscando horários...</p>
       </div>
 
       <div class="state-card error-state" *ngIf="!carregando && erroHorarios">
+        <ion-icon name="alert-circle" aria-hidden="true"></ion-icon>
         <p>{{ erroHorarios }}</p>
         <button class="outline-btn" type="button" (click)="carregarHorarios()">Tentar novamente</button>
       </div>
@@ -100,9 +106,13 @@
       <div class="slots-list" *ngIf="!carregando && !erroHorarios && horarios.length">
         <div class="slot-row" *ngFor="let horario of horarios">
           <div class="slot-time">
-            <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
-            <span>
-              {{ horario.hora }} – {{ horario.horaFim || calcularHoraFim(horario.hora) }}
+            <span class="slot-icon">
+              <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
+            </span>
+            <span class="slot-range">
+              <strong>{{ horario.hora }}</strong>
+              <em>–</em>
+              <span>{{ horario.horaFim || calcularHoraFim(horario.hora) }}</span>
             </span>
           </div>
           <button
@@ -118,13 +128,20 @@
       </div>
 
       <div class="state-card" *ngIf="!carregando && !erroHorarios && !horarios.length">
+        <ion-icon name="calendar-outline" aria-hidden="true"></ion-icon>
         <p>Nenhum horário disponível para esta data.</p>
       </div>
     </section>
 
     <!-- Resultado da reserva sem interromper a lista de horários. -->
-    <p class="success-message" *ngIf="mensagemSucesso" role="status">{{ mensagemSucesso }}</p>
-    <p class="error-message" *ngIf="erroReserva" role="alert">{{ erroReserva }}</p>
+    <p class="success-message" *ngIf="mensagemSucesso" role="status">
+      <ion-icon name="checkmark-circle" aria-hidden="true"></ion-icon>
+      <span>{{ mensagemSucesso }}</span>
+    </p>
+    <p class="error-message" *ngIf="erroReserva" role="alert">
+      <ion-icon name="alert-circle" aria-hidden="true"></ion-icon>
+      <span>{{ erroReserva }}</span>
+    </p>
 
     <!-- Nota de orientação no rodapé da área de conteúdo. -->
     <aside class="important-card">
@@ -137,5 +154,4 @@
   </main>
 </ion-content>
 
-<!-- Reutiliza a barra inferior do projeto e destaca a aba Agenda. -->
 <app-bottom-nav activeTab="agenda"></app-bottom-nav>

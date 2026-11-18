@@ -19,7 +19,7 @@ type FiltroStatus = 'todas' | StatusAula;
 
 interface AulaHistorico {
   id: number;
-  data: string;       // ISO: 2026-09-10
+  data: string;       
   titulo: string;
   instrutor: string;
   status: StatusAula;
@@ -63,7 +63,6 @@ export class HistoricoAulaPage {
 
   categoria = 'B';
 
-  // Card azul: vem de GET /horas/aluno/{id}
   readonly resumo = signal<ResumoHoras>({
     horasContratadas: 0,
     horasRealizadas: 0,
@@ -71,7 +70,6 @@ export class HistoricoAulaPage {
     percentualConcluido: 0
   });
 
-  // Lista: vem de GET /aulas/aluno/{id}
   readonly aulas = signal<AulaHistorico[]>([]);
 
   readonly aulasFiltradas = computed(() => {
@@ -90,11 +88,11 @@ export class HistoricoAulaPage {
     });
   }
 
-  private get alunoId(): number {
-    return Number(this.auth.usuario()?.id) || 0;
+private get alunoId(): number {
+    const u: any = this.auth.usuario();
+    return Number(u?.id || u?.usuarioId) || 0;
   }
 
-  // Roda toda vez que a tela abre (mantém os dados atualizados)
   ionViewWillEnter(): void {
     const u: any = this.auth.usuario();
     if (u?.categoriaPretendida) {
@@ -103,7 +101,7 @@ export class HistoricoAulaPage {
     this.carregar();
   }
 
-  private carregar(): void {
+private carregar(): void {
     const id = this.alunoId;
     if (!Number.isInteger(id) || id <= 0) {
       this.erro.set('Usuário não identificado. Faça login novamente.');
@@ -112,27 +110,31 @@ export class HistoricoAulaPage {
 
     this.erro.set('');
 
-    this.aulaService.resumoHoras(id).subscribe({
-      next: r => {
-        this.resumo.set(r);
-        if (r.categoriaPrincipal) {
-          this.categoria = r.categoriaPrincipal.replace(/Categoria\s*/i, '').trim() || 'B';
-        }
-        this.cdr.detectChanges();
-      },
-      error: () => this.erro.set('Não foi possível carregar o progresso.')
-    });
-
     this.aulaService.historicoAluno(id).subscribe({
       next: lista => {
-        this.aulas.set((lista || []).map(a => this.converter(a)));
+        const aulasApi = lista || [];
+        const convertidas = aulasApi.map(a => this.converter(a));
+        this.aulas.set(convertidas);
+
+        const ativas = convertidas.filter(a => a.status !== 'cancelada');
+        const realizadas = ativas.filter(a => a.status === 'concluida').length;
+        const pendentes = ativas.filter(a => a.status === 'agendada').length;
+        const contratadas = ativas.length;
+        const percentual = contratadas > 0 ? Math.min(100, Math.round((realizadas / contratadas) * 100)) : 0;
+
+        this.resumo.set({
+          horasContratadas: contratadas > 0 ? contratadas : 10,
+          horasRealizadas: realizadas,
+          horasPendentes: pendentes,
+          percentualConcluido: percentual
+        });
+
         this.cdr.detectChanges();
       },
       error: () => this.erro.set('Não foi possível carregar as aulas.')
     });
   }
 
-  // Converte o formato do back para o formato que a tela já usava
   private converter(a: AulaHistoricoApi): AulaHistorico {
     const rawStatus = (a.status || 'AGENDADA').toUpperCase();
     let status: StatusAula = 'agendada';
@@ -166,7 +168,7 @@ export class HistoricoAulaPage {
   }
 
   avaliar(aula: AulaHistorico, nota: number, ev: Event): void {
-    ev.stopPropagation(); // não abre o detalhe do card
+    ev.stopPropagation();
     if (aula.status !== 'concluida') { return; }
 
     const id = this.alunoId;

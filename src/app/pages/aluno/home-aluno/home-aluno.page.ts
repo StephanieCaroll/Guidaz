@@ -179,8 +179,10 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
     }
   }
 
-  private carregarDadosAluno() {
-    const alunoId = Number(this.auth.usuario()?.id);
+private carregarDadosAluno() {
+    const usuarioLogado: any = this.auth.usuario();
+    const alunoId = Number(usuarioLogado?.id || usuarioLogado?.usuarioId);
+    
     if (!Number.isInteger(alunoId) || alunoId <= 0) return;
 
     // 1. Próximas 3 aulas para os cards
@@ -189,35 +191,34 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
         this.aulas = (lista || []).slice(0, 3).map(item => this.mapearAula(item));
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Erro ao carregar próximas aulas do aluno:', err)
+      error: (err) => console.error('Erro ao carregar próximas aulas:', err)
     });
 
-    // 2. Todas as aulas do aluno para pintar as bolinhas verdes no calendário
+    // 2. Histórico completo para calcular o progresso localmente sem dependência de rotas extras
     this.aulaService.historicoAluno(alunoId).subscribe({
       next: (todas) => {
+        const listaValida = (todas || []).filter(item => item.status !== 'CANCELADA');
         const datas = new Set<string>();
-        for (const item of todas || []) {
-          if (item.status === 'CANCELADA') continue;
+        
+        for (const item of listaValida) {
           const iso = item.dataAula || (item.dataHora ? item.dataHora.slice(0, 10) : '');
           if (iso) datas.add(iso);
         }
         this.diasComAula = datas;
-        this.cdr.detectChanges();
-      },
-      error: (err) => console.error('Erro ao carregar datas com aula:', err)
-    });
 
-    // 3. Resumo de progresso
-    this.aulaService.resumoHoras(alunoId).subscribe({
-      next: (resumo) => {
+        const concluidas = listaValida.filter(item => item.status === 'CONCLUIDA').length;
+        const total = listaValida.length;
+        const cat = listaValida[0]?.categoria;
+
         this.progresso = {
-          categoria: resumo.categoriaPrincipal || this.progresso.categoria,
-          realizadas: Math.round(resumo.horasRealizadas || 0),
-          total: Math.round(resumo.horasContratadas || 0)
+          categoria: cat ? `Categoria ${cat}` : this.progresso.categoria,
+          realizadas: concluidas,
+          total: total > 0 ? total : 10
         };
+
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Erro ao carregar resumo de horas:', err)
+      error: (err) => console.error('Erro ao carregar histórico:', err)
     });
   }
 

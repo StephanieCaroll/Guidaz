@@ -10,6 +10,9 @@ import {
   calendarOutline,
   checkmarkOutline,
   notificationsOffOutline,
+  notificationsOutline,
+  mailUnreadOutline,
+  informationCircle,
   refreshOutline,
   chevronForwardOutline,
   checkmarkCircleOutline,
@@ -75,6 +78,9 @@ export class NotificacoesPage implements OnInit {
       calendarOutline,
       checkmarkOutline,
       notificationsOffOutline,
+      notificationsOutline,
+      mailUnreadOutline,
+      informationCircle,
       refreshOutline,
       chevronForwardOutline,
       checkmarkCircleOutline,
@@ -84,6 +90,17 @@ export class NotificacoesPage implements OnInit {
       cashOutline,
       timeOutline
     });
+  }
+
+  get totalNotificacoes(): number {
+    return this.grupos.reduce((total, grupo) => total + grupo.itens.length, 0);
+  }
+
+  get totalNaoLidas(): number {
+    return this.grupos.reduce(
+      (total, grupo) => total + grupo.itens.filter((item) => !item.lida).length,
+      0
+    );
   }
 
   ngOnInit() {

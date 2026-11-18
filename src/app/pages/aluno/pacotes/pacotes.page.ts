@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, computed, inject, signal } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   IonBackButton,
   IonButtons,
@@ -32,6 +32,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { PedidoPacoteService } from '../../../core/services/pedido-pacote.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { PacoteApi } from '../../../core/models/pedido-pacote.model';
+import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
 
 export interface PacoteAula {
   id?: number;
@@ -59,7 +60,6 @@ const VEICULO_POR_CATEGORIA: Record<string, string> = {
   imports: [
     NgIf,
     FormsModule,
-    RouterLink,
     IonBackButton,
     IonButtons,
     IonContent,
@@ -69,6 +69,7 @@ const VEICULO_POR_CATEGORIA: Record<string, string> = {
     IonSpinner,
     IonTitle,
     IonToolbar,
+    BottomNavComponent,
   ],
 })
 export class PacotesPage {

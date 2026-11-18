@@ -1,33 +1,57 @@
-<ion-header class="ion-no-border">
-  <div class="custom-header">
-    <button class="back-btn" type="button" aria-label="Voltar" (click)="voltar()">
+<ion-content class="bg-light" [fullscreen]="true">
+  <ion-refresher slot="fixed" (ionRefresh)="recarregar($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Cabeçalho -->
+  <div class="header-blue">
+    <button class="btn-back" type="button" aria-label="Voltar" (click)="voltar()">
       <ion-icon name="arrow-back-outline"></ion-icon>
     </button>
 
-    <h1 class="header-title">Notificações</h1>
+    <div class="header-titles">
+      <h1>Notificações</h1>
+      <p>Fique por dentro das novidades</p>
+    </div>
 
     <button
-      class="refresh-btn"
+      class="btn-refresh"
       type="button"
       aria-label="Atualizar notificações"
+      [class.girando]="carregando"
       (click)="carregarNotificacoes()"
     >
       <ion-icon name="refresh-outline"></ion-icon>
     </button>
   </div>
-</ion-header>
-
-<ion-content class="bg-light">
-  <ion-refresher slot="fixed" (ionRefresh)="recarregar($event)">
-    <ion-refresher-content></ion-refresher-content>
-  </ion-refresher>
 
   <div class="page-content">
+    <!-- Resumo -->
+    <section class="resumo-card" *ngIf="!carregando && grupos.length" aria-label="Resumo das notificações">
+      <div class="resumo-item">
+        <span class="resumo-icone"><ion-icon name="mail-unread-outline" aria-hidden="true"></ion-icon></span>
+        <span class="resumo-texto">
+          <strong>{{ totalNaoLidas }}</strong>
+          <small>Não lidas</small>
+        </span>
+      </div>
+      <span class="resumo-divisor"></span>
+      <div class="resumo-item">
+        <span class="resumo-icone"><ion-icon name="notifications-outline" aria-hidden="true"></ion-icon></span>
+        <span class="resumo-texto">
+          <strong>{{ totalNotificacoes }}</strong>
+          <small>Total</small>
+        </span>
+      </div>
+    </section>
+
+    <!-- Carregando -->
     <div *ngIf="carregando" class="estado-vazio">
-      <ion-spinner name="crescent"></ion-spinner>
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
       <p>Carregando notificações...</p>
     </div>
 
+    <!-- Vazio -->
     <div *ngIf="!carregando && grupos.length === 0" class="estado-vazio">
       <div class="estado-vazio__icone">
         <ion-icon name="notifications-off-outline"></ion-icon>
@@ -36,6 +60,7 @@
       <p>Quando houver novidades sobre suas aulas ou pacotes, elas aparecerão aqui.</p>
     </div>
 
+    <!-- Grupos -->
     <div class="notification-group" *ngFor="let grupo of grupos">
       <h2 class="group-title">{{ grupo.titulo }}</h2>
 
@@ -55,7 +80,10 @@
 
         <div class="card-content">
           <div class="card-top">
-            <h3 class="card-title">{{ item.titulo }}</h3>
+            <div class="card-title-row">
+              <span class="dot-nao-lida" *ngIf="!item.lida" aria-label="Não lida"></span>
+              <h3 class="card-title">{{ item.titulo }}</h3>
+            </div>
             <span class="card-time" *ngIf="item.horaTexto">{{ item.horaTexto }}</span>
           </div>
           <p class="card-desc">{{ item.descricao }}</p>
@@ -73,7 +101,7 @@
         <ion-toolbar class="modal-toolbar">
           <ion-title>Detalhes do Pedido Pix</ion-title>
           <ion-buttons slot="end">
-            <ion-button (click)="fecharModalPedido()">
+            <ion-button class="btn-fechar" aria-label="Fechar" (click)="fecharModalPedido()">
               <ion-icon name="close-outline"></ion-icon>
             </ion-button>
           </ion-buttons>
@@ -82,41 +110,57 @@
 
       <ion-content class="modal-body">
         <div *ngIf="carregandoPedido" class="estado-vazio">
-          <ion-spinner name="crescent"></ion-spinner>
+          <ion-spinner name="crescent" color="primary"></ion-spinner>
           <p>Carregando dados do pedido...</p>
         </div>
 
         <div *ngIf="!carregandoPedido && !pedidoSelecionado" class="estado-vazio">
+          <div class="estado-vazio__icone">
+            <ion-icon name="receipt-outline"></ion-icon>
+          </div>
           <h3>Pedido não encontrado</h3>
           <p>Não foi possível carregar os detalhes deste pedido agora.</p>
-          <button type="button" class="btn-modal-secundario" (click)="irParaTodosPedidos()">
+          <button type="button" class="btn-modal-secundario btn-solo" (click)="irParaTodosPedidos()">
             Ver todos os pedidos
           </button>
         </div>
 
         <div *ngIf="!carregandoPedido && pedidoSelecionado" class="pedido-detalhe-box">
           <div class="status-pill" [ngClass]="pedidoSelecionado.status.toLowerCase()">
+            <span class="status-dot"></span>
             {{ traduzirStatusPedido(pedidoSelecionado.status) }}
           </div>
 
           <div class="info-card">
             <div class="info-linha">
-              <span><ion-icon name="person-outline"></ion-icon> Aluno</span>
+              <span class="linha-label">
+                <span class="linha-icone"><ion-icon name="person-outline"></ion-icon></span>
+                Aluno
+              </span>
               <strong>{{ pedidoSelecionado.alunoNome }}</strong>
             </div>
 
             <div class="info-linha">
-              <span><ion-icon name="receipt-outline"></ion-icon> Pacote</span>
+              <span class="linha-label">
+                <span class="linha-icone"><ion-icon name="receipt-outline"></ion-icon></span>
+                Pacote
+              </span>
               <strong>{{ pedidoSelecionado.nomePacote }} ({{ pedidoSelecionado.quantidadeAulas }} aulas)</strong>
             </div>
 
             <div class="info-linha">
-              <span><ion-icon name="cash-outline"></ion-icon> Valor Pix</span>
+              <span class="linha-label">
+                <span class="linha-icone"><ion-icon name="cash-outline"></ion-icon></span>
+                Valor Pix
+              </span>
               <strong class="valor-destaque">R$ {{ formatarPreco(pedidoSelecionado.precoTotal) }}</strong>
             </div>
 
             <div class="info-linha" *ngIf="pedidoSelecionado.comprovanteInformadoEm">
-              <span><ion-icon name="time-outline"></ion-icon> Comprovante informado em</span>
+              <span class="linha-label">
+                <span class="linha-icone"><ion-icon name="time-outline"></ion-icon></span>
+                Comprovante informado em
+              </span>
               <strong>{{ formatarDataBr(pedidoSelecionado.comprovanteInformadoEm) }}</strong>
             </div>
           </div>
@@ -130,7 +174,10 @@
           </div>
 
           <div class="aviso-pendente" *ngIf="pedidoSelecionado.status === 'PENDENTE_PAGAMENTO'">
-            O aluno criou o pedido, mas ainda não clicou em <strong>"Já fiz o Pix / Enviar comprovante"</strong>. Assim que ele enviar, os botões de aprovar e rejeitar ficarão ativos aqui.
+            <ion-icon name="information-circle"></ion-icon>
+            <span>
+              O aluno criou o pedido, mas ainda não clicou em <strong>"Já fiz o Pix / Enviar comprovante"</strong>. Assim que ele enviar, os botões de aprovar e rejeitar ficarão ativos aqui.
+            </span>
           </div>
 
           <div *ngIf="pedidoSelecionado.status === 'EM_ANALISE'" class="acoes-aprovacao">
@@ -186,7 +233,8 @@
           </div>
 
           <button type="button" class="btn-link-todos" (click)="irParaTodosPedidos()">
-            Abrir tela completa de pedidos
+            <span>Abrir tela completa de pedidos</span>
+            <ion-icon name="chevron-forward-outline"></ion-icon>
           </button>
         </div>
       </ion-content>

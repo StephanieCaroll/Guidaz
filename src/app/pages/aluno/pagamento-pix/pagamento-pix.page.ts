@@ -1,10 +1,9 @@
 import { Component, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import {
   IonBackButton,
   IonButtons,
   IonContent,
-  IonFooter,
   IonHeader,
   IonIcon,
   IonTitle,
@@ -12,17 +11,23 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
+  alertCircle,
   calendarOutline,
+  carSportOutline,
   checkmarkCircleOutline,
   copyOutline,
-  homeOutline,
+  informationCircle,
+  keyOutline,
   layersOutline,
   personOutline,
   qrCodeOutline,
-  walletOutline,
+  receiptOutline,
+  ribbonOutline,
+  timeOutline,
 } from 'ionicons/icons';
 import { ToastService } from '../../../core/services/toast.service';
 import { HorarioPedidoPacote, PedidoPacote } from '../../../core/models/pedido-pacote.model';
+import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
 
 interface PacoteResumo {
   categoria: string;
@@ -36,18 +41,18 @@ interface PacoteResumo {
   templateUrl: './pagamento-pix.page.html',
   styleUrls: ['./pagamento-pix.page.scss'],
   imports: [
-    RouterLink,
     IonBackButton,
     IonButtons,
     IonContent,
-    IonFooter,
     IonHeader,
     IonIcon,
     IonTitle,
     IonToolbar,
+    BottomNavComponent,
   ],
 })
 export class PagamentoPixPage {
+
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
@@ -63,16 +68,21 @@ export class PagamentoPixPage {
 
   readonly chavePix = 'guidaz@exemplo.com';
 
-  constructor() {
+   constructor() {
     addIcons({
+      alertCircle,
       calendarOutline,
+      carSportOutline,
       checkmarkCircleOutline,
       copyOutline,
-      homeOutline,
+      informationCircle,
+      keyOutline,
       layersOutline,
       personOutline,
       qrCodeOutline,
-      walletOutline,
+      receiptOutline,
+      ribbonOutline,
+      timeOutline,
     });
   }
 
@@ -115,6 +125,7 @@ export class PagamentoPixPage {
   descreverHorario(h: HorarioPedidoPacote): string {
     return `${this.formatarData(h.data)} das ${h.horaInicio.slice(0, 5)} às ${h.horaFim.slice(0, 5)}`;
   }
+
   formatarData(dataIso: string): string {
     const partes = dataIso.split('-');
     if (partes.length !== 3) return dataIso;

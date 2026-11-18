@@ -8,9 +8,7 @@ import {
   IonContent,
   IonHeader,
   IonToolbar,
-  IonIcon,
-  IonModal,
-  IonButton
+  IonIcon
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -23,7 +21,14 @@ import {
   logoWhatsapp,
   addCircleOutline,
   peopleOutline,
-  closeOutline
+  closeOutline,
+  mailOutline,
+  callOutline,
+  timeOutline,
+  locationOutline,
+  documentTextOutline,
+  calendarClearOutline,
+  personCircleOutline
 } from 'ionicons/icons';
 
 import { AuthService } from '../../../core/services/auth.service';
@@ -63,8 +68,6 @@ export interface AlunoInstrutor {
     IonHeader,
     IonToolbar,
     IonIcon,
-    IonModal,
-    IonButton,
     BottomNavComponent
   ]
 })
@@ -88,10 +91,6 @@ export class GestaoAlunosPage {
   erro = '';
   instrutorIdDebug = 0;
 
-  modalAulasAberto = false;
-  alunoSelecionado: AlunoInstrutor | null = null;
-  aulasDoAlunoSelecionado: AulaHistoricoApi[] = [];
-
   constructor() {
     addIcons({
       arrowBackOutline,
@@ -103,7 +102,14 @@ export class GestaoAlunosPage {
       logoWhatsapp,
       addCircleOutline,
       peopleOutline,
-      closeOutline
+      closeOutline,
+      mailOutline,
+      callOutline,
+      timeOutline,
+      locationOutline,
+      documentTextOutline,
+      calendarClearOutline,
+      personCircleOutline
     });
   }
 
@@ -186,11 +192,6 @@ export class GestaoAlunosPage {
     this.aplicarFiltros();
   }
 
-  limparBusca(): void {
-    this.termoBusca = '';
-    this.aplicarFiltros();
-  }
-
   aplicarFiltros(): void {
     const termo = (this.termoBusca || '').trim().toLowerCase();
     const filtroAtual = (this.filtroStatus || 'todos').toLowerCase();
@@ -232,44 +233,26 @@ export class GestaoAlunosPage {
     await actionSheet.present();
   }
 
-  agendarAula(aluno: AlunoInstrutor): void {
-    void this.router.navigate(['/aluno/agendamento-aulas'], {
-      queryParams: { alunoId: aluno.id },
-      state: { alunoId: aluno.id, alunoNome: aluno.nome, alunoCategoria: aluno.categoria }
-    });
+  verAulasWhatsApp(aluno: AlunoInstrutor): void {
+    const digitos = (aluno.telefone || '').replace(/\D/g, '');
+    if (!digitos) {
+      void this.toastService.mostrar('Aluno sem telefone cadastrado.', 'erro');
+      return;
+    }
+    const numero = digitos.startsWith('55') ? digitos : `55${digitos}`;
+    const msg = encodeURIComponent(`Olá ${aluno.nome}, tudo bem? Estou entrando em contato para conversarmos sobre o andamento e o histórico das suas aulas no Guidaz.`);
+    window.open(`https://wa.me/${numero}?text=${msg}`, '_blank');
   }
 
-  abrirHistoricoAluno(aluno: AlunoInstrutor): void {
-    this.alunoSelecionado = aluno;
-    this.aulasDoAlunoSelecionado = this.todasAulasInstrutor.filter(
-      a => Number(a.alunoId) === Number(aluno.id)
-    );
-    this.modalAulasAberto = true;
-  }
-
-  fecharModalAulas(): void {
-    this.modalAulasAberto = false;
-  }
-
-  abrirDetalheAula(aulaId: number): void {
-    this.modalAulasAberto = false;
-    void this.router.navigate(['/instrutor/detalhe-aula'], { queryParams: { id: aulaId } });
-  }
-
-  formatarDataAula(aula: AulaHistoricoApi): string {
-    const data = aula.dataAula ? aula.dataAula.split('-').reverse().join('/') : '';
-    const hora = aula.horaInicio ? aula.horaInicio.slice(0, 5) : '';
-    return hora ? `${data} às ${hora}` : data;
-  }
-
-  labelStatusAula(status: string): string {
-    const mapa: Record<string, string> = {
-      AGENDADA: 'Agendada',
-      CONCLUIDA: 'Concluída',
-      CANCELADA: 'Cancelada',
-      FALTA_ALUNO: 'Falta'
-    };
-    return mapa[status] || status;
+  agendarWhatsApp(aluno: AlunoInstrutor): void {
+    const digitos = (aluno.telefone || '').replace(/\D/g, '');
+    if (!digitos) {
+      void this.toastService.mostrar('Aluno sem telefone cadastrado.', 'erro');
+      return;
+    }
+    const numero = digitos.startsWith('55') ? digitos : `55${digitos}`;
+    const msg = encodeURIComponent(`Olá ${aluno.nome}, tudo bem? Passando para sabermos qual o melhor horário para agendarmos a sua próxima aula prática.`);
+    window.open(`https://wa.me/${numero}?text=${msg}`, '_blank');
   }
 
   abrirWhatsApp(aluno: AlunoInstrutor): void {

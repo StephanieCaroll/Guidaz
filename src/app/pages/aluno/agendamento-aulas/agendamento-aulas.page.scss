@@ -1,93 +1,179 @@
 :host {
-  --azul: #1a5cff;
-  --fundo: #f3f3fa;
+  --azul: #1a6bff;
+  --azul-escuro: #0b4fd6;
+  --azul-suave: #eef4ff;
+  --fundo: var(--guidaz-bg, #f2f4f9);
   --card: #ffffff;
-  --card-instrutor: #f0f0f5;
-  --card-aviso: #e4ebff;
-  --texto: #222222;
-  --texto-secundario: #5c6270;
-  --borda: #e0e0e5;
-  font-family: 'Montserrat', system-ui, sans-serif;
+  --card-sub: #fafbfe;
+  --card-aviso: #f0f6ff;
+  --texto: #111827;
+  --texto-secundario: #5b6170;
+  --borda: #e4e7f0;
+  --sombra: 0 8px 24px rgba(17, 34, 68, 0.07);
+  --sucesso-bg: #f0fdf4;
+  --sucesso-cor: #16a34a;
+  --erro-bg: #fef2f2;
+  --erro-cor: #dc2626;
+  font-family: var(--guidaz-font, 'Montserrat', sans-serif);
 }
 
 :host-context(body.dark) {
-  --fundo: #0f1115;
-  --card: #1b1e25;
-  --card-instrutor: #242832;
-  --card-aviso: #1c2740;
-  --texto: #f3f4f6;
-  --texto-secundario: #b0b7c3;
-  --borda: #374151;
+  --azul-suave: rgba(26, 107, 255, 0.16);
+  --fundo: #0f172a;
+  --card: #1e293b;
+  --card-sub: #243247;
+  --card-aviso: #172554;
+  --texto: #f8fafc;
+  --texto-secundario: #94a3b8;
+  --borda: rgba(255, 255, 255, 0.08);
+  --sombra: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --sucesso-bg: rgba(22, 163, 74, 0.14);
+  --sucesso-cor: #4ade80;
+  --erro-bg: rgba(220, 38, 38, 0.14);
+  --erro-cor: #f87171;
+}
+
+@keyframes subir {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 ion-content.page-container {
   --background: var(--fundo);
   --color: var(--texto);
+  --padding-bottom: 120px;
 }
 
-/* Faixa azul compacta, preservando o botão de retorno do aplicativo. */
+/* Cabeçalho */
 .header-blue {
+  position: relative;
   display: flex;
-  min-height: 88px;
   align-items: center;
-  gap: 12px;
-  padding: calc(env(safe-area-inset-top) + 14px) 18px 16px;
-  background: var(--azul);
+  gap: 16px;
+  min-height: 120px;
+  padding: calc(env(safe-area-inset-top) + 20px) 20px 52px;
+  border-radius: 0 0 32px 32px;
+  background: linear-gradient(135deg, var(--azul) 0%, var(--azul-escuro) 100%);
   color: #fff;
+  overflow: hidden;
+
+  // Círculos decorativos
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+  }
+
+  &::before {
+    top: -50px;
+    right: -30px;
+    width: 160px;
+    height: 160px;
+  }
+
+  &::after {
+    bottom: -60px;
+    right: 70px;
+    width: 120px;
+    height: 120px;
+  }
+
+  .header-titles {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
 
   h1 {
     margin: 0;
-    font-size: 19px;
+    font-size: 21px;
     font-weight: 700;
+    letter-spacing: -0.3px;
   }
 
   p {
-    margin: 2px 0 0;
-    font-size: 11px;
+    margin: 4px 0 0;
+    font-size: 13px;
+    opacity: 0.88;
   }
 }
 
 .btn-back {
+  position: relative;
+  z-index: 1;
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   flex: none;
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: 50%;
-  background: #fff;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.95);
   color: var(--azul);
-  font-size: 16px;
+  font-size: 20px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.93);
+  }
 }
 
+/* Conteúdo */
 .content-wrapper {
-  padding: 16px 18px 88px;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  max-width: 480px;
+  margin: -28px auto 0;
+  padding: 0 18px 36px;
+  flex-direction: column;
+  gap: 16px;
+
+  > * {
+    animation: subir 0.4s ease both;
+  }
+
+  > :nth-child(2) { animation-delay: 0.06s; }
+  > :nth-child(3) { animation-delay: 0.12s; }
+  > :nth-child(4) { animation-delay: 0.18s; }
 }
 
-/* Cartão compacto de instrutor, conforme a hierarquia visual do Figma. */
+/* ---------- Cartão do instrutor ---------- */
 .instructor-card {
   display: flex;
-  min-height: 58px;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-  padding: 9px 11px;
-  border-radius: 20px;
-  background: var(--card-instrutor);
-  box-shadow: 0 4px 10px rgba(27, 38, 79, 0.08);
+  gap: 14px;
+  padding: 16px;
+  border-radius: 22px;
+  background: var(--card);
+  border: 1.5px solid var(--borda);
+  box-shadow: var(--sombra);
 }
 
 .avatar {
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 52px;
+  height: 52px;
   flex: none;
   place-items: center;
-  border-radius: 50%;
-  background: var(--borda);
-  color: #fff;
-  font-size: 17px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--azul-suave), rgba(26, 107, 255, 0.22));
+  color: var(--azul);
+  font-size: 24px;
 }
 
 .instructor-details {
@@ -95,88 +181,133 @@ ion-content.page-container {
   min-width: 0;
   flex: 1;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   color: var(--texto);
-  font-size: 9px;
 
   .instructor-name-row {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 8px;
   }
 
   strong {
     overflow: hidden;
     min-width: 0;
-    font-size: 10px;
+    font-size: 15.5px;
     font-weight: 700;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--texto);
   }
 
-  > span {
+  .instructor-category {
     color: var(--texto-secundario);
+    font-size: 12.5px;
+    font-weight: 500;
   }
 }
 
 .change-instructor-btn {
   flex: none;
-  padding: 7px 12px;
-  border: 1px solid var(--azul);
-  border-radius: 16px;
-  background: var(--azul);
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--azul-suave);
   font: inherit;
-  font-size: 10px;
-  font-weight: 600;
-  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--azul);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    background: var(--azul);
+    color: #fff;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
 }
 
 .rating {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 3px;
+  gap: 6px;
+  margin-top: 2px;
   color: var(--texto-secundario);
-  font-size: 8px;
+  font-size: 12px;
 
-  ion-icon {
-    color: #f0c400;
-    font-size: 10px;
+  .rating-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(245, 158, 11, 0.14);
+    color: #d97706;
+    font-weight: 700;
+
+    ion-icon {
+      color: #f59e0b;
+      font-size: 13px;
+    }
   }
 }
 
 .instructor-error {
-  color: #b42318 !important;
+  color: var(--erro-cor) !important;
+  font-weight: 600;
 }
 
-/* Carrossel com 30 datas, mantendo sete botões visíveis como no Figma. */
+/* ---------- Seletor de datas ---------- */
 .date-section {
-  margin-bottom: 9px;
+  padding: 16px;
+  border-radius: 22px;
+  background: var(--card);
+  border: 1.5px solid var(--borda);
+  box-shadow: var(--sombra);
 }
 
 .carousel {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 8px;
 }
 
 .carousel-arrow {
   display: grid;
-  width: 18px;
-  height: 40px;
+  width: 32px;
+  height: 62px;
   flex: none;
   place-items: center;
   padding: 0;
   border: 0;
-  background: transparent;
+  border-radius: 12px;
+  background: var(--azul-suave);
   color: var(--azul);
-  font-size: 15px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    background: rgba(26, 107, 255, 0.2);
+  }
+
+  &:active {
+    transform: scale(0.92);
+  }
 }
 
 .days-strip {
   display: flex;
   min-width: 0;
   flex: 1;
-  gap: 5px;
+  gap: 8px;
+  padding: 4px 2px 8px;
+  margin: -4px -2px -8px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-behavior: smooth;
@@ -191,185 +322,339 @@ ion-content.page-container {
 .day-btn {
   display: flex;
   min-width: 0;
-  flex: 0 0 calc((100% - 30px) / 7);
-  min-height: 40px;
+  min-height: 62px;
+  flex: 0 0 calc((100% - 32px) / 5);
   scroll-snap-align: start;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  padding: 3px 1px;
-  border: 1px solid var(--borda);
-  border-radius: 8px;
-  background: var(--card);
+  gap: 4px;
+  padding: 6px 4px;
+  border: 1.5px solid var(--borda);
+  border-radius: 16px;
+  background: var(--card-sub);
   color: var(--texto-secundario);
   font: inherit;
-  font-size: 8px;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+
+  span {
+    text-transform: capitalize;
+    font-weight: 600;
+  }
 
   strong {
     color: var(--texto);
-    font-size: 11px;
+    font-size: 17px;
+    font-weight: 700;
     line-height: 1.1;
   }
 
+  &:active {
+    transform: scale(0.95);
+  }
+
   &.active {
-    border-color: var(--azul);
-    background: var(--azul);
-    color: #fff;
+    border-color: transparent;
+    background: linear-gradient(160deg, var(--azul), var(--azul-escuro));
+    color: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 8px 18px rgba(26, 107, 255, 0.35);
+    transform: translateY(-2px);
 
     strong {
       color: #fff;
     }
   }
-
 }
 
 .selected-date {
-  display: block;
-  margin: 8px 0 3px;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 8px 14px;
+  border: 1px dashed var(--azul);
+  border-radius: 999px;
+  background: var(--azul-suave);
   color: var(--azul);
   font: inherit;
-  font-size: 9px;
-  text-align: left;
+  font-size: 12.5px;
+  font-weight: 600;
   text-transform: capitalize;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+
+  ion-icon {
+    font-size: 16px;
+  }
+
+  &:hover {
+    background: rgba(26, 107, 255, 0.2);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
 }
 
+/* Horários */
 .schedule-section {
-  margin-bottom: 12px;
+  padding: 18px;
+  border-radius: 22px;
+  background: var(--card);
+  border: 1.5px solid var(--borda);
+  box-shadow: var(--sombra);
 }
 
 .section-title {
-  margin: 0 0 7px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
   color: var(--texto);
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 700;
+  letter-spacing: -0.2px;
+
+  &::before {
+    content: '';
+    width: 4px;
+    height: 18px;
+    border-radius: 4px;
+    background: var(--azul);
+  }
 }
 
 .state-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 7px;
-  padding: 12px 8px;
+  gap: 10px;
+  padding: 30px 16px;
+  background: var(--card-sub);
+  border-radius: 16px;
+  border: 1.5px dashed var(--borda);
   color: var(--texto-secundario);
   text-align: center;
 
+  > ion-icon {
+    font-size: 30px;
+    opacity: 0.7;
+  }
+
   p {
     margin: 0;
-    font-size: 11px;
+    font-size: 13.5px;
+    font-weight: 500;
+    line-height: 1.4;
   }
 }
 
 .error-state {
-  color: #b42318;
+  color: var(--erro-cor);
+  border-color: rgba(239, 68, 68, 0.35);
+  background: var(--erro-bg);
+
+  > ion-icon {
+    opacity: 1;
+  }
 }
 
 .slots-list {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  align-items: center;
+  gap: 10px;
 }
 
 .slot-row {
   display: flex;
-  width: 88%;
-  min-height: 30px;
+  width: 100%;
+  min-height: 60px;
   align-items: center;
   justify-content: space-between;
-  padding: 5px 8px;
-  border: 1px solid var(--borda);
-  border-radius: 8px;
-  background: var(--card);
+  gap: 12px;
+  padding: 8px 10px 8px 12px;
+  border: 1.5px solid var(--borda);
+  border-radius: 16px;
+  background: var(--card-sub);
+  animation: subir 0.3s ease both;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    border-color: var(--azul);
+    box-shadow: 0 6px 16px rgba(26, 107, 255, 0.12);
+    transform: translateY(-1px);
+  }
 }
 
 .slot-time {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   color: var(--texto);
-  font-size: 12px;
-  font-weight: 500;
+}
 
-  ion-icon {
-    color: var(--azul);
-    font-size: 15px;
+.slot-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--azul-suave);
+  color: var(--azul);
+  font-size: 19px;
+}
+
+.slot-range {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--texto-secundario);
+
+  strong {
+    color: var(--texto);
+    font-size: 16px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  em {
+    font-style: normal;
+    opacity: 0.6;
+  }
+
+  span {
+    font-variant-numeric: tabular-nums;
   }
 }
 
 .book-btn {
   display: flex;
-  min-width: 58px;
-  min-height: 28px;
+  min-width: 100px;
+  min-height: 40px;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  padding: 4px 10px;
+  gap: 6px;
+  padding: 6px 16px;
   border: 0;
   border-radius: 12px;
-  background: var(--azul);
+  background: linear-gradient(135deg, var(--azul), var(--azul-escuro));
   color: #fff;
   font: inherit;
-  font-size: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(26, 107, 255, 0.3);
+  transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+
+  ion-spinner {
+    width: 16px;
+    height: 16px;
+    color: #fff;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.95);
+  }
 
   &:disabled {
-    opacity: 0.65;
+    opacity: 0.55;
+    box-shadow: none;
+    cursor: not-allowed;
   }
 }
 
 .outline-btn {
-  padding: 7px 12px;
-  border: 1px solid var(--azul);
-  border-radius: 9px;
-  background: var(--card);
+  padding: 10px 20px;
+  border: 1.5px solid var(--azul);
+  border-radius: 12px;
+  background: transparent;
   color: var(--azul);
   font: inherit;
-  font-size: 10px;
-  font-weight: 600;
-}
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 
-/* Cartão informativo arredondado, como no rodapé do conteúdo do Figma. */
-.important-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 7px;
-  padding: 10px;
-  border-radius: 13px;
-  background: var(--card-aviso);
-  color: var(--texto-secundario);
-  font-size: 8px;
-
-  > ion-icon {
-    flex: none;
-    color: #18aef1;
-    font-size: 14px;
-  }
-
-  strong {
-    color: var(--azul);
-    font-size: 10px;
-  }
-
-  p {
-    margin: 3px 0 0;
-    line-height: 1.4;
+  &:hover {
+    background: var(--azul);
+    color: #fff;
   }
 }
 
 .success-message,
 .error-message {
-  margin: 8px 2px;
-  font-size: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  font-size: 13.5px;
   font-weight: 600;
+  line-height: 1.4;
+
+  ion-icon {
+    flex: none;
+    font-size: 22px;
+  }
 }
 
 .success-message {
-  color: #16803c;
+  background: var(--sucesso-bg);
+  color: var(--sucesso-cor);
+  border: 1px solid rgba(22, 163, 74, 0.25);
 }
 
 .error-message {
-  color: #b42318;
+  background: var(--erro-bg);
+  color: var(--erro-cor);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+}
+
+.important-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--card-aviso);
+  border: 1.5px solid rgba(26, 107, 255, 0.15);
+  color: var(--texto-secundario);
+  font-size: 13px;
+
+  > ion-icon {
+    flex: none;
+    margin-top: 1px;
+    color: var(--azul);
+    font-size: 22px;
+  }
+
+  strong {
+    color: var(--azul);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 4px 0 0;
+    line-height: 1.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content-wrapper > *,
+  .slot-row {
+    animation: none;
+  }
+
+  .day-btn,
+  .slot-row,
+  .book-btn {
+    transition: none;
+  }
 }

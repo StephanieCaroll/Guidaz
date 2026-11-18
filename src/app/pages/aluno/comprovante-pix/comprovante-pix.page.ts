@@ -8,7 +8,6 @@ import {
   IonBackButton,
   IonButtons,
   IonContent,
-  IonFooter,
   IonHeader,
   IonIcon,
   IonTitle,
@@ -16,17 +15,20 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
+  alertCircle,
   calendarOutline,
+  carSportOutline,
   checkmarkCircleOutline,
   closeCircleOutline,
   cloudUploadOutline,
   documentTextOutline,
-  homeOutline,
   layersOutline,
   personOutline,
+  receiptOutline,
+  ribbonOutline,
   timeOutline,
-  walletOutline,
 } from 'ionicons/icons';
+import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
 
 interface PacoteResumo {
   categoria: string;
@@ -46,11 +48,11 @@ type StatusComprovante = 'selecionar' | 'analise';
     IonBackButton,
     IonButtons,
     IonContent,
-    IonFooter,
     IonHeader,
     IonIcon,
     IonTitle,
     IonToolbar,
+    BottomNavComponent,
   ],
 })
 export class ComprovantePixPage {
@@ -74,16 +76,18 @@ export class ComprovantePixPage {
 
   constructor() {
     addIcons({
+      alertCircle,
       calendarOutline,
+      carSportOutline,
       checkmarkCircleOutline,
       closeCircleOutline,
       cloudUploadOutline,
       documentTextOutline,
-      homeOutline,
       layersOutline,
       personOutline,
+      receiptOutline,
+      ribbonOutline,
       timeOutline,
-      walletOutline,
     });
   }
 

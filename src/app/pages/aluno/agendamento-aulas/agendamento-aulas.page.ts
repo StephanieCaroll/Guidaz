@@ -4,7 +4,18 @@ import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { IonicModule, NavController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { arrowBackOutline, chevronBackOutline, chevronForwardOutline, informationCircle, personOutline, star, timeOutline } from 'ionicons/icons';
+import {
+  alertCircle,
+  arrowBackOutline,
+  calendarOutline,
+  checkmarkCircle,
+  chevronBackOutline,
+  chevronForwardOutline,
+  informationCircle,
+  personOutline,
+  star,
+  timeOutline
+} from 'ionicons/icons';
 import { finalize, timeout } from 'rxjs';
 
 import { AuthService } from '../../../core/services/auth.service';
@@ -88,7 +99,10 @@ export class AgendamentoAulasPage {
 
   constructor() {
     addIcons({
+      alertCircle,
       arrowBackOutline,
+      calendarOutline,
+      checkmarkCircle,
       chevronBackOutline,
       chevronForwardOutline,
       informationCircle,
