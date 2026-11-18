@@ -109,7 +109,7 @@ export class AulaService {
   }
 
   resumoInstrutor(instrutorId: number): Observable<ResumoInstrutor> {
-    return this.http.get<ResumoInstrutor>(`${this.api}/horas/instrutor/${instrutorId}`);
+    return this.http.get<ResumoInstrutor>(`${this.api}/aulas/instrutor/${instrutorId}/resumo`);
   }
 
   historicoInstrutor(instrutorId: number): Observable<AulaHistoricoApi[]> {
