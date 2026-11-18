@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { IonContent, IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -13,6 +14,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import {
   AulaService, AulaHistoricoApi, ResumoInstrutor
 } from '../../../core/services/aula.service';
+import { environment } from '../../../../environments/environment';
 
 type StatusAula = 'agendada' | 'concluida' | 'cancelada' | 'falta';
 
@@ -22,7 +24,7 @@ interface AulaHistorico {
   titulo: string;
   aluno: string;
   status: StatusAula;
-  minhaNota: number | null;   // nota que o instrutor deu ao aluno
+  minhaNota: number | null;
 }
 
 const STATUS_LABEL: Record<StatusAula, string> = {
@@ -45,22 +47,21 @@ export class ProgressoInstrutorPage {
   private readonly auth = inject(AuthService);
   private readonly aulaService = inject(AulaService);
   private readonly router = inject(Router);
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = environment.apiUrl;
 
-  // Vem do login; se não vier, usa 1 (só para testes)
   private instrutorId = 1;
 
   readonly busca = signal('');
   readonly erro = signal('');
   readonly estrelas = [1, 2, 3, 4, 5];
-  readonly alunosAtivos = 18; // TODO: virá do back
+  readonly alunosAtivos = signal(0);
 
-  // Card azul: vem de GET /horas/instrutor/{id}
   readonly resumo = signal<ResumoInstrutor>({
     totalAulas: 0, realizadas: 0, canceladas: 0, faltas: 0, agendadas: 0,
     horasRealizadas: 0, horasPendentes: 0, mediaAvaliacoes: null
   });
 
-  // Lista: vem de GET /aulas/instrutor/{id}
   readonly aulas = signal<AulaHistorico[]>([]);
 
   readonly aulasFiltradas = computed(() => {
@@ -84,7 +85,6 @@ export class ProgressoInstrutorPage {
     });
   }
 
-  // Roda toda vez que a tela abre
   ionViewWillEnter(): void {
     const u: any = this.auth.usuario();
     this.instrutorId = Number(u?.id) || 1;
@@ -100,19 +100,25 @@ export class ProgressoInstrutorPage {
     });
 
     this.aulaService.historicoInstrutor(this.instrutorId).subscribe({
-      next: lista => this.aulas.set(lista.map(a => this.converter(a))),
+      next: lista => this.aulas.set((lista || []).map(a => this.converter(a))),
       error: () => this.erro.set('Não foi possível carregar as aulas.')
+    });
+
+    this.http.get<unknown[]>(`${this.apiUrl}/instrutores/${this.instrutorId}/alunos`).subscribe({
+      next: (lista: unknown[]) => {
+        this.alunosAtivos.set(Array.isArray(lista) ? lista.length : 0);
+      },
+      error: () => {}
     });
   }
 
-  // Converte o formato do back para o que a tela já usava
   private converter(a: AulaHistoricoApi): AulaHistorico {
     return {
       id: a.id,
-      data: a.dataHora.substring(0, 10),
+      data: (a.dataHora || a.dataAula || '').substring(0, 10),
       titulo: a.titulo,
-      aluno: a.nomeOutraPessoa,
-      status: a.status.toLowerCase() as StatusAula,
+      aluno: a.alunoNome || a.nomeOutraPessoa || 'Aluno',
+      status: (a.status || 'AGENDADA').toLowerCase() as StatusAula,
       minhaNota: a.minhaNota
     };
   }
@@ -122,15 +128,16 @@ export class ProgressoInstrutorPage {
   }
 
   formatarData(iso: string): string {
+    if (!iso) return '';
     const [ano, mes, dia] = iso.split('-').map(Number);
+    if (!ano || !mes || !dia) return iso;
     return `${dia} ${MESES[mes - 1]} ${ano}`;
   }
 
   labelStatus(s: StatusAula): string {
-    return STATUS_LABEL[s];
+    return STATUS_LABEL[s] || s;
   }
 
-  // O INSTRUTOR avalia o ALUNO da aula
   avaliar(aula: AulaHistorico, nota: number, ev: Event): void {
     ev.stopPropagation();
     if (aula.status !== 'concluida') { return; }
@@ -144,6 +151,12 @@ export class ProgressoInstrutorPage {
         lista.map(a => a.id === aula.id ? { ...a, minhaNota: nota } : a)
       ),
       error: () => this.erro.set('Não foi possível enviar a avaliação.')
+    });
+  }
+
+  abrirDetalhesAula(aulaId: number): void {
+    void this.router.navigate(['/instrutor/detalhe-aula'], {
+      queryParams: { id: aulaId }
     });
   }
 

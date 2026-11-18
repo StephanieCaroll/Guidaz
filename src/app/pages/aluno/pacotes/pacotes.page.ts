@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, computed, inject, signal } from '@angular/core';
+import { NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
@@ -56,6 +57,7 @@ const VEICULO_POR_CATEGORIA: Record<string, string> = {
   templateUrl: './pacotes.page.html',
   styleUrls: ['./pacotes.page.scss'],
   imports: [
+    NgIf,
     FormsModule,
     RouterLink,
     IonBackButton,

@@ -80,31 +80,114 @@
         <!-- Ações quando a aula está AGENDADA -->
         <aside class="conteudo__lateral" *ngIf="podeAlterarStatus">
           <div class="reserva">
-            <p class="reserva__rotulo">Aula agendada</p>
+            <p class="reserva__rotulo">Gerenciar aula</p>
             <p class="reserva__valor">{{ aula.dataFormatada || aula.statusTexto }}</p>
 
-            <button
-              *ngIf="isInstrutor"
-              type="button"
-              class="cta"
-              [disabled]="processando"
-              (click)="concluirAula()"
-            >
-              <ion-icon name="checkmark-circle"></ion-icon>
-              {{ processando ? 'Processando...' : 'Concluir aula' }}
-            </button>
+            <!-- Formulário de Edição do Instrutor -->
+            <div *ngIf="isInstrutor && editando" class="edit-box">
+              <div class="edit-box__header">
+                <h3>Editar Agendamento</h3>
+                <p>Ajuste data, horários e local da aula</p>
+              </div>
 
-            <button
-              type="button"
-              class="cta"
-              [style.margin-top.px]="isInstrutor ? 10 : 0"
-              style="background: #ff2d2d;"
-              [disabled]="processando"
-              (click)="cancelarAula()"
-            >
-              <ion-icon name="close-circle-outline"></ion-icon>
-              {{ processando ? 'Processando...' : 'Cancelar aula' }}
-            </button>
+              <div class="input-grupo">
+                <label>Data da aula</label>
+                <div class="input-wrapper">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  <input type="date" [(ngModel)]="editDataAula" />
+                </div>
+              </div>
+
+              <div class="input-grid">
+                <div class="input-grupo">
+                  <label>Início</label>
+                  <div class="input-wrapper">
+                    <ion-icon name="time-outline"></ion-icon>
+                    <input type="time" [(ngModel)]="editHoraInicio" />
+                  </div>
+                </div>
+                <div class="input-grupo">
+                  <label>Término</label>
+                  <div class="input-wrapper">
+                    <ion-icon name="time-outline"></ion-icon>
+                    <input type="time" [(ngModel)]="editHoraFim" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="input-grupo">
+                <label>Local de encontro</label>
+                <div class="input-wrapper">
+                  <ion-icon name="location-outline"></ion-icon>
+                  <input type="text" [(ngModel)]="editLocalEncontro" placeholder="Ex.: Em frente à autoescola" />
+                </div>
+              </div>
+
+              <div class="input-grupo">
+                <label>Observações</label>
+                <textarea
+                  rows="2"
+                  [(ngModel)]="editObservacoes"
+                  placeholder="Ex.: Foco em baliza e controle de embreagem"
+                ></textarea>
+              </div>
+
+              <div class="edit-actions">
+                <button
+                  type="button"
+                  class="cta cta--primary"
+                  [disabled]="salvandoEdicao"
+                  (click)="salvarEdicao()"
+                >
+                  <ion-icon name="checkmark-circle"></ion-icon>
+                  {{ salvandoEdicao ? 'Salvando...' : 'Salvar alterações' }}
+                </button>
+
+                <button
+                  type="button"
+                  class="cta cta--ghost"
+                  [disabled]="salvandoEdicao"
+                  (click)="cancelarEdicao()"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+
+            <!-- Botões principais quando NÃO está editando -->
+            <ng-container *ngIf="!editando">
+              <button
+                *ngIf="isInstrutor"
+                type="button"
+                class="cta cta--edit"
+                [disabled]="processando"
+                (click)="abrirEdicao()"
+              >
+                <ion-icon name="create-outline"></ion-icon>
+                Editar aula
+              </button>
+
+              <button
+                *ngIf="isInstrutor"
+                type="button"
+                class="cta cta--concluir"
+                [disabled]="processando"
+                (click)="concluirAula()"
+              >
+                <ion-icon name="checkmark-circle"></ion-icon>
+                {{ processando ? 'Processando...' : 'Concluir aula' }}
+              </button>
+
+              <button
+                type="button"
+                class="cta cta--cancelar"
+                [disabled]="processando"
+                (click)="cancelarAula()"
+              >
+                <ion-icon name="close-circle-outline"></ion-icon>
+                {{ processando ? 'Processando...' : 'Cancelar aula' }}
+              </button>
+            </ng-container>
           </div>
         </aside>
 

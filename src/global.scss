@@ -77,3 +77,51 @@ body.font-grande {
     font-size: 120% !important;
   }
 }
+
+/* Guidaz Toast — Alto contraste e leitura nítida */
+
+ion-toast.guidaz-toast {
+  --color: #ffffff;
+  --button-color: #ffffff;
+  --border-radius: 14px;
+  --box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+  --min-height: 52px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+ion-toast.guidaz-toast::part(container) {
+  padding: 6px 10px;
+}
+
+ion-toast.guidaz-toast::part(message) {
+  color: #ffffff !important;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+ion-toast.guidaz-toast::part(icon) {
+  color: #ffffff !important;
+  font-size: 22px;
+}
+
+ion-toast.guidaz-toast::part(button) {
+  color: #ffffff !important;
+  opacity: 0.9;
+}
+
+ion-toast.guidaz-toast--ok {
+  --background: #15803d; /* Verde escuro de alto contraste */
+}
+
+ion-toast.guidaz-toast--erro {
+  --background: #dc2626; /* Vermelho intenso de alto contraste */
+}
+
+ion-toast.guidaz-toast--warning {
+  --background: #d97706; /* Âmbar escuro legível com texto branco */
+}
+
+ion-toast.guidaz-toast--info {
+  --background: #1d4ed8; /* Azul Guidaz */
+}

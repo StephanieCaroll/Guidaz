@@ -8,18 +8,9 @@ import {
   IonContent,
   IonHeader,
   IonToolbar,
-  IonTitle,
-  IonButtons,
-  IonBackButton,
   IonIcon,
   IonModal,
-  IonButton,
-  IonList,
-  IonItem,
-  IonAvatar,
-  IonLabel,
-  IonBadge,
-  IonText
+  IonButton
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -71,18 +62,9 @@ export interface AlunoInstrutor {
     IonContent,
     IonHeader,
     IonToolbar,
-    IonTitle,
-    IonButtons,
-    IonBackButton,
     IonIcon,
     IonModal,
     IonButton,
-    IonList,
-    IonItem,
-    IonAvatar,
-    IonLabel,
-    IonBadge,
-    IonText,
     BottomNavComponent
   ]
 })
@@ -138,27 +120,12 @@ export class GestaoAlunosPage {
   }
 
   carregarAlunos(): void {
-    let instrutorId = 0;
-    const usuarioAtual = typeof this.auth.usuario === 'function' 
-      ? this.auth.usuario() 
-      : (this.auth as any).usuario || (this.auth as any).getUsuarioLogado?.();
-
-    if (usuarioAtual?.id) {
-      instrutorId = Number(usuarioAtual.id);
-    } else if (usuarioAtual?.instrutorId) {
-      instrutorId = Number(usuarioAtual.instrutorId);
-    } else {
-      const stored = localStorage.getItem('usuario') || localStorage.getItem('user');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          instrutorId = Number(parsed.id || parsed.instrutorId);
-        } catch (e: any) {}
-      }
-    }
+    const usuarioAtual = this.auth.usuario();
+    const instrutorId = Number(usuarioAtual?.id || (usuarioAtual as any)?.instrutorId || 0);
 
     if (!Number.isInteger(instrutorId) || instrutorId <= 0) {
-      instrutorId = 3; 
+      this.erro = 'Instrutor não identificado na sessão.';
+      return;
     }
 
     this.instrutorIdDebug = instrutorId;

@@ -30,7 +30,7 @@
         <ion-icon name="people-outline" class="atalho__icone"></ion-icon>
         <span class="atalho__texto">
           <strong>Meus Alunos</strong>
-          <small>{{ alunosAtivos }} Alunos ativos</small>
+          <small>{{ alunosAtivos() }} Alunos ativos</small>
         </span>
         <ion-icon name="chevron-forward" class="atalho__seta"></ion-icon>
       </button>
@@ -59,15 +59,11 @@
       </label>
 
       <div class="lista__grid">
-        <article class="card" *ngFor="let aula of aulasFiltradas(); trackBy: trackAula">
+        <article class="card" *ngFor="let aula of aulasFiltradas(); trackBy: trackAula" (click)="abrirDetalhesAula(aula.id)" style="cursor: pointer;">
           <span class="card__data">
             <ion-icon name="calendar-outline"></ion-icon>
             {{ formatarData(aula.data) }}
           </span>
-
-          <button type="button" class="card__menu" aria-label="Mais opções">
-            <ion-icon name="ellipsis-vertical"></ion-icon>
-          </button>
 
           <h3 class="card__titulo">{{ aula.titulo }}</h3>
           <p class="card__aluno">{{ aula.aluno }}</p>
@@ -77,7 +73,7 @@
           </span>
 
           <!-- Avaliação do aluno: só em aula concluída -->
-          <div class="estrelas" *ngIf="aula.status === 'concluida'">
+          <div class="estrelas" *ngIf="aula.status === 'concluida'" (click)="$event.stopPropagation()">
             <span class="estrelas__rotulo">
               {{ aula.minhaNota ? 'Sua avaliação' : 'Avalie o aluno' }}
             </span>

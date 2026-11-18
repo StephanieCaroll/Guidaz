@@ -7,7 +7,8 @@ import { addIcons } from 'ionicons';
 import {
   arrowBackOutline, bookmarkOutline, bookmark, star, starOutline, timeOutline,
   pricetagOutline, layersOutline, checkmarkCircle, chevronForward,
-  calendarOutline, personOutline, closeCircleOutline, sendOutline
+  calendarOutline, personOutline, closeCircleOutline, sendOutline,
+  createOutline, locationOutline
 } from 'ionicons/icons';
 
 import { AulaHistoricoApi, AulaService } from '../../../core/services/aula.service';
@@ -30,6 +31,11 @@ interface DetalheAula {
   categoria: string;
   duracaoMin: number;
   valor: number;
+  dataIso: string;
+  horaInicioIso: string;
+  horaFimIso: string;
+  localEncontro: string;
+  observacoesRaw: string;
   dataFormatada: string;
   horarioFormatado: string;
   statusTexto: string;
@@ -58,6 +64,14 @@ export class DetalheAulaPage implements OnInit {
   processando = false;
   enviandoAvaliacao = false;
 
+  editando = false;
+  salvandoEdicao = false;
+  editDataAula = '';
+  editHoraInicio = '';
+  editHoraFim = '';
+  editLocalEncontro = '';
+  editObservacoes = '';
+
   notaSelecionada = 5;
   comentarioAvaliacao = '';
   readonly estrelas = [1, 2, 3, 4, 5];
@@ -72,6 +86,11 @@ export class DetalheAulaPage implements OnInit {
     categoria: 'B',
     duracaoMin: 60,
     valor: 120,
+    dataIso: '',
+    horaInicioIso: '',
+    horaFimIso: '',
+    localEncontro: '',
+    observacoesRaw: '',
     dataFormatada: '',
     horarioFormatado: '',
     statusTexto: 'Agendada',
@@ -89,7 +108,8 @@ export class DetalheAulaPage implements OnInit {
     addIcons({
       arrowBackOutline, bookmarkOutline, bookmark, star, starOutline, timeOutline,
       pricetagOutline, layersOutline, checkmarkCircle, chevronForward,
-      calendarOutline, personOutline, closeCircleOutline, sendOutline
+      calendarOutline, personOutline, closeCircleOutline, sendOutline,
+      createOutline, locationOutline
     });
   }
 
@@ -134,8 +154,10 @@ export class DetalheAulaPage implements OnInit {
         const dataTxt = dados.dataAula
           ? dados.dataAula.split('-').reverse().join('/')
           : '';
-        const horaTxt = dados.horaInicio
-          ? `${dados.horaInicio.slice(0, 5)}${dados.horaFim ? ' às ' + dados.horaFim.slice(0, 5) : ''}`
+        const horaInicioCurta = dados.horaInicio ? dados.horaInicio.slice(0, 5) : '';
+        const horaFimCurta = dados.horaFim ? dados.horaFim.slice(0, 5) : '';
+        const horaTxt = horaInicioCurta
+          ? `${horaInicioCurta}${horaFimCurta ? ' às ' + horaFimCurta : ''}`
           : '';
 
         const statusMap: Record<string, string> = {
@@ -165,6 +187,11 @@ export class DetalheAulaPage implements OnInit {
           categoria: dados.categoria || 'B',
           duracaoMin: 60,
           valor: 120,
+          dataIso: dados.dataAula || '',
+          horaInicioIso: horaInicioCurta,
+          horaFimIso: horaFimCurta,
+          localEncontro: dados.localEncontro || '',
+          observacoesRaw: dados.observacoes || '',
           dataFormatada: dataTxt,
           horarioFormatado: horaTxt,
           statusTexto: statusMap[dados.status] || dados.status,
@@ -176,9 +203,9 @@ export class DetalheAulaPage implements OnInit {
           descricao: dados.observacoes || `Aula prática agendada para ${dataTxt || 'breve'}${horaTxt ? ' (' + horaTxt + ')' : ''}. Status: ${statusMap[dados.status] || dados.status}.`,
           inclusos: [
             veiculoInfo,
+            ...(dados.localEncontro ? [`Ponto de encontro: ${dados.localEncontro}`] : []),
             'Acompanhamento prático',
-            'Orientações personalizadas',
-            'Suporte para dúvidas após a aula'
+            'Orientações personalizadas'
           ]
         };
         this.cdr.detectChanges();
@@ -215,6 +242,54 @@ export class DetalheAulaPage implements OnInit {
     } else {
       void this.router.navigateByUrl('/aluno/instrutores');
     }
+  }
+
+  abrirEdicao(): void {
+    this.editDataAula = this.aula.dataIso;
+    this.editHoraInicio = this.aula.horaInicioIso;
+    this.editHoraFim = this.aula.horaFimIso;
+    this.editLocalEncontro = this.aula.localEncontro;
+    this.editObservacoes = this.aula.observacoesRaw;
+    this.editando = true;
+  }
+
+  cancelarEdicao(): void {
+    this.editando = false;
+  }
+
+  salvarEdicao(): void {
+    if (!this.aula.id || this.salvandoEdicao) return;
+
+    if (!this.editDataAula || !this.editHoraInicio || !this.editHoraFim) {
+      void this.toastService.mostrar('Preencha data, horário de início e término.', 'erro');
+      return;
+    }
+
+    if (this.editHoraFim <= this.editHoraInicio) {
+      void this.toastService.mostrar('O horário de término deve ser maior que o de início.', 'erro');
+      return;
+    }
+
+    this.salvandoEdicao = true;
+    this.aulaService.editarAula(this.aula.id, {
+      dataAula: this.editDataAula,
+      horaInicio: this.editHoraInicio,
+      horaFim: this.editHoraFim,
+      localEncontro: this.editLocalEncontro.trim() || undefined,
+      observacoes: this.editObservacoes.trim() || undefined
+    }).subscribe({
+      next: () => {
+        this.salvandoEdicao = false;
+        this.editando = false;
+        void this.toastService.mostrar('Aula atualizada com sucesso!', 'ok');
+        this.carregarAula();
+      },
+      error: (err) => {
+        this.salvandoEdicao = false;
+        const msg = err?.error?.message || err?.error?.erro || 'Não foi possível editar a aula.';
+        void this.toastService.mostrar(msg, 'erro');
+      }
+    });
   }
 
   concluirAula(): void {

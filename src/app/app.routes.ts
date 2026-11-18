@@ -42,6 +42,7 @@ export const routes: Routes = [
   // ---------- Área do Instrutor ----------
   {
     path: 'instrutor',
+    canActivate: [authGuard, perfilGuard('instrutor')],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'home' },
       {
@@ -72,17 +73,7 @@ export const routes: Routes = [
       {
         path: 'gestao-alunos',
         title: 'Gestão de alunos | Guidaz',
-       
-        loadComponent: () =>
-          import('./pages/instrutor/gestao-alunos/gestao-alunos.page')
-            .then((m) => {
-              console.log('[ROTA] chunk carregado', m);
-              return m.GestaoAlunosPage;
-            })
-            .catch((e) => {
-              console.error('[ROTA] falha no chunk', e);
-              throw e;
-            }),
+        loadComponent: () => import('./pages/instrutor/gestao-alunos/gestao-alunos.page').then((m) => m.GestaoAlunosPage),
       },
       {
         path: 'pedidos-pacote',
@@ -160,6 +151,8 @@ export const routes: Routes = [
   },
   {
     path: 'notificacoes',
+    canActivate: [authGuard],
+    title: 'Notificações | Guidaz',
     loadComponent: () => import('./pages/notificacoes/notificacoes.page').then(m => m.NotificacoesPage)
   },
 

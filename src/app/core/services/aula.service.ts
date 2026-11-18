@@ -69,6 +69,14 @@ export interface AgendarAulaPayload {
   observacoes?: string;
 }
 
+export interface EditarAulaPayload {
+  dataAula: string;
+  horaInicio: string;
+  horaFim: string;
+  localEncontro?: string;
+  observacoes?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AulaService {
   private readonly api = environment.apiUrl;
@@ -82,6 +90,10 @@ export class AulaService {
   buscarPorId(aulaId: number, perfil: 'ALUNO' | 'INSTRUTOR' = 'ALUNO'): Observable<AulaHistoricoApi> {
     const params = new HttpParams().set('perfil', perfil);
     return this.http.get<AulaHistoricoApi>(`${this.api}/aulas/${aulaId}`, { params });
+  }
+
+  editarAula(aulaId: number, payload: EditarAulaPayload): Observable<AulaHistoricoApi> {
+    return this.http.put<AulaHistoricoApi>(`${this.api}/aulas/${aulaId}`, payload);
   }
 
   resumoHoras(alunoId: number): Observable<ResumoHoras> {
