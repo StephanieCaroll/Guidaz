@@ -34,7 +34,15 @@ import {
   personOutline,
   checkmarkCircleOutline,
   closeOutline,
-  createOutline
+  createOutline,
+  documentTextOutline,
+  attachOutline,
+  informationCircleOutline,
+  statsChartOutline,
+  cardOutline,
+  ribbonOutline,
+  warningOutline,
+  alertCircleOutline
 } from 'ionicons/icons';
 
 import { AuthService } from '../../core/services/auth.service';
@@ -92,6 +100,17 @@ interface EditForm {
   biografia: string;
 }
 
+type ChaveDocumentoDetran = 'cnh' | 'credencial' | 'certidao';
+
+interface DocumentoDetranItem {
+  chave: ChaveDocumentoDetran;
+  titulo: string;
+  descricao: string;
+  icone: string;
+  arquivoNome: string;
+  enviado: boolean;
+}
+
 @Component({
   selector: 'app-perfil',
   templateUrl: './perfil.page.html',
@@ -118,6 +137,7 @@ export class PerfilPage {
   private readonly actionSheetCtrl = inject(ActionSheetController);
 
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('docInput') docInput?: ElementRef<HTMLInputElement>;
 
   readonly t = (chave: string): string => this.settingsService.t(chave);
 
@@ -158,6 +178,60 @@ export class PerfilPage {
     return partes.join(' - ');
   });
 
+  abaAtiva: 'conta' | 'agendamentos' | 'estatisticas' = 'conta';
+  documentoEmSelecao: ChaveDocumentoDetran | null = null;
+
+  documentosObrigatorios: DocumentoDetranItem[] = [
+    {
+      chave: 'cnh',
+      titulo: 'CNH',
+      descricao: 'Carteira Nacional de Habilitação',
+      icone: 'card-outline',
+      arquivoNome: '',
+      enviado: false
+    },
+    {
+      chave: 'credencial',
+      titulo: 'Credencial',
+      descricao: 'Credencial de Instrutor',
+      icone: 'ribbon-outline',
+      arquivoNome: '',
+      enviado: false
+    },
+    {
+      chave: 'certidao',
+      titulo: 'Certidão',
+      descricao: 'Certidão Negativa do DETRAN-PE',
+      icone: 'document-text-outline',
+      arquivoNome: '',
+      enviado: false
+    }
+  ];
+
+  get statusConta(): 'PENDENTE' | 'EM_ANALISE' | 'ATIVO' {
+    const enviados = this.documentosObrigatorios.filter(d => d.enviado).length;
+    if (enviados === 0) return 'PENDENTE';
+    if (enviados < this.documentosObrigatorios.length) return 'PENDENTE';
+    return 'EM_ANALISE';
+  }
+
+  get tituloStatusConta(): string {
+    if (this.statusConta === 'ATIVO') return 'Cadastro Ativo';
+    if (this.statusConta === 'EM_ANALISE') return 'Documentação em Análise';
+    return 'Cadastro Pendente';
+  }
+
+  get descricaoStatusConta(): string {
+    const enviados = this.documentosObrigatorios.filter(d => d.enviado).length;
+    if (this.statusConta === 'ATIVO') {
+      return 'Sua documentação do DETRAN-PE foi aprovada e seu perfil está ativo para aulas.';
+    }
+    if (this.statusConta === 'EM_ANALISE') {
+      return 'Todos os 3 documentos foram anexados e aguardam validação da equipe.';
+    }
+    return `Envie os documentos abaixo para ativar seu perfil e começar a ministrar aulas (${enviados}/3 enviados).`;
+  }
+
   isModalEdicaoAberto = false;
   carregandoSalvar = false;
 
@@ -185,7 +259,15 @@ export class PerfilPage {
       personOutline,
       checkmarkCircleOutline,
       closeOutline,
-      createOutline
+      createOutline,
+      documentTextOutline,
+      attachOutline,
+      informationCircleOutline,
+      statsChartOutline,
+      cardOutline,
+      ribbonOutline,
+      warningOutline,
+      alertCircleOutline
     });
   }
 
@@ -195,11 +277,40 @@ export class PerfilPage {
     });
   }
 
+  selecionarAba(aba: 'conta' | 'agendamentos' | 'estatisticas'): void {
+    this.abaAtiva = aba;
+  }
+
+  selecionarDocumento(chave: ChaveDocumentoDetran): void {
+    this.documentoEmSelecao = chave;
+    const input = this.docInput?.nativeElement;
+    if (!input) return;
+    input.value = '';
+    input.click();
+  }
+
+  onDocumentoSelecionado(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const arquivo = input.files?.[0];
+    const chave = this.documentoEmSelecao;
+    this.documentoEmSelecao = null;
+
+    if (!arquivo || !chave) return;
+
+    const doc = this.documentosObrigatorios.find(item => item.chave === chave);
+    if (!doc) return;
+
+    doc.arquivoNome = arquivo.name;
+    doc.enviado = true;
+
+    this.toastService.presentToast(`${doc.titulo} anexado: ${arquivo.name}`, 'success');
+  }
+
   goBack(): void {
     void this.router.navigateByUrl(this.isInstrutor() ? '/instrutor/home' : '/aluno/home');
   }
 
-  private navegar(rota: string): void {
+  navegar(rota: string): void {
     void this.router.navigateByUrl(rota);
   }
 

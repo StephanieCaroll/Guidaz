@@ -46,35 +46,285 @@
       </button>
     </div>
 
-    <div class="profile-sections">
-      <!-- Bloco Conta -->
-      <div class="section-group">
-        <h3 class="section-title">Conta</h3>
+    <!-- Abas de navegação (Instrutor) -->
+    <div class="profile-tabs" *ngIf="isInstrutor()">
+      <button
+        type="button"
+        class="profile-tab"
+        [class.active]="abaAtiva === 'conta'"
+        (click)="selecionarAba('conta')"
+      >
+        <ion-icon name="person-outline"></ion-icon>
+        <span>Informações da Conta</span>
+      </button>
 
-        <div class="menu-list">
-          <div class="menu-item" (click)="abrirDetalheConta('Email')">
-            <div class="item-left">
-              <div class="item-icon-wrap">
-                <ion-icon name="mail-outline" class="item-icon"></ion-icon>
+      <button
+        type="button"
+        class="profile-tab"
+        [class.active]="abaAtiva === 'agendamentos'"
+        (click)="selecionarAba('agendamentos')"
+      >
+        <ion-icon name="calendar-outline"></ion-icon>
+        <span>Meus Agendamentos</span>
+      </button>
+
+      <button
+        type="button"
+        class="profile-tab"
+        [class.active]="abaAtiva === 'estatisticas'"
+        (click)="selecionarAba('estatisticas')"
+      >
+        <ion-icon name="stats-chart-outline"></ion-icon>
+        <span>Estatísticas</span>
+      </button>
+    </div>
+
+    <div class="profile-sections">
+      <!-- Aba: Informações da Conta -->
+      <ng-container *ngIf="!isInstrutor() || abaAtiva === 'conta'">
+        <!-- Status da conta + Documentos Obrigatórios DETRAN-PE -->
+        <ng-container *ngIf="isInstrutor()">
+          <div
+            class="account-status-card"
+            [class.is-active]="statusConta === 'ATIVO'"
+            [class.is-pending]="statusConta === 'PENDENTE'"
+          >
+            <div class="status-main">
+              <div class="status-shield">
+                <ion-icon
+                  [name]="statusConta === 'PENDENTE' ? 'warning-outline' : 'shield-checkmark-outline'"
+                ></ion-icon>
               </div>
-              <div class="item-text">
-                <span class="item-label">Email</span>
-                <span class="item-value">{{ u()?.email || 'Não informado' }}</span>
+              <div class="status-copy">
+                <span class="status-kicker">Status da sua conta</span>
+                <strong class="status-heading">{{ tituloStatusConta }}</strong>
+                <p class="status-desc">{{ descricaoStatusConta }}</p>
               </div>
             </div>
-            <div class="item-right">
-              <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
+
+            <div class="status-info-note">
+              <ion-icon name="information-circle-outline"></ion-icon>
+              <span>Após o envio e aprovação dos documentos, seu perfil será ativado em até 24h.</span>
             </div>
           </div>
 
-          <div class="menu-item" *ngIf="isInstrutor()" (click)="irParaDisponibilidade()">
+          <div class="section-group">
+            <div class="docs-section-header">
+              <div class="docs-title-row">
+                <ion-icon name="document-text-outline"></ion-icon>
+                <h3 class="section-title docs-title">Documentos Obrigatórios</h3>
+              </div>
+              <p class="docs-subtitle">Envie os documentos exigidos pelo DETRAN-PE para validar seu cadastro:</p>
+            </div>
+
+            <div class="doc-list">
+              <div
+                class="doc-card"
+                *ngFor="let doc of documentosObrigatorios"
+                [class.pendente-alerta]="!doc.enviado"
+                [class.doc-enviado]="doc.enviado"
+              >
+                <div class="doc-left">
+                  <div class="doc-icon-box">
+                    <ion-icon [name]="doc.icone"></ion-icon>
+                  </div>
+                  <div class="doc-info">
+                    <div class="doc-title-line">
+                      <span class="doc-name">{{ doc.titulo }}</span>
+                      <span class="doc-alert-badge" *ngIf="!doc.enviado">
+                        <ion-icon name="alert-circle-outline"></ion-icon>
+                        <span>Envio obrigatório</span>
+                      </span>
+                    </div>
+                    <span class="doc-desc">{{ doc.arquivoNome || doc.descricao }}</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  class="btn-doc-enviar"
+                  [class.enviado]="doc.enviado"
+                  [class.alerta]="!doc.enviado"
+                  (click)="selecionarDocumento(doc.chave)"
+                >
+                  <ion-icon [name]="doc.enviado ? 'checkmark-circle-outline' : 'attach-outline'"></ion-icon>
+                  <span>{{ doc.enviado ? 'Enviado' : 'Enviar' }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Bloco Conta -->
+        <div class="section-group">
+          <h3 class="section-title">Conta</h3>
+
+          <div class="menu-list">
+            <div class="menu-item" (click)="abrirDetalheConta('Email')">
+              <div class="item-left">
+                <div class="item-icon-wrap">
+                  <ion-icon name="mail-outline" class="item-icon"></ion-icon>
+                </div>
+                <div class="item-text">
+                  <span class="item-label">Email</span>
+                  <span class="item-value">{{ u()?.email || 'Não informado' }}</span>
+                </div>
+              </div>
+              <div class="item-right">
+                <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
+              </div>
+            </div>
+
+            <div class="menu-item" *ngIf="isInstrutor()" (click)="irParaDisponibilidade()">
+              <div class="item-left">
+                <div class="item-icon-wrap">
+                  <ion-icon name="calendar-outline" class="item-icon"></ion-icon>
+                </div>
+                <div class="item-text">
+                  <span class="item-label">Agenda & Disponibilidade</span>
+                  <span class="item-value">Gerencie seus horários</span>
+                </div>
+              </div>
+              <div class="item-right">
+                <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
+              </div>
+            </div>
+
+            <div class="menu-item" *ngIf="isInstrutor()" (click)="abrirModalEdicao()">
+              <div class="item-left">
+                <div class="item-icon-wrap">
+                  <ion-icon name="car-sport-outline" class="item-icon"></ion-icon>
+                </div>
+                <div class="item-text">
+                  <span class="item-label">Veículo & Credencial Detran</span>
+                  <span class="item-value">{{ u()?.veiculoModelo || 'Não informado' }}</span>
+                </div>
+              </div>
+              <div class="item-right">
+                <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
+              </div>
+            </div>
+
+            <div class="menu-item" (click)="abrirOpcao('Notificações')">
+              <div class="item-left">
+                <div class="item-icon-wrap">
+                  <ion-icon name="notifications-outline" class="item-icon"></ion-icon>
+                </div>
+                <div class="item-text">
+                  <span class="item-label">Notificações</span>
+                </div>
+              </div>
+              <div class="item-right">
+                <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
+              </div>
+            </div>
+
+            <div class="menu-item" (click)="abrirOpcao('Privacidade')">
+              <div class="item-left">
+                <div class="item-icon-wrap">
+                  <ion-icon name="lock-closed-outline" class="item-icon"></ion-icon>
+                </div>
+                <div class="item-text">
+                  <span class="item-label">Privacidade</span>
+                  <span class="item-value">Quem pode ver seu perfil</span>
+                </div>
+              </div>
+              <div class="item-right">
+                <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
+              </div>
+            </div>
+
+            <div class="menu-item" (click)="abrirOpcao('Segurança')">
+              <div class="item-left">
+                <div class="item-icon-wrap">
+                  <ion-icon name="shield-checkmark-outline" class="item-icon"></ion-icon>
+                </div>
+                <div class="item-text">
+                  <span class="item-label">Segurança</span>
+                  <span class="item-value">Em breve</span>
+                </div>
+              </div>
+              <div class="item-right">
+                <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bloco Configurações -->
+        <div class="section-group">
+          <h3 class="section-title">Configurações do aplicativo</h3>
+
+          <div class="menu-list">
+            <div class="menu-item toggle-item">
+              <div class="item-left">
+                <div class="item-icon-wrap">
+                  <ion-icon name="moon-outline" class="item-icon"></ion-icon>
+                </div>
+                <div class="item-text">
+                  <span class="item-label">Modo Escuro</span>
+                </div>
+              </div>
+              <ion-toggle
+                [checked]="settingsService.darkMode()"
+                (ionChange)="toggleDarkMode($event)"
+                color="primary">
+              </ion-toggle>
+            </div>
+
+            <div class="menu-item" (click)="alterarTamanhoTexto()">
+              <div class="item-left">
+                <div class="item-icon-wrap">
+                  <ion-icon name="text-outline" class="item-icon"></ion-icon>
+                </div>
+                <div class="item-text">
+                  <span class="item-label">Tamanho do Texto</span>
+                </div>
+              </div>
+              <div class="item-right">
+                <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
+              </div>
+            </div>
+
+            <div class="menu-item" (click)="alterarLinguagem()">
+              <div class="item-left">
+                <div class="item-icon-wrap">
+                  <ion-icon name="globe-outline" class="item-icon"></ion-icon>
+                </div>
+                <div class="item-text">
+                  <span class="item-label">Linguagem</span>
+                </div>
+              </div>
+              <div class="item-right">
+                <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
+              </div>
+            </div>
+
+            <div class="menu-item logout-item" (click)="fazerLogout()">
+              <div class="item-left">
+                <div class="item-icon-wrap danger-bg">
+                  <ion-icon name="log-out-outline" class="item-icon danger-color"></ion-icon>
+                </div>
+                <div class="item-text">
+                  <span class="item-label danger-color">Sair da Conta</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Aba: Meus Agendamentos -->
+      <div class="section-group" *ngIf="isInstrutor() && abaAtiva === 'agendamentos'">
+        <div class="menu-list">
+          <div class="menu-item" (click)="irParaDisponibilidade()">
             <div class="item-left">
               <div class="item-icon-wrap">
                 <ion-icon name="calendar-outline" class="item-icon"></ion-icon>
               </div>
               <div class="item-text">
                 <span class="item-label">Agenda & Disponibilidade</span>
-                <span class="item-value">Gerencie seus horários</span>
+                <span class="item-value">Gerencie seus dias e horários de aula</span>
               </div>
             </div>
             <div class="item-right">
@@ -82,58 +332,14 @@
             </div>
           </div>
 
-          <div class="menu-item" *ngIf="isInstrutor()" (click)="abrirModalEdicao()">
+          <div class="menu-item" (click)="navegar('/instrutor/calendario')">
             <div class="item-left">
               <div class="item-icon-wrap">
-                <ion-icon name="car-sport-outline" class="item-icon"></ion-icon>
+                <ion-icon name="time-outline" class="item-icon"></ion-icon>
               </div>
               <div class="item-text">
-                <span class="item-label">Veículo & Credencial Detran</span>
-                <span class="item-value">{{ u()?.veiculoModelo || 'Não informado' }}</span>
-              </div>
-            </div>
-            <div class="item-right">
-              <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
-            </div>
-          </div>
-
-          <div class="menu-item" (click)="abrirOpcao('Notificações')">
-            <div class="item-left">
-              <div class="item-icon-wrap">
-                <ion-icon name="notifications-outline" class="item-icon"></ion-icon>
-              </div>
-              <div class="item-text">
-                <span class="item-label">Notificações</span>
-              </div>
-            </div>
-            <div class="item-right">
-              <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
-            </div>
-          </div>
-
-          <div class="menu-item" (click)="abrirOpcao('Privacidade')">
-            <div class="item-left">
-              <div class="item-icon-wrap">
-                <ion-icon name="lock-closed-outline" class="item-icon"></ion-icon>
-              </div>
-              <div class="item-text">
-                <span class="item-label">Privacidade</span>
-                <span class="item-value">Quem pode ver seu perfil</span>
-              </div>
-            </div>
-            <div class="item-right">
-              <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
-            </div>
-          </div>
-
-          <div class="menu-item" (click)="abrirOpcao('Segurança')">
-            <div class="item-left">
-              <div class="item-icon-wrap">
-                <ion-icon name="shield-checkmark-outline" class="item-icon"></ion-icon>
-              </div>
-              <div class="item-text">
-                <span class="item-label">Segurança</span>
-                <span class="item-value">Em breve</span>
+                <span class="item-label">Calendário de Aulas</span>
+                <span class="item-value">Visualize as aulas agendadas</span>
               </div>
             </div>
             <div class="item-right">
@@ -143,63 +349,21 @@
         </div>
       </div>
 
-      <!-- Bloco Configurações -->
-      <div class="section-group">
-        <h3 class="section-title">Configurações do aplicativo</h3>
-
+      <!-- Aba: Estatísticas -->
+      <div class="section-group" *ngIf="isInstrutor() && abaAtiva === 'estatisticas'">
         <div class="menu-list">
-          <div class="menu-item toggle-item">
+          <div class="menu-item" (click)="navegar('/instrutor/progresso-instrutor')">
             <div class="item-left">
               <div class="item-icon-wrap">
-                <ion-icon name="moon-outline" class="item-icon"></ion-icon>
+                <ion-icon name="stats-chart-outline" class="item-icon"></ion-icon>
               </div>
               <div class="item-text">
-                <span class="item-label">Modo Escuro</span>
-              </div>
-            </div>
-            <ion-toggle
-              [checked]="settingsService.darkMode()"
-              (ionChange)="toggleDarkMode($event)"
-              color="primary">
-            </ion-toggle>
-          </div>
-
-          <div class="menu-item" (click)="alterarTamanhoTexto()">
-            <div class="item-left">
-              <div class="item-icon-wrap">
-                <ion-icon name="text-outline" class="item-icon"></ion-icon>
-              </div>
-              <div class="item-text">
-                <span class="item-label">Tamanho do Texto</span>
+                <span class="item-label">Aulas Dadas & Progresso</span>
+                <span class="item-value">Acompanhe seu desempenho e aulas concluídas</span>
               </div>
             </div>
             <div class="item-right">
               <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
-            </div>
-          </div>
-
-          <div class="menu-item" (click)="alterarLinguagem()">
-            <div class="item-left">
-              <div class="item-icon-wrap">
-                <ion-icon name="globe-outline" class="item-icon"></ion-icon>
-              </div>
-              <div class="item-text">
-                <span class="item-label">Linguagem</span>
-              </div>
-            </div>
-            <div class="item-right">
-              <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
-            </div>
-          </div>
-
-          <div class="menu-item logout-item" (click)="fazerLogout()">
-            <div class="item-left">
-              <div class="item-icon-wrap danger-bg">
-                <ion-icon name="log-out-outline" class="item-icon danger-color"></ion-icon>
-              </div>
-              <div class="item-text">
-                <span class="item-label danger-color">Sair da Conta</span>
-              </div>
             </div>
           </div>
         </div>
@@ -214,6 +378,15 @@
     accept="image/*"
     hidden
     (change)="onFotoSelecionada($event)"
+  />
+
+  <!-- Input escondido para envio de documentos DETRAN-PE -->
+  <input
+    #docInput
+    type="file"
+    accept=".pdf,image/*"
+    hidden
+    (change)="onDocumentoSelecionado($event)"
   />
 
   <app-bottom-nav activeTab="perfil"></app-bottom-nav>

@@ -18,7 +18,7 @@ $vermelho: #ef4444;
   padding: 16px 16px calc(90px + env(safe-area-inset-bottom)) 16px;
 }
 
-//  Botão voltar 
+// Botão voltar
 .profile-header-bar {
   display: flex;
   align-items: center;
@@ -45,7 +45,7 @@ $vermelho: #ef4444;
   }
 }
 
-//  Avatar 
+// Avatar
 .avatar-container {
   display: flex;
   flex-direction: column;
@@ -201,7 +201,350 @@ $vermelho: #ef4444;
   }
 }
 
-//  Cards de menu 
+// Abas do perfil (Instrutor)
+.profile-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px;
+  margin-bottom: 22px;
+  background: $cinza-bg;
+  border-radius: 999px;
+
+  .profile-tab {
+    flex: 1;
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: $cinza-texto;
+    font-family: inherit;
+    font-size: fs(12);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+
+    ion-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &.active {
+      background: linear-gradient(135deg, $azul 0%, $azul-escuro 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(30, 104, 246, 0.28);
+    }
+  }
+}
+
+// Card de Status da Conta
+.account-status-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px;
+  margin-bottom: 24px;
+  background: $cinza-bg;
+  border: 1.5px solid $cinza-borda;
+  border-radius: 18px;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+
+  &.is-pending {
+    background: #fef2f2;
+    border-color: rgba(239, 68, 68, 0.35);
+
+    .status-main .status-shield {
+      background: #fee2e2;
+      color: $vermelho;
+    }
+
+    .status-main .status-copy .status-heading {
+      color: #b91c1c;
+    }
+  }
+
+  &.is-active {
+    background: rgba(59, 224, 59, 0.08);
+    border-color: rgba(59, 224, 59, 0.45);
+  }
+
+  .status-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+
+    .status-shield {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: #ffffff;
+      color: $azul;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+
+      ion-icon {
+        font-size: 20px;
+      }
+    }
+
+    .status-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      .status-kicker {
+        font-size: fs(11);
+        font-weight: 600;
+        color: $cinza-texto;
+      }
+
+      .status-heading {
+        font-size: fs(15);
+        font-weight: 700;
+        color: #111827;
+      }
+
+      .status-desc {
+        margin: 2px 0 0;
+        font-size: fs(12);
+        line-height: 1.4;
+        color: #4b5563;
+      }
+    }
+  }
+
+  .status-info-note {
+    max-width: 220px;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid $cinza-borda;
+    font-size: fs(11);
+    line-height: 1.35;
+    color: $cinza-texto;
+    flex-shrink: 0;
+
+    ion-icon {
+      font-size: 16px;
+      color: $azul;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: stretch;
+
+    .status-info-note {
+      max-width: none;
+    }
+  }
+}
+
+// Documentos Obrigatórios DETRAN-PE
+.docs-section-header {
+  margin-bottom: 12px;
+
+  .docs-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: $azul;
+
+    ion-icon {
+      font-size: 18px;
+    }
+
+    .docs-title {
+      margin: 0;
+      padding: 0;
+      color: #111827;
+      font-size: fs(15);
+      font-weight: 700;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+  }
+
+  .docs-subtitle {
+    margin: 4px 0 0;
+    font-size: fs(12);
+    color: $cinza-texto;
+  }
+}
+
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.doc-title-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.doc-alert-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: $vermelho;
+  font-size: fs(10);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+
+  ion-icon {
+    font-size: 12px;
+  }
+}
+
+.doc-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: $cinza-bg;
+  border: 1.5px solid transparent;
+  border-radius: 16px;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+
+  &.pendente-alerta {
+    background: #fef2f2;
+    border-color: rgba(239, 68, 68, 0.35);
+
+    .doc-icon-box {
+      background: #fee2e2;
+
+      ion-icon {
+        color: $vermelho;
+      }
+    }
+  }
+
+  &.doc-enviado {
+    border-color: rgba(59, 224, 59, 0.4);
+  }
+
+  .doc-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    flex: 1;
+
+    .doc-icon-box {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: #ffffff;
+      color: $azul;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+
+      ion-icon {
+        font-size: 20px;
+      }
+    }
+
+    .doc-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+
+      .doc-name {
+        font-size: fs(15);
+        font-weight: 600;
+        color: #1f2937;
+      }
+
+      .doc-desc {
+        font-size: fs(12);
+        color: $cinza-texto;
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+
+  .btn-doc-enviar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1.5px solid $cinza-borda;
+    background: #ffffff;
+    color: #1f2937;
+    font-family: inherit;
+    font-size: fs(12);
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+
+    ion-icon {
+      font-size: 15px;
+    }
+
+    &:hover {
+      border-color: $azul;
+      color: $azul;
+    }
+
+    &.alerta {
+      border-color: rgba(239, 68, 68, 0.45);
+      background: #ffffff;
+      color: $vermelho;
+
+      &:hover {
+        border-color: $vermelho;
+        background: rgba(239, 68, 68, 0.08);
+      }
+    }
+
+    &.enviado {
+      border-color: #3be03b;
+      background: rgba(59, 224, 59, 0.14);
+      color: #15803d;
+    }
+  }
+}
+
+// Cards de menu
 .profile-sections {
   .section-group {
     margin-bottom: 26px;
@@ -239,6 +582,7 @@ $vermelho: #ef4444;
 
         &.toggle-item {
           cursor: default;
+
           &:active {
             background-color: $cinza-bg;
             transform: none;
@@ -358,7 +702,7 @@ ion-modal.edit-modal {
     text-align: left;
   }
 
-  //  Header (fica fixo no topo ao rolar) 
+  // Header (fica fixo no topo ao rolar)
   .modal-header {
     position: sticky;
     top: 0;
@@ -412,7 +756,7 @@ ion-modal.edit-modal {
     }
   }
 
-  //  Corpo 
+  // Corpo
   .modal-body {
     flex: 1;
     width: 100%;
@@ -447,7 +791,7 @@ ion-modal.edit-modal {
     }
   }
 
-  // Campos 
+  // Campos
   .field {
     position: relative;
     display: flex;
@@ -490,7 +834,7 @@ ion-modal.edit-modal {
       border-radius: 14px;
       background: #f9fafb;
       font-family: inherit;
-      font-size: 16px; 
+      font-size: 16px;
       line-height: 1.4;
       color: #1f2937;
       text-align: left;
@@ -661,24 +1005,29 @@ ion-modal.edit-modal {
     color: #4b5563;
     font-size: 13px;
   }
+
   .alert-checkbox-label {
     font-size: 14px;
   }
 }
 
-// Modo Escuro (página) 
+// Modo Escuro (página)
 :host-context(body.dark) {
   .profile-content {
     --background: #121212;
   }
 
-  .user-name {
+  .user-name,
+  .docs-section-header .docs-title-row .docs-title,
+  .doc-card .doc-left .doc-info .doc-name {
     color: #f3f4f6;
   }
 
   .user-role,
   .section-title,
-  .item-value {
+  .item-value,
+  .docs-section-header .docs-subtitle,
+  .doc-card .doc-left .doc-info .doc-desc {
     color: #9ca3af;
   }
 
@@ -693,11 +1042,73 @@ ion-modal.edit-modal {
 
   .rating-badge {
     background: #3f2f0f;
+
     .rating-text {
       color: #fcd34d;
     }
   }
 
+  .profile-tabs {
+    background: #1f2937;
+
+    .profile-tab {
+      color: #9ca3af;
+
+      &.active {
+        color: #ffffff;
+      }
+    }
+  }
+
+  .account-status-card {
+    background: #1f2937;
+    border-color: #374151;
+
+    &.is-pending {
+      background: rgba(127, 29, 29, 0.24);
+      border-color: rgba(248, 113, 113, 0.45);
+
+      .status-main .status-shield {
+        background: #3b1d1d;
+        color: #f87171;
+      }
+
+      .status-main .status-copy .status-heading {
+        color: #fca5a5;
+      }
+    }
+
+    .status-main {
+      .status-shield {
+        background: #111827;
+        color: #60a5fa;
+      }
+
+      .status-copy {
+        .status-heading {
+          color: #f3f4f6;
+        }
+
+        .status-desc {
+          color: #d1d5db;
+        }
+      }
+    }
+
+    .status-info-note {
+      background: #111827;
+      border-color: #374151;
+      color: #9ca3af;
+    }
+  }
+
+  .doc-alert-badge {
+    background: rgba(248, 113, 113, 0.16);
+    border-color: rgba(248, 113, 113, 0.4);
+    color: #f87171;
+  }
+
+  .doc-card,
   .menu-item {
     background: #1f2937;
 
@@ -705,6 +1116,20 @@ ion-modal.edit-modal {
       background-color: #273449;
     }
 
+    &.pendente-alerta {
+      background: rgba(127, 29, 29, 0.24);
+      border-color: rgba(248, 113, 113, 0.45);
+
+      .doc-icon-box {
+        background: #3b1d1d;
+
+        ion-icon {
+          color: #f87171;
+        }
+      }
+    }
+
+    .doc-left .doc-icon-box,
     .item-icon-wrap {
       background: #111827;
 
@@ -712,8 +1137,27 @@ ion-modal.edit-modal {
         background: #3b1d1d;
       }
 
+      ion-icon,
       .item-icon {
         color: #60a5fa;
+      }
+    }
+
+    .btn-doc-enviar {
+      background: #111827;
+      border-color: #4b5563;
+      color: #e5e7eb;
+
+      &.alerta {
+        background: #2a1717;
+        border-color: rgba(248, 113, 113, 0.5);
+        color: #f87171;
+      }
+
+      &.enviado {
+        border-color: #3be03b;
+        background: rgba(59, 224, 59, 0.16);
+        color: #86efac;
       }
     }
 
@@ -721,6 +1165,7 @@ ion-modal.edit-modal {
       .item-label {
         color: #f3f4f6;
       }
+
       .item-value {
         color: #9ca3af;
       }
@@ -744,7 +1189,7 @@ ion-modal.edit-modal {
   }
 }
 
-// Modo Escuro (modal) 
+// Modo Escuro (modal)
 ::ng-deep body.dark ion-modal.edit-modal {
   .modal-ion-content {
     --background: #1e1e1e;

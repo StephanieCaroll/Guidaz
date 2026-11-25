@@ -1,196 +1,294 @@
-<ion-content [fullscreen]="true" class="page-container" style="--background: #f4f6f9;">
-  <!-- Top Banner Header com o Botão de Voltar Restaurado e Alinhado -->
-  <div class="header-banner" style="display: flex; align-items: center; gap: 16px; padding: 24px 32px; background: #2563eb; color: white;">
-    <button type="button" class="back-btn" (click)="voltar()" style="background: rgba(255, 255, 255, 0.2); border: none; border-radius: 50%; width: 40px; height: 40px; min-width: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; transition: background 0.2s;">
-      <ion-icon name="arrow-back-outline" style="font-size: 20px;"></ion-icon>
-    </button>
-    <div class="header-text" style="display: flex; flex-direction: column;">
-      <h1 style="margin: 0; font-size: 1.5rem; font-weight: 700; color: white; line-height: 1.2;">Disponibilidade</h1>
-      <p style="margin: 4px 0 0 0; font-size: 0.9rem; color: rgba(255, 255, 255, 0.85);">Planeje seus horários!</p>
+<ion-content [fullscreen]="true" class="agenda-content">
+  <div class="agenda-container">
+    <!-- Barra superior -->
+    <div class="top-bar">
+      <button type="button" class="circle-btn" aria-label="Voltar" (click)="voltar()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </button>
+
+      <button type="button" class="circle-btn bell-btn" aria-label="Notificações" (click)="abrirNotificacoes()">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <span class="bell-dot" *ngIf="temNotificacao"></span>
+      </button>
     </div>
-  </div>
 
-  <div class="content-wrapper" style="max-width: 640px; margin: 0 auto; padding: 16px 16px 96px;">
-    <p class="section-description" style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">
-      Gerencie seus horários de aula. Adicione, edite ou bloqueie os horários em que você está disponível.
-    </p>
+    <!-- Cabeçalho do mês e setas -->
+    <div class="month-header">
+      <div class="month-left">
+        <div class="month-icon-box">
+          <ion-icon name="calendar-outline"></ion-icon>
+        </div>
+        <div class="month-titles">
+          <h1>{{ mesAnoLabel || 'Disponibilidade' }}</h1>
+          <p>Visualize suas datas e gerencie sua agenda</p>
+        </div>
+      </div>
 
-    <!-- Card de Perfil do Instrutor / Contexto do Aluno -->
-    <div class="instructor-card" style="background: white; border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 14px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+      <div class="month-arrows">
+        <button type="button" class="arrow-btn" aria-label="Mês anterior" (click)="mesAnterior()">
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </button>
+        <button type="button" class="arrow-btn" aria-label="Próximo mês" (click)="proximoMes()">
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Cartão do calendário mensal -->
+    <div class="calendar-card" *ngIf="diasDoMes?.length">
+      <div class="weekdays-row">
+        <span>Seg</span>
+        <span>Ter</span>
+        <span>Qua</span>
+        <span>Qui</span>
+        <span>Sex</span>
+        <span>Sáb</span>
+        <span>Dom</span>
+      </div>
+
+      <div class="days-grid">
+        <button
+          type="button"
+          class="day-cell"
+          *ngFor="let dia of diasDoMes"
+          [class.outside]="!dia.noMesAtual"
+          [class.selected]="dia.chave === diaSelecionadoChave"
+          [class.has-lesson]="dia.temAula && dia.chave !== diaSelecionadoChave"
+          (click)="selecionarDiaCalendario ? selecionarDiaCalendario(dia) : null"
+        >
+          <span>{{ dia.numero }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Cartão inferior: sem aulas ou aulas do dia -->
+    <div class="empty-schedule-card" *ngIf="!aulasDoDia || aulasDoDia.length === 0">
+      <div class="empty-left">
+        <div class="empty-icon-box">
+          <ion-icon name="calendar-outline"></ion-icon>
+        </div>
+        <div class="empty-copy">
+          <strong>Nenhuma aula agendada</strong>
+          <p>Você ainda não possui aulas para este dia.</p>
+        </div>
+      </div>
+
+      <div class="empty-illustration" aria-hidden="true">
+        <ion-icon name="calendar-number-outline"></ion-icon>
+      </div>
+    </div>
+
+    <div class="lessons-list" *ngIf="aulasDoDia && aulasDoDia.length > 0">
+      <div class="lesson-item-card" *ngFor="let aula of aulasDoDia">
+        <div class="lesson-main">
+          <strong>{{ aula.horario }} — {{ aula.titulo }}</strong>
+          <span>{{ aula.aluno }}</span>
+        </div>
+        <span class="lesson-pill">{{ aula.status }}</span>
+      </div>
+    </div>
+
+    <!-- Card de Perfil do Instrutor -->
+    <div class="section-card instructor-card">
       <div class="avatar-box">
-        <ion-avatar style="width: 50px; height: 50px;">
-          <div class="avatar-placeholder" style="width: 100%; height: 100%; background: #dbeafe; color: #1d4ed8; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 50%;">{{ nomeInstrutor[0] }}</div>
+        <ion-avatar class="instructor-avatar">
+          <div class="avatar-placeholder">{{ nomeInstrutor?.[0] || 'I' }}</div>
         </ion-avatar>
       </div>
-      <div class="instructor-info" style="flex: 1;">
-        <h2 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #1e293b;">{{ nomeInstrutor }}</h2>
-        <p class="role" style="margin: 2px 0; font-size: 0.85rem; color: #64748b;">{{ instrutorEspecialidade }}</p>
-        <p class="rating" style="margin: 0; font-size: 0.8rem; color: #475569;">
-          <span class="star" style="color: #f59e0b;">★</span> {{ notaInstrutor }} <span class="reviews" style="color: #94a3b8;">({{ instrutorQtdAvaliacoes }} avaliações)</span>
+      <div class="instructor-info">
+        <h2>{{ nomeInstrutor }}</h2>
+        <p class="role">{{ instrutorEspecialidade }}</p>
+        <p class="rating">
+          <span class="star">★</span> {{ notaInstrutor }}
+          <span class="reviews">({{ instrutorQtdAvaliacoes }} avaliações)</span>
         </p>
       </div>
     </div>
 
-    <!-- Botões de Dias da Semana -->
-    <div class="section-container" style="background: white; border-radius: 16px; padding: 16px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-      <h3 class="section-title" style="margin: 0 0 4px 0; font-size: 1rem; font-weight: 700; color: #1e293b;">Dias da Semana</h3>
-      <p class="section-subtitle" style="margin: 0 0 14px 0; font-size: 0.82rem; color: #64748b;">Selecione os dias em que você está disponível para dar aulas.</p>
-      <div class="days-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
-        <button 
+    <!-- Dias da Semana -->
+    <div class="section-card">
+      <h3 class="section-title">Dias da Semana</h3>
+      <p class="section-subtitle">Selecione os dias em que você está disponível para dar aulas.</p>
+      <div class="days-week-grid">
+        <button
           type="button"
-          *ngFor="let dia of diasSemana" 
-          class="day-btn" 
+          *ngFor="let dia of diasSemana"
+          class="week-btn"
           [class.active]="diaEstaSelecionado(dia.valor)"
           (click)="selecionarDia(dia.valor)"
-          style="padding: 10px 0; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #f8fafc; font-weight: 600; font-size: 0.85rem; color: #334155; cursor: pointer; transition: all 0.2s;">
+        >
           {{ dia.nome }}
         </button>
       </div>
     </div>
 
-    <!-- 🎯 Seção de Foco Pedagógico da Aula -->
-    <div class="section-container" style="background: white; border-radius: 16px; padding: 16px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-      <h3 class="section-title" style="margin: 0 0 4px 0; font-size: 1rem; font-weight: 700; color: #1e293b;">🎯 Foco Pedagógico da Aula</h3>
-      <p class="section-subtitle" style="margin: 0 0 12px 0; font-size: 0.82rem; color: #64748b;">Selecione o objetivo de treino com base no desempenho do aluno:</p>
+    <!-- Foco Pedagógico da Aula -->
+    <div class="section-card">
+      <h3 class="section-title">🎯 Foco Pedagógico da Aula</h3>
+      <p class="section-subtitle">Selecione o objetivo de treino com base no desempenho do aluno:</p>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-        
-        <!-- 1. Vias Públicas -->
-        <div (click)="selecionarFoco('vias')" [style.border]="focoSelecionado === 'vias' ? '2px solid #2563eb' : '1px solid #e2e8f0'" [style.background]="focoSelecionado === 'vias' ? '#eff6ff' : '#f8fafc'" style="padding: 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
-          <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b;">1. Vias Públicas</div>
-          <div style="font-size: 0.7rem; color: #64748b;">Ruas, avenidas e rodovias</div>
+      <div class="focus-grid">
+        <div
+          class="focus-item"
+          [class.selected]="focoSelecionado === 'vias'"
+          (click)="selecionarFoco('vias')"
+        >
+          <div class="focus-title">1. Vias Públicas</div>
+          <div class="focus-desc">Ruas, avenidas e rodovias</div>
         </div>
 
-        <!-- 2. Manejos Específicos -->
-        <div (click)="selecionarFoco('manejo')" [style.border]="focoSelecionado === 'manejo' ? '2px solid #2563eb' : '1px solid #e2e8f0'" [style.background]="focoSelecionado === 'manejo' ? '#eff6ff' : '#f8fafc'" style="padding: 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
-          <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b;">2. Manejos Específicos</div>
-          <div style="font-size: 0.7rem; color: #64748b;">Marchas, embreagem ou moto</div>
+        <div
+          class="focus-item"
+          [class.selected]="focoSelecionado === 'manejo'"
+          (click)="selecionarFoco('manejo')"
+        >
+          <div class="focus-title">2. Manejos Específicos</div>
+          <div class="focus-desc">Marchas, embreagem ou moto</div>
         </div>
 
-        <!-- 3. Baliza e Estacionamento -->
-        <div (click)="selecionarFoco('baliza')" [style.border]="focoSelecionado === 'baliza' ? '2px solid #2563eb' : '1px solid #e2e8f0'" [style.background]="focoSelecionado === 'baliza' ? '#eff6ff' : '#f8fafc'" style="padding: 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
-          <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b;">3. Baliza e Estacionamento</div>
-          <div style="font-size: 0.7rem; color: #64748b;">Vagas paralelas e garagens</div>
+        <div
+          class="focus-item"
+          [class.selected]="focoSelecionado === 'baliza'"
+          (click)="selecionarFoco('baliza')"
+        >
+          <div class="focus-title">3. Baliza e Estacionamento</div>
+          <div class="focus-desc">Vagas paralelas e garagens</div>
         </div>
 
-        <!-- 4. Simulado Detran -->
-        <div (click)="selecionarFoco('detran')" [style.border]="focoSelecionado === 'detran' ? '2px solid #2563eb' : '1px solid #e2e8f0'" [style.background]="focoSelecionado === 'detran' ? '#eff6ff' : '#f8fafc'" style="padding: 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
-          <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b;">4. Simulado Detran</div>
-          <div style="font-size: 0.7rem; color: #64748b;">Percurso e exigências da prova</div>
+        <div
+          class="focus-item"
+          [class.selected]="focoSelecionado === 'detran'"
+          (click)="selecionarFoco('detran')"
+        >
+          <div class="focus-title">4. Simulado Detran</div>
+          <div class="focus-desc">Percurso e exigências da prova</div>
         </div>
 
-        <!-- 5. Superação de Medos -->
-        <div (click)="selecionarFoco('fobia')" [style.border]="focoSelecionado === 'fobia' ? '2px solid #2563eb' : '1px solid #e2e8f0'" [style.background]="focoSelecionado === 'fobia' ? '#eff6ff' : '#f8fafc'" style="padding: 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
-          <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b;">5. Superação de Medos</div>
-          <div style="font-size: 0.7rem; color: #64748b;">Amaxofobia e insegurança</div>
+        <div
+          class="focus-item"
+          [class.selected]="focoSelecionado === 'fobia'"
+          (click)="selecionarFoco('fobia')"
+        >
+          <div class="focus-title">5. Superação de Medos</div>
+          <div class="focus-desc">Amaxofobia e insegurança</div>
         </div>
 
-        <!-- 6. Trânsito Pesado -->
-        <div (click)="selecionarFoco('pesado')" [style.border]="focoSelecionado === 'pesado' ? '2px solid #2563eb' : '1px solid #e2e8f0'" [style.background]="focoSelecionado === 'pesado' ? '#eff6ff' : '#f8fafc'" style="padding: 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
-          <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b;">6. Trânsito Pesado</div>
-          <div style="font-size: 0.7rem; color: #64748b;">Horários de pico e rodovias</div>
+        <div
+          class="focus-item"
+          [class.selected]="focoSelecionado === 'pesado'"
+          (click)="selecionarFoco('pesado')"
+        >
+          <div class="focus-title">6. Trânsito Pesado</div>
+          <div class="focus-desc">Horários de pico e rodovias</div>
         </div>
 
-        <!-- 7. Subidas e Rampas -->
-        <div (click)="selecionarFoco('rampa')" [style.border]="focoSelecionado === 'rampa' ? '2px solid #2563eb' : '1px solid #e2e8f0'" [style.background]="focoSelecionado === 'rampa' ? '#eff6ff' : '#f8fafc'" style="padding: 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
-          <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b;">7. Subidas e Rampas</div>
-          <div style="font-size: 0.7rem; color: #64748b;">Controle de aclives/declives</div>
+        <div
+          class="focus-item"
+          [class.selected]="focoSelecionado === 'rampa'"
+          (click)="selecionarFoco('rampa')"
+        >
+          <div class="focus-title">7. Subidas e Rampas</div>
+          <div class="focus-desc">Controle de aclives/declives</div>
         </div>
 
-        <!-- 8. Rotinas Personalizadas -->
-        <div (click)="selecionarFoco('rotina')" [style.border]="focoSelecionado === 'rotina' ? '2px solid #2563eb' : '1px solid #e2e8f0'" [style.background]="focoSelecionado === 'rotina' ? '#eff6ff' : '#f8fafc'" style="padding: 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
-          <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b;">8. Rotinas Personalizadas</div>
-          <div style="font-size: 0.7rem; color: #64748b;">Trajeto casa-trabalho/escola</div>
+        <div
+          class="focus-item"
+          [class.selected]="focoSelecionado === 'rotina'"
+          (click)="selecionarFoco('rotina')"
+        >
+          <div class="focus-title">8. Rotinas Personalizadas</div>
+          <div class="focus-desc">Trajeto casa-trabalho/escola</div>
         </div>
-
       </div>
     </div>
 
-    <!-- Seção de Horários Ocupados / Bloqueados -->
-    <div class="section-container" style="background: white; border-radius: 16px; padding: 16px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-      <div class="section-header-inline" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <h3 class="section-title" style="margin: 0; font-size: 1rem; font-weight: 700; color: #1e293b;">Horários ocupados</h3>
-        <span class="badge-status ocupado" style="font-size: 0.75rem; font-weight: 600; color: #b45309; background: #fef3c7; padding: 2px 8px; border-radius: 999px;">• {{ horariosOcupados.length }} agendados/bloqueados</span>
+    <!-- Horários Ocupados / Bloqueados -->
+    <div class="section-card">
+      <div class="section-header-inline">
+        <h3 class="section-title">Horários ocupados</h3>
+        <span class="badge-status ocupado">• {{ horariosOcupados.length }} agendados/bloqueados</span>
       </div>
 
-      <div class="blocked-list" *ngIf="horariosOcupados.length > 0" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
-        <div class="blocked-item-card" *ngFor="let b of horariosOcupados" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
-          <div class="blocked-details" style="display: flex; flex-direction: column;">
-            <span class="blocked-title" style="font-size: 0.88rem; font-weight: 600; color: #1e293b;">{{ b.motivo || 'Compromisso Pessoal' }}</span>
-            <span class="blocked-time" style="font-size: 0.76rem; color: #64748b;">{{ b.data }} | {{ b.horaInicio }} - {{ b.horaFim }}</span>
+      <div class="blocked-list" *ngIf="horariosOcupados.length > 0">
+        <div class="blocked-item-card" *ngFor="let b of horariosOcupados">
+          <div class="blocked-details">
+            <span class="blocked-title">{{ b.motivo || 'Compromisso Pessoal' }}</span>
+            <span class="blocked-time">{{ b.data }} | {{ b.horaInicio }} - {{ b.horaFim }}</span>
           </div>
-          <button type="button" class="icon-delete-btn" (click)="removerBloqueio(b.id)" style="background: transparent; border: none; color: #ef4444; font-size: 18px; cursor: pointer;">
+          <button type="button" class="icon-delete-btn" (click)="removerBloqueio(b.id)">
             <ion-icon name="trash-outline"></ion-icon>
           </button>
         </div>
       </div>
-      <p class="empty-text" *ngIf="horariosOcupados.length === 0" style="font-size: 0.85rem; color: #94a3b8; text-align: center; margin: 8px 0 12px 0;">Nenhum Horário ocupado</p>
 
-      <!-- Botões de Ação -->
-      <div class="action-buttons-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <button type="button" class="outline-btn" (click)="abrirFormularioDisponibilidade()" style="padding: 10px; background: #f1f5f9; color: #334155; border: 1.5px solid #cbd5e1; border-radius: 10px; font-weight: 600; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-          <ion-icon name="add-outline" style="font-size: 16px;"></ion-icon> Adicionar Horário
+      <p class="empty-text" *ngIf="horariosOcupados.length === 0">Nenhum Horário ocupado</p>
+
+      <div class="action-buttons-row">
+        <button type="button" class="outline-btn" (click)="abrirFormularioDisponibilidade()">
+          <ion-icon name="add-outline"></ion-icon>
+          <span>Adicionar Horário</span>
         </button>
-        <button type="button" class="outline-btn" (click)="abrirFormularioBloqueio()" style="padding: 10px; background: #f1f5f9; color: #334155; border: 1.5px solid #cbd5e1; border-radius: 10px; font-weight: 600; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-          <ion-icon name="ban-outline" style="font-size: 16px;"></ion-icon> Bloquear Horário
+        <button type="button" class="outline-btn" (click)="abrirFormularioBloqueio()">
+          <ion-icon name="ban-outline"></ion-icon>
+          <span>Bloquear Horário</span>
         </button>
       </div>
     </div>
 
     <!-- Form Inline: Adicionar Disponibilidade -->
-    <div class="inline-form-card" *ngIf="mostrarFormularioDisponibilidade" style="background: white; border-radius: 16px; padding: 16px; margin-bottom: 20px; border: 2px solid #2563eb; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
-      <h4 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">Adicionar Novo Horário</h4>
-      <div class="form-group" style="margin-bottom: 12px;">
-        <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #475569; margin-bottom: 4px;">Dia da Semana</label>
-        <select [(ngModel)]="novoHorarioDia" class="custom-select" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.88rem; background: #f8fafc;">
+    <div class="inline-form-card" *ngIf="mostrarFormularioDisponibilidade">
+      <h4>Adicionar Novo Horário</h4>
+      <div class="form-group">
+        <label>Dia da Semana</label>
+        <select [(ngModel)]="novoHorarioDia" class="custom-select">
           <option *ngFor="let d of diasSemana" [value]="d.valor">{{ d.nomeCompleto }}</option>
         </select>
       </div>
 
-      <div class="form-row" style="display: flex; gap: 10px; margin-bottom: 16px;">
-        <div class="form-group flex-1" style="flex: 1;">
-          <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #475569; margin-bottom: 4px;">Início</label>
-          <input type="time" [(ngModel)]="horaInicio" class="custom-input" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.88rem; background: #f8fafc;" />
+      <div class="form-row">
+        <div class="form-group flex-1">
+          <label>Início</label>
+          <input type="time" [(ngModel)]="horaInicio" class="custom-input" />
         </div>
-        <div class="form-group flex-1" style="flex: 1;">
-          <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #475569; margin-bottom: 4px;">Fim</label>
-          <input type="time" [(ngModel)]="horaFim" class="custom-input" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.88rem; background: #f8fafc;" />
+        <div class="form-group flex-1">
+          <label>Fim</label>
+          <input type="time" [(ngModel)]="horaFim" class="custom-input" />
         </div>
       </div>
 
-      <div class="form-actions" style="display: flex; gap: 10px;">
-        <button type="button" class="btn-cancel" (click)="mostrarFormularioDisponibilidade = false" style="flex: 1; padding: 10px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancelar</button>
-        <button type="button" class="btn-confirm" (click)="confirmarAdicionarHorario()" style="flex: 1; padding: 10px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Confirmar</button>
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" (click)="mostrarFormularioDisponibilidade = false">Cancelar</button>
+        <button type="button" class="btn-confirm" (click)="confirmarAdicionarHorario()">Confirmar</button>
       </div>
     </div>
 
     <!-- Form Inline: Bloquear Horário -->
-    <div class="inline-form-card warning-border" *ngIf="mostrarFormularioBloqueio" style="background: white; border-radius: 16px; padding: 16px; margin-bottom: 20px; border: 2px solid #f59e0b; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
-      <h4 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">Bloquear Horário Pessoal</h4>
-      <div class="form-group" style="margin-bottom: 12px;">
-        <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #475569; margin-bottom: 4px;">Data</label>
-        <input type="date" [(ngModel)]="novoBloqueioData" class="custom-input" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.88rem; background: #f8fafc;" />
+    <div class="inline-form-card warning-border" *ngIf="mostrarFormularioBloqueio">
+      <h4>Bloquear Horário Pessoal</h4>
+      <div class="form-group">
+        <label>Data</label>
+        <input type="date" [(ngModel)]="novoBloqueioData" class="custom-input" />
       </div>
 
-      <div class="form-row" style="display: flex; gap: 10px; margin-bottom: 12px;">
-        <div class="form-group flex-1" style="flex: 1;">
-          <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #475569; margin-bottom: 4px;">Início</label>
-          <input type="time" [(ngModel)]="horaBloqueioInicio" class="custom-input" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.88rem; background: #f8fafc;" />
+      <div class="form-row">
+        <div class="form-group flex-1">
+          <label>Início</label>
+          <input type="time" [(ngModel)]="horaBloqueioInicio" class="custom-input" />
         </div>
-        <div class="form-group flex-1" style="flex: 1;">
-          <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #475569; margin-bottom: 4px;">Fim</label>
-          <input type="time" [(ngModel)]="horaBloqueioFim" class="custom-input" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.88rem; background: #f8fafc;" />
+        <div class="form-group flex-1">
+          <label>Fim</label>
+          <input type="time" [(ngModel)]="horaBloqueioFim" class="custom-input" />
         </div>
       </div>
 
-      <div class="form-group" style="margin-bottom: 16px;">
-        <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #475569; margin-bottom: 4px;">Motivo</label>
-        <input type="text" [(ngModel)]="motivoBloqueio" placeholder="Ex: Médico, Almoço..." class="custom-input" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.88rem; background: #f8fafc;" />
+      <div class="form-group">
+        <label>Motivo</label>
+        <input type="text" [(ngModel)]="motivoBloqueio" placeholder="Ex: Médico, Almoço..." class="custom-input" />
       </div>
 
-      <div class="form-actions" style="display: flex; gap: 10px;">
-        <button type="button" class="btn-cancel" (click)="mostrarFormularioBloqueio = false" style="flex: 1; padding: 10px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancelar</button>
-        <button type="button" class="btn-confirm danger" [disabled]="bloqueando" (click)="cadastrarBloqueio()" style="flex: 1; padding: 10px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" (click)="mostrarFormularioBloqueio = false">Cancelar</button>
+        <button type="button" class="btn-confirm danger" [disabled]="bloqueando" (click)="cadastrarBloqueio()">
           <span *ngIf="!bloqueando">Confirmar Bloqueio</span>
           <ion-spinner name="crescent" *ngIf="bloqueando"></ion-spinner>
         </button>
@@ -198,47 +296,47 @@
     </div>
 
     <!-- Lista de Horários Cadastrados -->
-    <div class="section-container" style="background: white; border-radius: 16px; padding: 16px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-      <h3 class="section-title" style="margin: 0 0 2px 0; font-size: 1rem; font-weight: 700; color: #1e293b;">Horários cadastrados</h3>
-      <p class="section-subtitle" style="margin: 0 0 12px 0; font-size: 0.82rem; color: #64748b;">Total de {{ disponabilidades.length }} horários configurados</p>
+    <div class="section-card">
+      <h3 class="section-title">Horários cadastrados</h3>
+      <p class="section-subtitle">Total de {{ disponabilidades.length }} horários configurados</p>
 
-      <div class="registered-loading" *ngIf="carregando" style="text-align: center; padding: 20px;">
+      <div class="registered-loading" *ngIf="carregando">
         <ion-spinner name="crescent" color="primary"></ion-spinner>
       </div>
 
-      <div class="registered-list" *ngIf="!carregando && disponabilidades.length > 0" style="display: flex; flex-direction: column; gap: 8px;">
-        <div class="registered-card" *ngFor="let item of disponabilidades; let i = index" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
-          <div class="registered-info" style="display: flex; align-items: center; gap: 8px;">
-            <span class="blue-dot" style="color: #2563eb; font-size: 18px; line-height: 1;">•</span>
-            <strong class="day-name" style="font-size: 0.88rem; color: #1e293b;">{{ getNomeDia(item.diaSemana) }}</strong>
+      <div class="registered-list" *ngIf="!carregando && disponabilidades.length > 0">
+        <div class="registered-card" *ngFor="let item of disponabilidades; let i = index">
+          <div class="registered-info">
+            <span class="blue-dot">•</span>
+            <strong class="day-name">{{ getNomeDia(item.diaSemana) }}</strong>
           </div>
-          <div class="registered-right" style="display: flex; align-items: center; gap: 12px;">
-            <span class="time-range" style="font-size: 0.84rem; font-weight: 600; color: #334155;">{{ item.horaInicio }} - {{ item.horaFim }}</span>
-            <button type="button" class="remove-btn" (click)="removerHorarioCadastrado(i)" style="background: transparent; border: none; color: #ef4444; font-size: 18px; cursor: pointer; display: flex; align-items: center;">
+          <div class="registered-right">
+            <span class="time-range">{{ item.horaInicio }} - {{ item.horaFim }}</span>
+            <button type="button" class="remove-btn" (click)="removerHorarioCadastrado(i)">
               <ion-icon name="trash-outline"></ion-icon>
             </button>
           </div>
         </div>
       </div>
 
-      <p class="empty-text" *ngIf="!carregando && disponabilidades.length === 0" style="font-size: 0.85rem; color: #94a3b8; text-align: center; margin: 12px 0;">
+      <p class="empty-text" *ngIf="!carregando && disponabilidades.length === 0">
         Nenhum horário cadastrado ainda.
       </p>
     </div>
 
     <!-- Aviso Importante -->
-    <div class="important-card" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 14px; display: flex; gap: 12px; margin-bottom: 24px;">
-      <ion-icon name="information-circle-outline" class="info-icon" style="color: #2563eb; font-size: 22px; flex-shrink: 0;"></ion-icon>
+    <div class="important-card">
+      <ion-icon name="information-circle-outline" class="info-icon"></ion-icon>
       <div class="important-text">
-        <h4 style="margin: 0 0 2px 0; font-size: 0.9rem; font-weight: 700; color: #1e40af;">Importante</h4>
-        <p style="margin: 0; font-size: 0.8rem; color: #1e3a8a; line-height: 1.4;">Lembre-se: seus horários são visíveis para os alunos apenas quando você estiver com o dia selecionado e com horários disponíveis.</p>
+        <h4>Importante</h4>
+        <p>Lembre-se: seus horários são visíveis para os alunos apenas quando você estiver com o dia selecionado e com horários disponíveis.</p>
       </div>
     </div>
 
     <!-- Botão de Salvar Alterações -->
     <div class="footer-action">
-      <button type="button" class="primary-save-btn" [disabled]="salvando" (click)="salvarAlteracoes()" style="width: 100%; padding: 14px; background: #2563eb; color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
-        <ion-spinner *ngIf="salvando" name="crescent" style="width: 20px; height: 20px;"></ion-spinner>
+      <button type="button" class="primary-save-btn" [disabled]="salvando" (click)="salvarAlteracoes()">
+        <ion-spinner *ngIf="salvando" name="crescent"></ion-spinner>
         <span>{{ salvando ? 'Salvando...' : 'Salvar Alterações' }}</span>
       </button>
     </div>

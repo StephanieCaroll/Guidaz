@@ -10,7 +10,18 @@ import {
   IonSpinner
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { arrowBackOutline, addOutline, banOutline, trashOutline, informationCircleOutline } from 'ionicons/icons';
+import {
+  arrowBackOutline,
+  notificationsOutline,
+  calendarOutline,
+  calendarNumberOutline,
+  chevronBackOutline,
+  chevronForwardOutline,
+  addOutline,
+  banOutline,
+  trashOutline,
+  informationCircleOutline
+} from 'ionicons/icons';
 
 import { AgendaService, DisponibilidadeInstrutor, BloqueioAgenda, InstrutorInfo } from '../../../core/services/agenda.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -21,6 +32,21 @@ export interface DiaSemanaItem {
   nome: string;
   nomeCompleto: string;
   selecionado: boolean;
+}
+
+export interface DiaCalendarioMes {
+  chave: string;
+  numero: number;
+  data: Date;
+  noMesAtual: boolean;
+  temAula: boolean;
+}
+
+export interface AulaDiaAgenda {
+  horario: string;
+  titulo: string;
+  aluno: string;
+  status: string;
 }
 
 @Component({
@@ -55,6 +81,15 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
   notaInstrutor: number = 5.0;
   instrutorQtdAvaliacoes: number = 0;
 
+  // Cabeçalho e calendário mensal
+  temNotificacao: boolean = false;
+  mesAtualReferencia: Date = new Date();
+  diaSelecionadoData: Date = new Date();
+  diaSelecionadoChave: string = '';
+  mesAnoLabel: string = '';
+  diasDoMes: DiaCalendarioMes[] = [];
+  aulasDoDia: AulaDiaAgenda[] = [];
+
   diasSemana: DiaSemanaItem[] = [
     { valor: 'MONDAY', nome: 'Seg', nomeCompleto: 'Segunda-feira', selecionado: false },
     { valor: 'TUESDAY', nome: 'Ter', nomeCompleto: 'Terça-feira', selecionado: false },
@@ -74,6 +109,16 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
     'SATURDAY': 'Sábado',
     'SUNDAY': 'Domingo'
   };
+
+  private readonly valoresDiaPorJsIndex: string[] = [
+    'SUNDAY',
+    'MONDAY',
+    'TUESDAY',
+    'WEDNESDAY',
+    'THURSDAY',
+    'FRIDAY',
+    'SATURDAY'
+  ];
 
   bloqueios: BloqueioAgenda[] = [];
   horariosOcupados: BloqueioAgenda[] = [];
@@ -104,11 +149,17 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
   ) {
     addIcons({
       arrowBackOutline,
+      notificationsOutline,
+      calendarOutline,
+      calendarNumberOutline,
+      chevronBackOutline,
+      chevronForwardOutline,
       addOutline,
       banOutline,
       trashOutline,
       informationCircleOutline
     });
+    this.gerarCalendarioMes(this.mesAtualReferencia);
   }
 
   ngOnInit() {
@@ -124,6 +175,95 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
       },
       error: () => { /* mantém dados da sessão local */ }
     });
+  }
+
+  private formatarChaveData(data: Date): string {
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const dia = String(data.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+  }
+
+  gerarCalendarioMes(referencia: Date) {
+    const ano = referencia.getFullYear();
+    const mes = referencia.getMonth();
+
+    const formatado = new Intl.DateTimeFormat('pt-BR', {
+      month: 'long',
+      year: 'numeric'
+    }).format(new Date(ano, mes, 1));
+    this.mesAnoLabel = formatado.charAt(0).toUpperCase() + formatado.slice(1);
+
+    if (!this.diaSelecionadoChave) {
+      this.diaSelecionadoChave = this.formatarChaveData(this.diaSelecionadoData);
+    }
+
+    const primeiroDiaMes = new Date(ano, mes, 1);
+    const offsetSegunda = (primeiroDiaMes.getDay() + 6) % 7; // 0 = Seg ... 6 = Dom
+    const dataInicioGrade = new Date(ano, mes, 1 - offsetSegunda);
+
+    const diasAtivos = new Set(
+      this.disponabilidadesSalvas.filter(d => d.ativo).map(d => d.diaSemana)
+    );
+
+    const celulas: DiaCalendarioMes[] = [];
+    for (let i = 0; i < 42; i++) {
+      const atual = new Date(
+        dataInicioGrade.getFullYear(),
+        dataInicioGrade.getMonth(),
+        dataInicioGrade.getDate() + i
+      );
+      const chave = this.formatarChaveData(atual);
+      const diaValor = this.valoresDiaPorJsIndex[atual.getDay()];
+
+      celulas.push({
+        chave,
+        numero: atual.getDate(),
+        data: atual,
+        noMesAtual: atual.getMonth() === mes,
+        temAula: diasAtivos.has(diaValor)
+      });
+    }
+
+    this.diasDoMes = celulas;
+  }
+
+  mesAnterior() {
+    this.mesAtualReferencia = new Date(
+      this.mesAtualReferencia.getFullYear(),
+      this.mesAtualReferencia.getMonth() - 1,
+      1
+    );
+    this.gerarCalendarioMes(this.mesAtualReferencia);
+    this.cdr.detectChanges();
+  }
+
+  proximoMes() {
+    this.mesAtualReferencia = new Date(
+      this.mesAtualReferencia.getFullYear(),
+      this.mesAtualReferencia.getMonth() + 1,
+      1
+    );
+    this.gerarCalendarioMes(this.mesAtualReferencia);
+    this.cdr.detectChanges();
+  }
+
+  selecionarDiaCalendario(dia: DiaCalendarioMes) {
+    this.diaSelecionadoData = dia.data;
+    this.diaSelecionadoChave = dia.chave;
+    this.novoBloqueioData = dia.chave;
+
+    if (!dia.noMesAtual) {
+      this.mesAtualReferencia = new Date(dia.data.getFullYear(), dia.data.getMonth(), 1);
+      this.gerarCalendarioMes(this.mesAtualReferencia);
+    }
+
+    this.cdr.detectChanges();
+  }
+
+  abrirNotificacoes() {
+    this.temNotificacao = false;
+    this.toastService.mostrar('Nenhuma nova notificação no momento.', 'ok');
   }
 
   private inicializarTela() {
@@ -223,6 +363,7 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
         this.disponabilidadesSalvas = [...res];
         this.disponabilidades = [...res];
         this.sincronizarBotoesDias();
+        this.gerarCalendarioMes(this.mesAtualReferencia);
         this.carregando = false;
         this.cdr.detectChanges();
       },
@@ -256,6 +397,7 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
     this.diasSemana.forEach(dia => {
       dia.selecionado = diasComDisponibilidade.has(dia.valor);
     });
+    this.gerarCalendarioMes(this.mesAtualReferencia);
     this.cdr.detectChanges();
   }
 
@@ -290,6 +432,7 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
       }
     }
     this.disponabilidades = [...this.disponabilidadesSalvas];
+    this.gerarCalendarioMes(this.mesAtualReferencia);
     this.cdr.detectChanges();
   }
 
