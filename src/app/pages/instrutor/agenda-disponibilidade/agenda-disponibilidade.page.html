@@ -35,7 +35,7 @@
     </div>
 
     <!-- Cartão do calendário mensal -->
-    <div class="calendar-card" *ngIf="diasDoMes?.length">
+    <div class="calendar-card" *ngIf="diasDoMes.length">
       <div class="weekdays-row">
         <span>Seg</span>
         <span>Ter</span>
@@ -54,7 +54,7 @@
           [class.outside]="!dia.noMesAtual"
           [class.selected]="dia.chave === diaSelecionadoChave"
           [class.has-lesson]="dia.temAula && dia.chave !== diaSelecionadoChave"
-          (click)="selecionarDiaCalendario ? selecionarDiaCalendario(dia) : null"
+          (click)="selecionarDiaCalendario(dia)"
         >
           <span>{{ dia.numero }}</span>
         </button>
@@ -62,7 +62,7 @@
     </div>
 
     <!-- Cartão inferior: sem aulas ou aulas do dia -->
-    <div class="empty-schedule-card" *ngIf="!aulasDoDia || aulasDoDia.length === 0">
+    <div class="empty-schedule-card" *ngIf="aulasDoDia.length === 0">
       <div class="empty-left">
         <div class="empty-icon-box">
           <ion-icon name="calendar-outline"></ion-icon>
@@ -78,7 +78,7 @@
       </div>
     </div>
 
-    <div class="lessons-list" *ngIf="aulasDoDia && aulasDoDia.length > 0">
+    <div class="lessons-list" *ngIf="aulasDoDia.length > 0">
       <div class="lesson-item-card" *ngFor="let aula of aulasDoDia">
         <div class="lesson-main">
           <strong>{{ aula.horario }} — {{ aula.titulo }}</strong>
@@ -92,7 +92,7 @@
     <div class="section-card instructor-card">
       <div class="avatar-box">
         <ion-avatar class="instructor-avatar">
-          <div class="avatar-placeholder">{{ nomeInstrutor?.[0] || 'I' }}</div>
+          <div class="avatar-placeholder">{{ nomeInstrutor[0] || 'I' }}</div>
         </ion-avatar>
       </div>
       <div class="instructor-info">
