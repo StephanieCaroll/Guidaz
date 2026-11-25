@@ -11,10 +11,23 @@ function isValidEntityId(rawId: string | null): boolean {
   return Number.isInteger(parsed) && parsed > 0;
 }
 
+function normalizarPerfil(perfil: unknown): Perfil | null {
+  const valor = String(perfil ?? '').trim().toLowerCase();
+  if (valor === 'instrutor') return 'instrutor';
+  if (valor === 'aluno') return 'aluno';
+  return null;
+}
+
 /** Só entra quem está logado. */
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
-  return auth.logado() ? true : inject(Router).createUrlTree(['/login']);
+  const router = inject(Router);
+  const user = auth.usuario();
+
+  if (!auth.logado() || !user) {
+    return router.createUrlTree(['/login']);
+  }
+  return true;
 };
 
 /** Só entra quem tem o perfil indicado (instrutor ou aluno). */
@@ -22,15 +35,31 @@ export const perfilGuard = (perfil: Perfil): CanActivateFn => () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const user = auth.usuario();
-  if (!user) return router.createUrlTree(['/login']);
-  return user.perfil === perfil ? true : router.createUrlTree([auth.rotaInicial(user.perfil)]);
+  if (!auth.logado() || !user) {
+    return router.createUrlTree(['/login']);
+  }
+
+  const perfilAtual = normalizarPerfil(user.perfil);
+  if (!perfilAtual) {
+    return router.createUrlTree(['/login']);
+  }
+
+  return perfilAtual === perfil
+    ? true
+    : router.createUrlTree([auth.rotaInicial(perfilAtual)]);
 };
 
 /** Telas públicas (login/cadastro): quem já está logado vai direto para a home. */
 export const visitanteGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
+  const router = inject(Router);
   const user = auth.usuario();
-  return user ? inject(Router).createUrlTree([auth.rotaInicial(user.perfil)]) : true;
+  const perfilAtual = normalizarPerfil(user?.perfil);
+
+  if (auth.logado() && user && perfilAtual) {
+    return router.createUrlTree([auth.rotaInicial(perfilAtual)]);
+  }
+  return true;
 };
 
 /** Valida parâmetro numérico de rota */
@@ -47,9 +76,11 @@ export const idParamGuard: CanActivateFn = (
     return true;
   }
 
+  const user = auth.usuario();
+  const perfilAtual = normalizarPerfil(user?.perfil);
   const fallbackRoute =
     (route.data?.['fallbackRoute'] as string) ||
-    (auth.usuario() ? auth.rotaInicial(auth.usuario()!.perfil) : '/login');
+    (user && perfilAtual ? auth.rotaInicial(perfilAtual) : '/login');
 
   return router.createUrlTree([fallbackRoute]);
 };

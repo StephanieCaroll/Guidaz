@@ -1,5 +1,22 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanActivateFn, Router, Routes } from '@angular/router';
 import { authGuard, idParamGuard, perfilGuard, visitanteGuard } from './core/guards/auth.guard';
+import { AuthService } from './core/services/auth.service';
+import { Perfil } from './core/models/user.model';
+
+const wildcardRedirectGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  const user = auth.usuario();
+
+  if (auth.logado() && user) {
+    const rawPerfil = String(user.perfil ?? '').trim().toLowerCase();
+    const perfil: Perfil = rawPerfil === 'instrutor' ? 'instrutor' : 'aluno';
+    return router.createUrlTree([auth.rotaInicial(perfil)]);
+  }
+
+  return router.createUrlTree(['/login']);
+};
 
 export const routes: Routes = [
   {
@@ -44,10 +61,11 @@ export const routes: Routes = [
       import('./pages/auth/esqueci-senha/esqueci-senha.page').then((m) => m.EsqueciSenhaPage),
   },
 
-  // Área do Instrutor 
+  // Área do Instrutor
   {
     path: 'instrutor',
     canActivate: [authGuard, perfilGuard('instrutor')],
+    canActivateChild: [authGuard, perfilGuard('instrutor')],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'home' },
       {
@@ -111,6 +129,7 @@ export const routes: Routes = [
   {
     path: 'aluno',
     canActivate: [authGuard, perfilGuard('aluno')],
+    canActivateChild: [authGuard, perfilGuard('aluno')],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'home' },
       {
@@ -190,7 +209,7 @@ export const routes: Routes = [
     ],
   },
 
-  //  Compartilhadas (logado) 
+  // Compartilhadas (logado)
   {
     path: 'perfil',
     canActivate: [authGuard],
@@ -205,5 +224,5 @@ export const routes: Routes = [
       import('./pages/notificacoes/notificacoes.page').then((m) => m.NotificacoesPage),
   },
 
-  { path: '**', redirectTo: 'login' },
+  { path: '**', canActivate: [wildcardRedirectGuard], children: [] },
 ];

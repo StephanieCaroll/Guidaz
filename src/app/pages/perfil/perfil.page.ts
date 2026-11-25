@@ -141,7 +141,12 @@ export class PerfilPage {
 
   readonly t = (chave: string): string => this.settingsService.t(chave);
 
-  readonly u = computed(() => this.authService.usuario() as unknown as UsuarioPerfil | null);
+  readonly u = computed(() => {
+    const bruto = this.authService.usuario() as Record<string, unknown> | null;
+    if (!bruto) return null;
+    const { senha: _senha, ...limpo } = bruto;
+    return limpo as unknown as UsuarioPerfil;
+  });
   readonly isInstrutor = computed(() => this.u()?.perfil === 'instrutor');
 
   readonly nome = computed(() => this.u()?.nome || this.t('usuarioPadrao'));

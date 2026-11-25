@@ -1,18 +1,17 @@
 import { createAnimation, AnimationBuilder } from '@ionic/angular';
 
 export const fadeAnimation: AnimationBuilder = (_baseEl: any, opts: any) => {
-  const DURACAO = 250;
-  const root = createAnimation();
+  const DURACAO = 300;
+  const root = createAnimation().duration(DURACAO).easing('ease-in-out');
 
   if (opts.enteringEl) {
     root.addAnimation(
       createAnimation()
         .addElement(opts.enteringEl)
         .beforeRemoveClass('ion-page-invisible')
-        .duration(DURACAO)
-        .easing('ease-in-out')
+        .beforeStyles({ 'z-index': '101' })
         .fromTo('opacity', '0', '1')
-        .afterClearStyles(['opacity'])
+        .afterClearStyles(['opacity', 'z-index'])
     );
   }
 
@@ -20,9 +19,8 @@ export const fadeAnimation: AnimationBuilder = (_baseEl: any, opts: any) => {
     root.addAnimation(
       createAnimation()
         .addElement(opts.leavingEl)
-        .duration(DURACAO)
-        .easing('ease-in-out')
-        .fromTo('opacity', '1', '0')
+        .beforeStyles({ 'z-index': '100' })
+        .afterClearStyles(['z-index'])
     );
   }
 

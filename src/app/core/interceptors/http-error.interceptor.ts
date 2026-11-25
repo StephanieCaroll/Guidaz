@@ -38,7 +38,11 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
         }));
       }
 
-      if (status === 0) {
+      if (status === 401) {
+        toastService.mostrar?.('Sessão expirada ou credenciais inválidas.', 'warning');
+      } else if (status === 403) {
+        toastService.mostrar?.('Você não tem permissão para realizar esta ação.', 'warning');
+      } else if (status === 0) {
         toastService.mostrar?.('Não foi possível conectar ao servidor.', 'warning');
       } else if (status >= 500) {
         toastService.mostrar?.('Erro interno no servidor. Tente novamente.', 'danger');

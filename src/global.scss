@@ -111,17 +111,27 @@ ion-toast.guidaz-toast::part(button) {
 }
 
 ion-toast.guidaz-toast--ok {
-  --background: #15803d; /* Verde escuro de alto contraste */
+  --background: #15803d; 
 }
 
 ion-toast.guidaz-toast--erro {
-  --background: #dc2626; /* Vermelho intenso de alto contraste */
+  --background: #dc2626; 
 }
 
 ion-toast.guidaz-toast--warning {
-  --background: #d97706; /* Âmbar escuro legível com texto branco */
+  --background: #d97706; 
 }
 
 ion-toast.guidaz-toast--info {
-  --background: #1d4ed8; /* Azul Guidaz */
+  --background: #1d4ed8; 
+}
+
+ion-router-outlet {
+  transition: opacity 300ms ease-in-out;
+}
+
+body.carregando-pagina ion-router-outlet {
+  opacity: 0;
+  transition: none;
+  pointer-events: none;
 }

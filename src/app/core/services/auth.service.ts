@@ -37,53 +37,89 @@ export class AuthService {
       : `${this.apiUrl}/alunos`;
   }
 
-  // LOGIN 
+  // LOGIN
   login(email: string, senha: string): Observable<Resultado> {
     // Reseta estado anterior para impedir vazamento de cache entre contas
     this._usuario.set(null);
     try { localStorage.removeItem(KEY_SESSION); } catch {}
 
-    return new Observable<Resultado>((observer) => {
-      this.http.get<any[]>(`${this.apiUrl}/alunos`).subscribe({
-        next: (alunos) => {
-          const aluno = alunos.find(
-            (u) => u.email?.toLowerCase() === email.trim().toLowerCase() && u.senha === senha
-          );
+    const emailLimpo = email.trim().toLowerCase();
 
-          if (aluno) {
-            const idForcado = aluno.id || aluno.codigo || aluno.idAluno || aluno.idUsuario;
-            this.abrirSessao({ ...aluno, id: idForcado, perfil: 'aluno' });
-            observer.next({ ok: true, perfil: 'aluno' });
+    return new Observable<Resultado>((observer) => {
+      this.http.post<any>(`${this.apiUrl}/auth/login`, { email: emailLimpo, senha }).subscribe({
+        next: (resp) => {
+          const bruto = resp?.usuario ?? resp;
+          const perfilBruto: string = (resp?.perfil ?? bruto?.perfil ?? '').toString().toLowerCase();
+          const perfil: Perfil = perfilBruto === 'instrutor' ? 'instrutor' : 'aluno';
+          const idForcado = bruto?.id || bruto?.codigo || bruto?.idInstrutor || bruto?.idAluno || bruto?.idUsuario;
+
+          if (bruto && (idForcado || bruto.email)) {
+            this.abrirSessao({ ...bruto, id: idForcado, perfil });
+            observer.next({ ok: true, perfil });
+            observer.complete();
+          } else {
+            observer.next({ ok: false, erro: 'E-mail ou senha incorretos.' });
+            observer.complete();
+          }
+        },
+        error: (err) => {
+          if (err?.status === 401 || err?.status === 400) {
+            observer.next({ ok: false, erro: 'E-mail ou senha incorretos.' });
             observer.complete();
             return;
           }
 
-          this.http.get<any[]>(`${this.apiUrl}/instrutores`).subscribe({
-            next: (instrutores) => {
-              const instrutor = instrutores.find(
-                (u) => u.email?.toLowerCase() === email.trim().toLowerCase() && u.senha === senha
-              );
-
-              if (instrutor) {
-                const idForcado = instrutor.id || instrutor.codigo || instrutor.idInstrutor || instrutor.idUsuario;
-                this.abrirSessao({ ...instrutor, id: idForcado, perfil: 'instrutor' });
-                observer.next({ ok: true, perfil: 'instrutor' });
-              } else {
-                observer.next({ ok: false, erro: 'E-mail ou senha incorretos.' });
-              }
-              observer.complete();
-            },
-            error: () => {
-              observer.next({ ok: false, erro: 'Erro ao conectar com o servidor.' });
-              observer.complete();
-            }
-          });
-        },
-        error: () => {
-          observer.next({ ok: false, erro: 'Erro ao conectar com o servidor.' });
-          observer.complete();
+          // Fallback compatível caso o endpoint /auth/login ainda não exista ou não responda
+          this.loginLegadoFallback(emailLimpo, senha, observer);
         }
       });
+    });
+  }
+
+  private loginLegadoFallback(
+    emailLimpo: string,
+    senha: string,
+    observer: { next: (value: Resultado) => void; complete: () => void }
+  ): void {
+    this.http.get<any[]>(`${this.apiUrl}/alunos`).subscribe({
+      next: (alunos) => {
+        const aluno = alunos.find(
+          (u) => u.email?.toLowerCase() === emailLimpo && (!u.senha || u.senha === senha)
+        );
+
+        if (aluno && aluno.senha) {
+          const idForcado = aluno.id || aluno.codigo || aluno.idAluno || aluno.idUsuario;
+          this.abrirSessao({ ...aluno, id: idForcado, perfil: 'aluno' });
+          observer.next({ ok: true, perfil: 'aluno' });
+          observer.complete();
+          return;
+        }
+
+        this.http.get<any[]>(`${this.apiUrl}/instrutores`).subscribe({
+          next: (instrutores) => {
+            const instrutor = instrutores.find(
+              (u) => u.email?.toLowerCase() === emailLimpo && (!u.senha || u.senha === senha)
+            );
+
+            if (instrutor && instrutor.senha) {
+              const idForcado = instrutor.id || instrutor.codigo || instrutor.idInstrutor || instrutor.idUsuario;
+              this.abrirSessao({ ...instrutor, id: idForcado, perfil: 'instrutor' });
+              observer.next({ ok: true, perfil: 'instrutor' });
+            } else {
+              observer.next({ ok: false, erro: 'E-mail ou senha incorretos.' });
+            }
+            observer.complete();
+          },
+          error: () => {
+            observer.next({ ok: false, erro: 'Erro ao conectar com o servidor.' });
+            observer.complete();
+          }
+        });
+      },
+      error: () => {
+        observer.next({ ok: false, erro: 'Erro ao conectar com o servidor.' });
+        observer.complete();
+      }
     });
   }
 
@@ -101,17 +137,27 @@ export class AuthService {
       this.http.post(endpoint, payload, { responseType: 'text' }).subscribe({
         next: () => {
           const listaEndpoint = draft.perfil === 'instrutor' ? '/instrutores' : '/alunos';
-          this.http.get<any[]>(`${this.apiUrl}${listaEndpoint}`).subscribe(lista => {
-            const novoUsuario = lista.find(u => u.email === draft.email);
-            if (novoUsuario) {
-              const idForcado = novoUsuario.id || novoUsuario.codigo || novoUsuario.idAluno || novoUsuario.idInstrutor;
-              this.abrirSessao({ ...novoUsuario, id: idForcado, perfil: draft.perfil });
-            } else {
-              this.abrirSessao({ ...payload, perfil: draft.perfil });
+          this.http.get<any[]>(`${this.apiUrl}${listaEndpoint}`).subscribe({
+            next: (lista) => {
+              const novoUsuario = lista.find(u => u.email?.toLowerCase() === draft.email.trim().toLowerCase());
+              if (novoUsuario) {
+                const idForcado = novoUsuario.id || novoUsuario.codigo || novoUsuario.idAluno || novoUsuario.idInstrutor;
+                this.abrirSessao({ ...novoUsuario, id: idForcado, perfil: draft.perfil });
+              } else {
+                const { senha: _senha, ...payloadSemSenha } = payload;
+                this.abrirSessao({ ...payloadSemSenha, perfil: draft.perfil });
+              }
+              this.draft.set(null);
+              observer.next({ ok: true, perfil: draft.perfil });
+              observer.complete();
+            },
+            error: () => {
+              const { senha: _senha, ...payloadSemSenha } = payload;
+              this.abrirSessao({ ...payloadSemSenha, perfil: draft.perfil });
+              this.draft.set(null);
+              observer.next({ ok: true, perfil: draft.perfil });
+              observer.complete();
             }
-            this.draft.set(null);
-            observer.next({ ok: true, perfil: draft.perfil });
-            observer.complete();
           });
         },
         error: (err) => {
@@ -156,12 +202,13 @@ export class AuthService {
     return this.http.get<Usuario>(endpoint).pipe(
       tap((usuarioBanco: any) => {
         if (usuarioBanco) {
-          const idBanco = usuarioBanco.id || usuarioBanco.codigo || usuarioBanco.idAluno || usuarioBanco.idInstrutor;
+          const { senha: _senha, ...bancoLimpo } = usuarioBanco;
+          const idBanco = bancoLimpo.id || bancoLimpo.codigo || bancoLimpo.idAluno || bancoLimpo.idInstrutor;
           const atualizado: Usuario = {
-             ...atual,
-             ...usuarioBanco,
-             id: idBanco || id,
-             perfil: atual.perfil
+            ...atual,
+            ...bancoLimpo,
+            id: idBanco || id,
+            perfil: atual.perfil
           };
           this._usuario.set(atualizado);
           this.salvarSessao(atualizado);
@@ -196,10 +243,13 @@ export class AuthService {
         let respostaJson: any = null;
         try { respostaJson = resp ? JSON.parse(resp) : null; } catch (e) {}
 
+        const { senha: _sNovos, ...novosLimpos } = dadosNovos as any;
+        const { senha: _sResp, ...respLimpa } = respostaJson ?? {};
+
         const atualizado: Usuario = {
           ...atual,
-          ...dadosNovos,
-          ...(respostaJson ?? {}),
+          ...novosLimpos,
+          ...respLimpa,
           id: id,
           perfil: atual.perfil
         } as Usuario;
@@ -237,9 +287,11 @@ export class AuthService {
           try { usuarioRetornado = JSON.parse(resp); } catch (e) {}
         }
 
+        const { senha: _sRet, ...retornadoLimpo } = usuarioRetornado ?? {};
+
         const atualizado: Usuario = {
           ...usuario,
-          ...(usuarioRetornado ?? {}),
+          ...retornadoLimpo,
           id: id,
           perfil: usuario.perfil
         };
@@ -255,7 +307,7 @@ export class AuthService {
     );
   }
 
-  // ALTERAR SENHA 
+  // ALTERAR SENHA
   alterarSenha(atualSenha: string, novaSenha: string): Observable<void> {
     const usuario = this._usuario();
     const id = usuario?.id || (usuario as any)?.codigo || (usuario as any)?.idAluno || (usuario as any)?.idInstrutor;

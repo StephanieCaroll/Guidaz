@@ -93,7 +93,7 @@ export class InstrutoresPage implements OnInit {
     this.erroCarregamento = false;
     this.cdr.detectChanges();
 
-    this.http.get<InstrutorItem[]>(`${this.apiUrl}/instrutores`).pipe(
+    this.http.get<any[]>(`${this.apiUrl}/instrutores`).pipe(
       catchError((err) => {
         console.error('Erro ao buscar instrutores:', err);
         this.erroCarregamento = true;
@@ -101,7 +101,20 @@ export class InstrutoresPage implements OnInit {
       })
     ).subscribe({
       next: (dados) => {
-        this.instrutores = dados || [];
+        this.instrutores = (dados || []).map((item: any) => {
+          const {
+            senha: _senha,
+            cpf: _cpf,
+            nascimento: _nascimento,
+            telefone: _telefone,
+            cep: _cep,
+            logradouro: _logradouro,
+            numero: _numero,
+            complemento: _complemento,
+            ...publico
+          } = item ?? {};
+          return publico as InstrutorItem;
+        });
         this.aplicarFiltros();
         this.carregando = false;
         this.cdr.detectChanges();

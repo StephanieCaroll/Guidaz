@@ -20,7 +20,7 @@
   width: 100%;
   height: 100%;
   margin: 0;
-  padding: 0 0 var(--subir-logo) 0; 
+  padding: 0 0 var(--subir-logo) 0;
   box-sizing: border-box;
   display: grid;
   place-items: center;
@@ -36,7 +36,11 @@
   object-fit: contain;
   transform-origin: center center;
   opacity: 0;
-  animation: splash-fade 3s ease-in-out 0.1s forwards;
+
+  // A animação só roda depois que a página entrou (classe .visivel).
+  &.visivel {
+    animation: splash-fade 3s ease-in-out forwards;
+  }
 }
 
 @keyframes splash-fade {

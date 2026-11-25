@@ -40,12 +40,8 @@ export interface InstrutorDetalhado {
   precoPacote?: number | string;
   qtdAulasPacote?: number;
 
-  logradouro?: string;
-  numero?: string;
-  complemento?: string;
   bairro?: string;
   cidade?: string;
-  cep?: string;
   localizacaoCompleta?: string;
 
   veiculoModelo?: string;
@@ -73,7 +69,7 @@ export class PerfilInstrutorPage implements OnInit {
 
   instrutorId: number | null = null;
   instrutor: InstrutorDetalhado | null = null;
-  
+
   carregando = true;
   erroCarregamento = false;
   hasImgError = false;
@@ -118,16 +114,14 @@ export class PerfilInstrutorPage implements OnInit {
     ).subscribe({
       next: (dados: any) => {
         if (dados) {
-          // Monta o endereço completo legível com base nos campos do backend
-          const partesEndereco = [
-            dados.logradouro ? `${dados.logradouro}${dados.numero ? ', ' + dados.numero : ''}` : '',
-            dados.complemento ? `(${dados.complemento})` : '',
+          // Exibe apenas região pública (bairro/cidade ou região informada), sem expor endereço residencial exato
+          const partesRegiao = [
             dados.bairro,
             dados.cidade
           ].filter(Boolean);
 
-          const enderecoFormatado = partesEndereco.length > 0
-            ? partesEndereco.join(' - ')
+          const regiaoFormatada = partesRegiao.length > 0
+            ? partesRegiao.join(' - ')
             : (dados.regiaoAtendimento || dados.regiao || dados.localizacao || '');
 
           // Tratamento da disponibilidade em texto ou objeto
@@ -144,9 +138,21 @@ export class PerfilInstrutorPage implements OnInit {
               .join(', ');
           }
 
+          const {
+            senha: _senha,
+            cpf: _cpf,
+            nascimento: _nascimento,
+            telefone: _telefone,
+            logradouro: _logradouro,
+            numero: _numero,
+            complemento: _complemento,
+            cep: _cep,
+            ...dadosPublicos
+          } = dados;
+
           this.instrutor = {
-            ...dados,
-            localizacaoCompleta: enderecoFormatado.trim(),
+            ...dadosPublicos,
+            localizacaoCompleta: String(regiaoFormatada).trim(),
             disponibilidade: String(disp).trim()
           };
         } else {
