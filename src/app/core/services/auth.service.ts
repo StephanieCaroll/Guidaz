@@ -114,8 +114,23 @@ export class AuthService {
             observer.complete();
           });
         },
-        error: () => {
-          observer.next({ ok: false, erro: 'Erro ao realizar cadastro no servidor.' });
+        error: (err) => {
+          const corpo = typeof err?.error === 'string'
+            ? err.error
+            : JSON.stringify(err?.error ?? '');
+
+          const ehCpfDuplicado =
+            corpo.toLowerCase().includes('cpf') ||
+            corpo.toLowerCase().includes('duplicate') ||
+            corpo.includes('1062') ||
+            err?.status === 409;
+
+          observer.next({
+            ok: false,
+            erro: ehCpfDuplicado
+              ? 'Cpf ja cadastrado'
+              : 'Erro ao realizar cadastro no servidor.'
+          });
           observer.complete();
         }
       });

@@ -4,14 +4,14 @@
     <input id="nome" formControlName="nome" placeholder="Insira seu nome completo" autocomplete="name" />
   </div>
 
-  <div class="row-3" style="--cols: 1fr 1.15fr 1.25fr">
+  <div class="row-4" style="--cols: 1fr 1.15fr 1.15fr 1.25fr">
     <div class="input-col">
       <label class="label" for="telefone">Telefone</label>
       <div class="field field--sm">
         <input id="telefone" formControlName="telefone" placeholder="Insira seu telefone" inputmode="tel" autocomplete="tel" (input)="mascarar($event, 'telefone')" />
       </div>
     </div>
-    
+
     <div class="input-col">
       <label class="label" for="nascimento">
         <span class="text-long">Data de Nascimento</span>
@@ -19,6 +19,19 @@
       </label>
       <div class="field field--sm">
         <input id="nascimento" formControlName="nascimento" placeholder="00/00/0000" inputmode="numeric" (input)="mascarar($event, 'nascimento')" />
+      </div>
+    </div>
+
+    <div class="input-col">
+      <label class="label" for="genero">Gênero</label>
+      <div class="field field--sm">
+        <select id="genero" formControlName="genero">
+          <option value="">Selecione</option>
+          <option value="Masculino">Masculino</option>
+          <option value="Feminino">Feminino</option>
+          <option value="Outro">Outro</option>
+          <option value="Prefiro não dizer">Prefiro não dizer</option>
+        </select>
       </div>
     </div>
 
@@ -74,7 +87,8 @@
     </div>
   </div>
 
-  <!-- Campos específicos do Instrutor -->
+  <!-- Campos específicos do Instrutor --> 
+   <!-- adicionei o genero, ao lado da data de nascimento do instrutor-->
   <div *ngIf="isInstrutor">
     <h3 class="section-title">Dados do Instrutor</h3>
 

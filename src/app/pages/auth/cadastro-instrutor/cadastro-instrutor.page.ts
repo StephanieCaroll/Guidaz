@@ -1,11 +1,16 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonContent, IonSelect, IonSelectOption, IonInput, IonTextarea, LoadingController } from '@ionic/angular/standalone';
 import { PATTERNS } from '../../../core/utils/masks';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { DadosPessoaisComponent } from '../../../shared/components/dados-pessoais/dados-pessoais.component';
+
+function generoObrigatorio(control: AbstractControl): ValidationErrors | null {
+  const valor = String(control.value ?? '').trim();
+  return valor.length > 0 ? null : { generoObrigatorio: true };
+}
 
 @Component({
   selector: 'app-cadastro-instrutor',
@@ -26,6 +31,7 @@ export class CadastroInstrutorPage implements OnInit {
     nome: ['', [Validators.required, Validators.minLength(3)]],
     telefone: ['', [Validators.required, Validators.pattern(PATTERNS.telefone)]],
     nascimento: ['', [Validators.required, Validators.pattern(PATTERNS.data)]],
+    genero: ['', [Validators.required, generoObrigatorio]],
     cpf: ['', [Validators.required, Validators.pattern(PATTERNS.cpf)]],
     cep: ['', [Validators.required, Validators.pattern(PATTERNS.cep)]],
     logradouro: ['', Validators.required],
@@ -59,8 +65,8 @@ export class CadastroInstrutorPage implements OnInit {
 
     const rawValues = this.form.getRawValue();
 
-    const categoriasFormatadas = Array.isArray(rawValues.categorias) 
-      ? rawValues.categorias.join(', ') 
+    const categoriasFormatadas = Array.isArray(rawValues.categorias)
+      ? rawValues.categorias.join(', ')
       : rawValues.categorias;
 
     const dadosFormulario = {
@@ -85,7 +91,7 @@ export class CadastroInstrutorPage implements OnInit {
         void this.router.navigateByUrl(this.auth.rotaInicial(res.perfil));
       },
       error: async () => {
-        await loading.dismiss(); 
+        await loading.dismiss();
         void this.toast.mostrar('Erro de comunicação com o servidor.', 'erro');
       }
     });

@@ -9,8 +9,10 @@
   width: 100%;
   margin-top: 4px;
   margin-bottom: 12px;
+  transition: border-color 0.2s ease;
 
-  input {
+  input,
+  select {
     width: 100%;
     border: none;
     background: transparent;
@@ -23,6 +25,15 @@
       opacity: 1;
     }
   }
+
+  select {
+    cursor: pointer;
+  }
+
+  &:has(select.ng-invalid.ng-touched),
+  &:has(select.ng-invalid.ng-dirty) {
+    border-color: #d93025;
+  }
 }
 
 .label {
@@ -34,7 +45,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  height: 20px; 
+  height: 20px;
 }
 
 .text-short {
@@ -64,8 +75,21 @@
   width: 100%;
 }
 
+.row-4 {
+  display: grid;
+  grid-template-columns: var(--cols, repeat(4, 1fr));
+  gap: 0 10px;
+  width: 100%;
+}
+
+@media (max-width: 700px) {
+  .row-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .input-col {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end; 
+  justify-content: flex-end;
 }

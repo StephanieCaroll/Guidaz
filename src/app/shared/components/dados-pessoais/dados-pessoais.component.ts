@@ -11,7 +11,7 @@ type Campo = 'telefone' | 'nascimento' | 'cpf' | 'cep';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './dados-pessoais.component.html',
-  styleUrls: ['./dados-pessoais.component.scss'], 
+  styleUrls: ['./dados-pessoais.component.scss'],
 })
 export class DadosPessoaisComponent {
   readonly group = input.required<FormGroup>();
