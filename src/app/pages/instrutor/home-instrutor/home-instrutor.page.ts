@@ -26,6 +26,7 @@ import {
 import { AuthService } from '../../../core/services/auth.service';
 import { AulaHistoricoApi, AulaService } from '../../../core/services/aula.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { SettingsService } from '../../../core/services/settings.service';
 import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
 import { environment } from '../../../../environments/environment';
 
@@ -91,6 +92,7 @@ export class HomeInstrutorPage implements OnInit, AfterViewInit {
   private readonly auth = inject(AuthService);
   private readonly aulaService = inject(AulaService);
   private readonly toastService = inject(ToastService);
+  readonly settingsService = inject(SettingsService);
 
   nomeInstrutor = '';
   fotoUrl = '';

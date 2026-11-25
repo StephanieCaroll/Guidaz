@@ -1,3 +1,4 @@
+
 <ion-content [fullscreen]="true" class="profile-content">
   <div class="page-container">
     <!-- Botão voltar -->
@@ -42,14 +43,14 @@
 
       <button class="btn-editar-perfil" type="button" (click)="abrirModalEdicao()">
         <ion-icon name="create-outline"></ion-icon>
-        <span>Editar Perfil</span>
+        <span>{{ t('editarPerfil') }}</span>
       </button>
     </div>
 
     <div class="profile-sections">
       <!-- Bloco Conta -->
       <div class="section-group">
-        <h3 class="section-title">Conta</h3>
+        <h3 class="section-title">{{ t('conta') }}</h3>
 
         <div class="menu-list">
           <div class="menu-item" (click)="abrirDetalheConta('Email')">
@@ -59,7 +60,7 @@
               </div>
               <div class="item-text">
                 <span class="item-label">Email</span>
-                <span class="item-value">{{ u()?.email || 'Não informado' }}</span>
+                <span class="item-value">{{ u()?.email || t('naoInformado') }}</span>
               </div>
             </div>
             <div class="item-right">
@@ -73,8 +74,8 @@
                 <ion-icon name="calendar-outline" class="item-icon"></ion-icon>
               </div>
               <div class="item-text">
-                <span class="item-label">Agenda & Disponibilidade</span>
-                <span class="item-value">Gerencie seus horários</span>
+                <span class="item-label">{{ t('agenda') }}</span>
+                <span class="item-value">{{ t('gerencieHorarios') }}</span>
               </div>
             </div>
             <div class="item-right">
@@ -88,8 +89,8 @@
                 <ion-icon name="car-sport-outline" class="item-icon"></ion-icon>
               </div>
               <div class="item-text">
-                <span class="item-label">Veículo & Credencial Detran</span>
-                <span class="item-value">{{ u()?.veiculoModelo || 'Não informado' }}</span>
+                <span class="item-label">{{ t('veiculo') }}</span>
+                <span class="item-value">{{ u()?.veiculoModelo || t('naoInformado') }}</span>
               </div>
             </div>
             <div class="item-right">
@@ -103,7 +104,7 @@
                 <ion-icon name="notifications-outline" class="item-icon"></ion-icon>
               </div>
               <div class="item-text">
-                <span class="item-label">Notificações</span>
+                <span class="item-label">{{ t('notificacoes') }}</span>
               </div>
             </div>
             <div class="item-right">
@@ -117,8 +118,8 @@
                 <ion-icon name="lock-closed-outline" class="item-icon"></ion-icon>
               </div>
               <div class="item-text">
-                <span class="item-label">Privacidade</span>
-                <span class="item-value">Quem pode ver seu perfil</span>
+                <span class="item-label">{{ t('privacidade') }}</span>
+                <span class="item-value">{{ t('quemVePerfil') }}</span>
               </div>
             </div>
             <div class="item-right">
@@ -132,8 +133,8 @@
                 <ion-icon name="shield-checkmark-outline" class="item-icon"></ion-icon>
               </div>
               <div class="item-text">
-                <span class="item-label">Segurança</span>
-                <span class="item-value">Em breve</span>
+                <span class="item-label">{{ t('seguranca') }}</span>
+                <span class="item-value">{{ t('emBreve') }}</span>
               </div>
             </div>
             <div class="item-right">
@@ -145,7 +146,7 @@
 
       <!-- Bloco Configurações -->
       <div class="section-group">
-        <h3 class="section-title">Configurações do aplicativo</h3>
+        <h3 class="section-title">{{ t('configApp') }}</h3>
 
         <div class="menu-list">
           <div class="menu-item toggle-item">
@@ -154,11 +155,12 @@
                 <ion-icon name="moon-outline" class="item-icon"></ion-icon>
               </div>
               <div class="item-text">
-                <span class="item-label">Modo Escuro</span>
+                <span class="item-label">{{ t('modoEscuro') }}</span>
               </div>
             </div>
             <ion-toggle
               [checked]="settingsService.darkMode()"
+              [disabled]="salvandoPreferencias"
               (ionChange)="toggleDarkMode($event)"
               color="primary">
             </ion-toggle>
@@ -170,7 +172,7 @@
                 <ion-icon name="text-outline" class="item-icon"></ion-icon>
               </div>
               <div class="item-text">
-                <span class="item-label">Tamanho do Texto</span>
+                <span class="item-label">{{ t('tamanhoTexto') }}</span>
               </div>
             </div>
             <div class="item-right">
@@ -184,7 +186,7 @@
                 <ion-icon name="globe-outline" class="item-icon"></ion-icon>
               </div>
               <div class="item-text">
-                <span class="item-label">Linguagem</span>
+                <span class="item-label">{{ t('idioma') }}</span>
               </div>
             </div>
             <div class="item-right">
@@ -198,7 +200,7 @@
                 <ion-icon name="log-out-outline" class="item-icon danger-color"></ion-icon>
               </div>
               <div class="item-text">
-                <span class="item-label danger-color">Sair da Conta</span>
+                <span class="item-label danger-color">Sair da {{ t('conta') }}</span>
               </div>
             </div>
           </div>
@@ -226,8 +228,8 @@
           <!-- Header fixo -->
           <div class="modal-header">
             <div class="modal-header-left">
-              <h2>Editar Perfil</h2>
-              <p>Atualize suas informações pessoais</p>
+              <h2>{{ t('editarPerfil') }}</h2>
+              <p>{{ t('atualizeInformacoes') }}</p>
             </div>
             <button class="modal-close" type="button" (click)="fecharModalEdicao()">
               <ion-icon name="close-outline"></ion-icon>
@@ -239,22 +241,22 @@
             <form (ngSubmit)="salvarPerfil()">
               <!-- Seção: Dados pessoais -->
               <div class="form-section">
-                <h3 class="form-section-title">Dados pessoais</h3>
+                <h3 class="form-section-title">{{ t('dadosPessoais') }}</h3>
 
                 <div class="field">
-                  <label>Nome completo</label>
+                  <label>{{ t('nomeCompleto') }}</label>
                   <input
                     class="field-input"
                     [(ngModel)]="editForm.nome"
                     name="nome"
                     type="text"
-                    placeholder="Seu nome completo"
+                    placeholder="{{ t('seuNomeCompleto') }}"
                     required
                   />
                 </div>
 
                 <div class="field">
-                  <label>E-mail</label>
+                  <label>{{ t('email') }}</label>
                   <input
                     class="field-input"
                     [(ngModel)]="editForm.email"
@@ -266,7 +268,7 @@
                 </div>
 
                 <div class="field">
-                  <label>Telefone</label>
+                  <label>{{ t('telefone') }}</label>
                   <input
                     class="field-input"
                     [(ngModel)]="editForm.telefone"
@@ -279,11 +281,11 @@
 
               <!-- Seção: Endereço -->
               <div class="form-section">
-                <h3 class="form-section-title">Endereço</h3>
+                <h3 class="form-section-title">{{ t('endereco') }}</h3>
 
                 <div class="field-row">
                   <div class="field">
-                    <label>CEP</label>
+                    <label>{{ t('cep') }}</label>
                     <input
                       class="field-input"
                       [(ngModel)]="editForm.cep"
@@ -293,7 +295,7 @@
                     />
                   </div>
                   <div class="field">
-                    <label>Número</label>
+                    <label>{{ t('numero') }}</label>
                     <input
                       class="field-input"
                       [(ngModel)]="editForm.numero"
@@ -305,68 +307,68 @@
                 </div>
 
                 <div class="field">
-                  <label>Logradouro</label>
+                  <label>{{ t('logradouro') }}</label>
                   <input
                     class="field-input"
                     [(ngModel)]="editForm.logradouro"
                     name="logradouro"
                     type="text"
-                    placeholder="Rua / Avenida"
+                    placeholder="{{ t('ruaAvenida') }}"
                   />
                 </div>
 
                 <div class="field-row">
                   <div class="field">
-                    <label>Bairro</label>
+                    <label>{{ t('bairro') }}</label>
                     <input
                       class="field-input"
                       [(ngModel)]="editForm.bairro"
                       name="bairro"
                       type="text"
-                      placeholder="Seu bairro"
+                      placeholder="{{ t('seuBairro') }}"
                     />
                   </div>
                   <div class="field">
-                    <label>Cidade</label>
+                    <label>{{ t('cidade') }}</label>
                     <input
                       class="field-input"
                       [(ngModel)]="editForm.cidade"
                       name="cidade"
                       type="text"
-                      placeholder="Sua cidade"
+                      placeholder="{{ t('suaCidade') }}"
                     />
                   </div>
                 </div>
 
                 <div class="field">
-                  <label>Complemento</label>
+                  <label>{{ t('complemento') }}</label>
                   <input
                     class="field-input"
                     [(ngModel)]="editForm.complemento"
                     name="complemento"
                     type="text"
-                    placeholder="Apto, Bloco, etc."
+                    placeholder="{{ t('aptoBlocoEtc') }}"
                   />
                 </div>
               </div>
 
               <!-- Seção: Instrutor -->
               <div class="form-section" *ngIf="isInstrutor()">
-                <h3 class="form-section-title">Dados do instrutor</h3>
+                <h3 class="form-section-title">{{ t('dadosInstrutor') }}</h3>
 
                 <div class="field-row">
                   <div class="field">
-                    <label>CNH</label>
+                    <label>{{ t('cnh') }}</label>
                     <input
                       class="field-input"
                       [(ngModel)]="editForm.cnh"
                       name="cnh"
                       type="text"
-                      placeholder="Número da CNH"
+                      placeholder="{{ t('numero') }} da {{ t('cnh') }}"
                     />
                   </div>
                   <div class="field">
-                    <label>Credencial Detran</label>
+                    <label>{{ t('credencial') }}</label>
                     <input
                       class="field-input"
                       [(ngModel)]="editForm.credencial"
@@ -378,19 +380,19 @@
                 </div>
 
                 <div class="field">
-                  <label>Modelo do veículo</label>
+                  <label>{{ t('modeloVeiculo') }}</label>
                   <input
                     class="field-input"
                     [(ngModel)]="editForm.veiculoModelo"
                     name="veiculoModelo"
                     type="text"
-                    placeholder="Ex: Chevrolet Onix"
+                    placeholder="{{ t('exemploOnix') }}"
                   />
                 </div>
 
                 <div class="field-row">
                   <div class="field">
-                    <label>Placa</label>
+                    <label>{{ t('placa') }}</label>
                     <input
                       class="field-input"
                       [(ngModel)]="editForm.veiculoPlaca"
@@ -400,19 +402,19 @@
                     />
                   </div>
                   <div class="field">
-                    <label>Ano do veículo</label>
+                    <label>{{ t('anoVeiculo') }}</label>
                     <input
                       class="field-input"
                       [(ngModel)]="editForm.veiculoAno"
                       name="veiculoAno"
                       type="text"
-                      placeholder="Ex: 2022"
+                      placeholder="{{ t('exemplo2022') }}"
                     />
                   </div>
                 </div>
 
                 <div class="field">
-                  <label>Valor hora/aula (R$)</label>
+                  <label>{{ t('valorHora') }}</label>
                   <input
                     class="field-input"
                     [(ngModel)]="editForm.valorHora"
@@ -423,13 +425,13 @@
                 </div>
 
                 <div class="field">
-                  <label>Biografia</label>
+                  <label>{{ t('biografia') }}</label>
                   <ion-textarea
                     class="field-input"
                     [(ngModel)]="editForm.biografia"
                     name="biografia"
                     rows="3"
-                    placeholder="Escreva uma breve apresentação..."
+                    placeholder="{{ t('escrevaApresentacao') }}"
                   ></ion-textarea>
                 </div>
               </div>
@@ -437,12 +439,12 @@
               <!-- Ações -->
               <div class="modal-actions">
                 <button type="button" class="btn-cancel" (click)="fecharModalEdicao()">
-                  Cancelar
+                  {{ t('cancelar') }}
                 </button>
                 <button type="submit" class="btn-save" [disabled]="carregandoSalvar">
                   <ion-spinner *ngIf="carregandoSalvar" name="crescent"></ion-spinner>
                   <ion-icon *ngIf="!carregandoSalvar" name="checkmark-circle-outline"></ion-icon>
-                  <span>{{ carregandoSalvar ? 'Salvando...' : 'Salvar Alterações' }}</span>
+                  <span>{{ carregandoSalvar ? t('salvando') : t('salvar') }}</span>
                 </button>
               </div>
             </form>

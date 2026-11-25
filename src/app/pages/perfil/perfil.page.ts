@@ -1,3 +1,4 @@
+
 import { Component, ElementRef, ViewChild, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -38,7 +39,12 @@ import {
 } from 'ionicons/icons';
 
 import { AuthService } from '../../core/services/auth.service';
-import { SettingsService, FontSize, Language } from '../../core/services/settings.service';
+import {
+  SettingsService,
+  FontSize,
+  Language,
+  Preferencias
+} from '../../core/services/settings.service';
 import { ToastService } from '../../core/services/toast.service';
 import { BottomNavComponent } from '../../shared/components/bottom-nav/bottom-nav.component';
 import { environment } from '../../../environments/environment';
@@ -129,9 +135,15 @@ export class PerfilPage {
   readonly fotoUrl = computed(() => {
     const raw = this.u()?.fotoUrl || this.u()?.foto || '';
     if (!raw) return '';
-    if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:')) {
+
+    if (
+      raw.startsWith('http://') ||
+      raw.startsWith('https://') ||
+      raw.startsWith('data:')
+    ) {
       return raw;
     }
+
     const baseUrl = environment.apiUrl.replace(/\/api\/?$/, '');
     return raw.startsWith('/') ? `${baseUrl}${raw}` : `${baseUrl}/${raw}`;
   });
@@ -148,18 +160,24 @@ export class PerfilPage {
 
     if (this.isInstrutor()) {
       return u.valorHora != null && u.valorHora !== ('' as any)
-        ? `${Number(u.valorHora).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} / h`
+        ? `${Number(u.valorHora).toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          })} / h`
         : '';
     }
 
     const partes: string[] = [];
+
     if (u.categoria) partes.push(`${this.t('categoria')} ${u.categoria}`);
     if (u.saldoAulas != null) partes.push(`${u.saldoAulas} ${this.t('aulas')}`);
+
     return partes.join(' - ');
   });
 
   isModalEdicaoAberto = false;
   carregandoSalvar = false;
+  salvandoPreferencias = false;
 
   editForm: EditForm = this.formVazio();
 
@@ -191,12 +209,29 @@ export class PerfilPage {
 
   ionViewWillEnter(): void {
     this.authService.buscarDoBanco().subscribe({
-      error: () => {}
+      next: () => {
+        this.settingsService.carregarDoBanco().subscribe({
+          error: () => {
+            this.toastService.presentToast(
+              'Não foi possível carregar suas preferências salvas. As configurações locais foram mantidas.',
+              'danger'
+            );
+          }
+        });
+      },
+      error: () => {
+        this.toastService.presentToast(
+          'Não foi possível carregar os dados da conta.',
+          'danger'
+        );
+      }
     });
   }
 
   goBack(): void {
-    void this.router.navigateByUrl(this.isInstrutor() ? '/instrutor/home' : '/aluno/home');
+    void this.router.navigateByUrl(
+      this.isInstrutor() ? '/instrutor/home' : '/aluno/home'
+    );
   }
 
   private navegar(rota: string): void {
@@ -219,16 +254,26 @@ export class PerfilPage {
     switch (opcao) {
       case 'Notificações':
         this.toastService.presentToast(
-          `Notificações: ${this.settingsService.notificacoes() ? this.t('ativadas') : this.t('desativadas')}`,
+          `Notificações: ${
+            this.settingsService.notificacoes()
+              ? this.t('ativadas')
+              : this.t('desativadas')
+          }`,
           'primary'
         );
         break;
+
       case 'Privacidade':
         void this.abrirPrivacidade();
         break;
+
       case 'Segurança':
-        this.toastService.presentToast('Em breve: recursos de segurança.', 'primary');
+        this.toastService.presentToast(
+          'Em breve: recursos de segurança.',
+          'primary'
+        );
         break;
+
       default:
         this.toastService.presentToast(opcao, 'primary');
     }
@@ -242,19 +287,36 @@ export class PerfilPage {
     const actionSheet = await this.actionSheetCtrl.create({
       header: this.t('alterarFoto'),
       buttons: [
-        { text: this.t('tirarFoto'), icon: 'camera-outline', handler: () => this.abrirSeletor(true) },
-        { text: this.t('galeria'), icon: 'image-outline', handler: () => this.abrirSeletor(false) },
-        { text: this.t('cancelar'), role: 'cancel' }
+        {
+          text: this.t('tirarFoto'),
+          icon: 'camera-outline',
+          handler: () => this.abrirSeletor(true)
+        },
+        {
+          text: this.t('galeria'),
+          icon: 'image-outline',
+          handler: () => this.abrirSeletor(false)
+        },
+        {
+          text: this.t('cancelar'),
+          role: 'cancel'
+        }
       ]
     });
+
     await actionSheet.present();
   }
 
   private abrirSeletor(usarCamera: boolean): void {
     const input = this.fileInput?.nativeElement;
     if (!input) return;
-    if (usarCamera) input.setAttribute('capture', 'environment');
-    else input.removeAttribute('capture');
+
+    if (usarCamera) {
+      input.setAttribute('capture', 'environment');
+    } else {
+      input.removeAttribute('capture');
+    }
+
     input.value = '';
     input.click();
   }
@@ -262,22 +324,33 @@ export class PerfilPage {
   async onFotoSelecionada(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const arquivo = input.files?.[0];
+
     if (!arquivo) return;
 
     if (!arquivo.type.startsWith('image/')) {
-      this.toastService.presentToast(this.t('fotoInvalida'), 'danger');
+      this.toastService.presentToast(
+        this.t('fotoInvalida'),
+        'danger'
+      );
       return;
     }
 
     this.carregandoSalvar = true;
+
     this.authService.uploadFoto(arquivo).subscribe({
       next: () => {
         this.carregandoSalvar = false;
-        this.toastService.presentToast(this.t('fotoAtualizada'), 'success');
+        this.toastService.presentToast(
+          this.t('fotoAtualizada'),
+          'success'
+        );
       },
       error: () => {
         this.carregandoSalvar = false;
-        this.toastService.presentToast(this.t('erroSalvar'), 'danger');
+        this.toastService.presentToast(
+          this.t('erroSalvar'),
+          'danger'
+        );
       }
     });
   }
@@ -305,6 +378,7 @@ export class PerfilPage {
 
   abrirModalEdicao(): void {
     const u = this.u();
+
     this.editForm = {
       nome: u?.nome || '',
       email: u?.email || '',
@@ -323,6 +397,7 @@ export class PerfilPage {
       complemento: u?.complemento || '',
       biografia: u?.biografia || ''
     };
+
     this.isModalEdicaoAberto = true;
   }
 
@@ -336,7 +411,10 @@ export class PerfilPage {
     const email = (f.email || '').trim();
 
     if (!nome || !/^\S+@\S+\.\S+$/.test(email)) {
-      this.toastService.presentToast(this.t('dadosInvalidos'), 'danger');
+      this.toastService.presentToast(
+        this.t('dadosInvalidos'),
+        'danger'
+      );
       return;
     }
 
@@ -354,10 +432,17 @@ export class PerfilPage {
 
     if (this.isInstrutor()) {
       const bruto = f.valorHora;
-      const valorHora = bruto === null || bruto === '' ? null : Number(bruto);
+      const valorHora =
+        bruto === null || bruto === '' ? null : Number(bruto);
 
-      if (valorHora !== null && (Number.isNaN(valorHora) || valorHora < 0)) {
-        this.toastService.presentToast(this.t('valorInvalido'), 'danger');
+      if (
+        valorHora !== null &&
+        (Number.isNaN(valorHora) || valorHora < 0)
+      ) {
+        this.toastService.presentToast(
+          this.t('valorInvalido'),
+          'danger'
+        );
         return;
       }
 
@@ -388,26 +473,83 @@ export class PerfilPage {
       next: () => {
         this.carregandoSalvar = false;
         aoSucesso?.();
-        this.toastService.presentToast(this.t(msgSucesso), 'success');
+
+        this.toastService.presentToast(
+          this.t(msgSucesso),
+          'success'
+        );
       },
       error: () => {
         this.carregandoSalvar = false;
-        this.toastService.presentToast(this.t('erroSalvar'), 'danger');
+
+        this.toastService.presentToast(
+          this.t('erroSalvar'),
+          'danger'
+        );
+      }
+    });
+  }
+
+  private salvarPreferencias(novasPreferencias: Preferencias): void {
+    if (this.salvandoPreferencias) return;
+
+    this.salvandoPreferencias = true;
+
+    this.settingsService.salvarNoBanco(novasPreferencias).subscribe({
+      next: () => {
+        this.salvandoPreferencias = false;
+
+        this.toastService.presentToast(
+          this.t('preferenciasSalvas'),
+          'success'
+        );
+      },
+      error: () => {
+        this.salvandoPreferencias = false;
+
+        this.toastService.presentToast(
+          this.t('erroSalvar'),
+          'danger'
+        );
       }
     });
   }
 
   toggleDarkMode(event: CustomEvent): void {
-    this.settingsService.setDarkMode(!!event.detail.checked);
+    if (this.salvandoPreferencias) return;
+
+    const anteriores = this.settingsService.obterPreferencias();
+
+    const novasPreferencias: Preferencias = {
+      ...anteriores,
+      temaEscuro: !!event.detail.checked
+    };
+
+    this.salvarPreferencias(novasPreferencias);
   }
 
   toggleNotificacoes(event: CustomEvent): void {
-    this.settingsService.setNotificacoes(!!event.detail.checked);
+    if (this.salvandoPreferencias) return;
+
+    const anteriores = this.settingsService.obterPreferencias();
+
+    const novasPreferencias: Preferencias = {
+      ...anteriores,
+      notificacoes: !!event.detail.checked
+    };
+
+    this.salvarPreferencias(novasPreferencias);
   }
 
   async alterarTamanhoTexto(): Promise<void> {
+    if (this.salvandoPreferencias) return;
+
     const current = this.settingsService.fontSize();
-    const opcoes: FontSize[] = ['Pequeno', 'Normal', 'Grande'];
+    const opcoes: FontSize[] = [
+      'Pequeno',
+      'Normal',
+      'Grande'
+    ];
 
     const alert = await this.alertCtrl.create({
       header: this.t('tamanhoTexto'),
@@ -418,27 +560,42 @@ export class PerfilPage {
         checked: current === op
       })),
       buttons: [
-        { text: this.t('cancelar'), role: 'cancel' },
+        {
+          text: this.t('cancelar'),
+          role: 'cancel'
+        },
         {
           text: this.t('confirmar'),
           handler: (val: FontSize) => {
-            if (val) {
-              this.settingsService.setFontSize(val);
-              this.toastService.presentToast(
-                `${this.t('tamanhoAlterado')}: ${this.t(`fs_${val}`)}`,
-                'success'
-              );
+            if (val && !this.salvandoPreferencias) {
+              const anteriores =
+                this.settingsService.obterPreferencias();
+
+              const novasPreferencias: Preferencias = {
+                ...anteriores,
+                tamanhoTexto: val
+              };
+
+              this.salvarPreferencias(novasPreferencias);
             }
           }
         }
       ]
     });
+
     await alert.present();
   }
 
   async alterarLinguagem(): Promise<void> {
+    if (this.salvandoPreferencias) return;
+
     const current = this.settingsService.language();
-    const opcoes: Language[] = ['Português (BR)', 'English (US)', 'Español'];
+
+    const opcoes: Language[] = [
+      'Português (BR)',
+      'English (US)',
+      'Español'
+    ];
 
     const alert = await this.alertCtrl.create({
       header: this.t('idiomaTitulo'),
@@ -449,18 +606,29 @@ export class PerfilPage {
         checked: current === op
       })),
       buttons: [
-        { text: this.t('cancelar'), role: 'cancel' },
+        {
+          text: this.t('cancelar'),
+          role: 'cancel'
+        },
         {
           text: this.t('confirmar'),
           handler: (val: Language) => {
-            if (val) {
-              this.settingsService.setLanguage(val);
-              this.toastService.presentToast(`${this.t('idiomaAlterado')}: ${val}`, 'success');
+            if (val && !this.salvandoPreferencias) {
+              const anteriores =
+                this.settingsService.obterPreferencias();
+
+              const novasPreferencias: Preferencias = {
+                ...anteriores,
+                idioma: val
+              };
+
+              this.salvarPreferencias(novasPreferencias);
             }
           }
         }
       ]
     });
+
     await alert.present();
   }
 
@@ -479,18 +647,24 @@ export class PerfilPage {
       ],
       cssClass: 'privacy-alert',
       buttons: [
-        { text: this.t('cancelar'), role: 'cancel' },
+        {
+          text: this.t('cancelar'),
+          role: 'cancel'
+        },
         {
           text: this.t('confirmar'),
           handler: (marcados: string[]) => {
             this.persistir(
-              { mostrarTelefone: (marcados || []).includes('telefone') },
+              {
+                mostrarTelefone: (marcados || []).includes('telefone')
+              },
               'perfilAtualizado'
             );
           }
         }
       ]
     });
+
     await alert.present();
   }
 }

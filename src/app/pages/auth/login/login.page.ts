@@ -1,3 +1,4 @@
+
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -6,6 +7,7 @@ import { addIcons } from 'ionicons';
 import { eyeOffOutline, eyeOutline, lockClosedOutline, logoApple, logoFacebook, mailOutline } from 'ionicons/icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { SettingsService } from '../../../core/services/settings.service';
 
 @Component({
   selector: 'app-login',
@@ -18,6 +20,7 @@ export class LoginPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly settings = inject(SettingsService);
 
   readonly verSenha = signal(false);
 
@@ -45,8 +48,17 @@ export class LoginPage {
           void this.toast.mostrar(res.erro, 'erro');
           return;
         }
-        void this.toast.mostrar('Login efetuado com sucesso!', 'ok');
-        void this.router.navigateByUrl(this.auth.rotaInicial(res.perfil));
+
+        this.settings.carregarDoBanco().subscribe({
+          next: () => {
+            void this.toast.mostrar('Login efetuado com sucesso!', 'ok');
+            void this.router.navigateByUrl(this.auth.rotaInicial(res.perfil));
+          },
+          error: () => {
+            void this.toast.mostrar('Login efetuado com sucesso!', 'ok');
+            void this.router.navigateByUrl(this.auth.rotaInicial(res.perfil));
+          }
+        });
       },
       error: () => {
         void this.toast.mostrar('Erro de comunicação com o servidor.', 'erro');

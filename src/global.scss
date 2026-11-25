@@ -1,85 +1,108 @@
+
 /*
  * App Global CSS
- * ----------------------------------------------------------------------------
- * Put style rules here that you want to apply globally. These styles are for
- * the entire app and not just one component. Additionally, this file can be
- * used as an entry point to import other CSS/Sass files to be included in the
- * output CSS.
- * For more information on global stylesheets, visit the documentation:
- * https://ionicframework.com/docs/layout/global-stylesheets
  */
-@use 'theme/auth.scss';
-/* Core CSS required for Ionic components to work properly */
-@import "@ionic/angular/css/core.css";
 
-/* Basic CSS for apps built with Ionic */
+@use 'theme/auth.scss';
+
+@import "@ionic/angular/css/core.css";
 @import "@ionic/angular/css/normalize.css";
 @import "@ionic/angular/css/structure.css";
 @import "@ionic/angular/css/typography.css";
 @import "@ionic/angular/css/display.css";
 
-/* Optional CSS utils that can be commented out */
 @import "@ionic/angular/css/padding.css";
 @import "@ionic/angular/css/float-elements.css";
 @import "@ionic/angular/css/text-alignment.css";
 @import "@ionic/angular/css/text-transformation.css";
 @import "@ionic/angular/css/flex-utils.css";
 
-/**
- * Ionic Dark Mode
- * -----------------------------------------------------
- * For more info, please see:
- * https://ionicframework.com/docs/theming/dark-mode
- */
+/* Tema escuro controlado pela preferência do usuário */
+@import "@ionic/angular/css/palettes/dark.class.css";
 
-/* @import "@ionic/angular/css/palettes/dark.always.css"; */
-/* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import '@ionic/angular/css/palettes/dark.system.css';
-
-html, body, ion-app {
-  background-color: #ffffff !important;
+/* Configuração global */
+html {
+  font-size: 16px;
 }
 
-/* Estilos Globais Guidaz */
+html,
+body,
+ion-app {
+  min-height: 100%;
+  background-color: var(--ion-background-color, #ffffff);
+}
 
-/* Suporte Global ao Modo Escuro */
+/* Modo escuro */
 body.dark {
+  color-scheme: dark;
+
   --ion-background-color: #121212;
   --ion-background-color-rgb: 18, 18, 18;
   --ion-text-color: #ffffff;
   --ion-text-color-rgb: 255, 255, 255;
   --ion-item-background: #1e1e1e;
   --ion-card-background: #1e1e1e;
+  --ion-toolbar-background: #1e1e1e;
+  --ion-toolbar-color: #ffffff;
+  --ion-border-color: #383838;
 
+  background-color: #121212 !important;
+  color: #ffffff;
+
+  ion-app,
   ion-content {
     --background: #121212;
+    --color: #ffffff;
+    background: #121212;
+    color: #ffffff;
+  }
+
+  ion-card,
+  ion-item {
+    --background: #1e1e1e;
+    --color: #ffffff;
+  }
+
+  ion-toolbar {
+    --background: #1e1e1e;
     --color: #ffffff;
   }
 }
 
-/* Tamanho de Fonte Global */
-body.font-pequeno {
-  font-size: 85% !important;
+/* Tamanho de fonte global */
+html {
+  font-size: 16px;
+}
 
-  h1, h2, h3, h4, ion-title {
-    font-size: 90% !important;
-  }
+body.font-pequeno {
+  font-size: 14.4px !important;
 }
 
 body.font-normal {
-  font-size: 100% !important;
+  font-size: 16px !important;
 }
 
 body.font-grande {
-  font-size: 115% !important;
-
-  h1, h2, h3, h4, ion-title {
-    font-size: 120% !important;
-  }
+  font-size: 18.4px !important;
 }
 
-/* Guidaz Toast — Alto contraste e leitura nítida */
+body.font-pequeno ion-app,
+body.font-pequeno ion-content,
+body.font-pequeno ion-item,
+body.font-pequeno ion-label,
+body.font-pequeno ion-button {
+  font-size: 90%;
+}
 
+body.font-grande ion-app,
+body.font-grande ion-content,
+body.font-grande ion-item,
+body.font-grande ion-label,
+body.font-grande ion-button {
+  font-size: 115%;
+}
+
+/* Toasts Guidaz */
 ion-toast.guidaz-toast {
   --color: #ffffff;
   --button-color: #ffffff;
@@ -111,17 +134,17 @@ ion-toast.guidaz-toast::part(button) {
 }
 
 ion-toast.guidaz-toast--ok {
-  --background: #15803d; /* Verde escuro de alto contraste */
+  --background: #15803d;
 }
 
 ion-toast.guidaz-toast--erro {
-  --background: #dc2626; /* Vermelho intenso de alto contraste */
+  --background: #dc2626;
 }
 
 ion-toast.guidaz-toast--warning {
-  --background: #d97706; /* Âmbar escuro legível com texto branco */
+  --background: #d97706;
 }
 
 ion-toast.guidaz-toast--info {
-  --background: #1d4ed8; /* Azul Guidaz */
+  --background: #1d4ed8;
 }

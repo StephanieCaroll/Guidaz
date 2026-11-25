@@ -13,7 +13,7 @@
       </div>
 
       <div class="profile-text">
-        <span class="greeting">Bem-vindo Aluno</span>
+        <span class="greeting">{{ settingsService.t('boasVindasAluno') }}</span>
         <span class="name">{{ nomeAluno }}</span>
       </div>
 
@@ -30,7 +30,7 @@
   <div class="calendar-header">
     <span class="month-label">{{ mesAno }}</span>
     <button class="today-btn" type="button" *ngIf="!hojeSelecionado" (click)="irParaHoje()">
-      Ir para hoje
+      {{ settingsService.t('irParaHoje') }}
     </button>
   </div>
 
@@ -51,19 +51,19 @@
     <!-- Card de progresso -->
     <div class="main-card">
       <div class="main-top">
-        <span class="main-title">Seu Progresso</span>
+        <span class="main-title">{{ settingsService.t('seuProgresso') }}</span>
         <span class="chip-categoria">{{ progresso.categoria }}</span>
       </div>
 
-      <h1 class="main-aulas">{{ progresso.realizadas }} de {{ progresso.total }} Aulas</h1>
+      <h1 class="main-aulas">{{ progresso.realizadas }} de {{ progresso.total }} {{ settingsService.t('aulas') }}</h1>
 
       <div class="progress-bar">
         <div class="progress-fill" [style.width.%]="porcentagem"></div>
       </div>
 
       <div class="progress-labels">
-        <span>{{ progresso.realizadas }} Realizadas</span>
-        <span>{{ pendentes }} Pendentes</span>
+        <span>{{ progresso.realizadas }} {{ settingsService.t('realizadas') }}</span>
+        <span>{{ pendentes }} {{ settingsService.t('pendentes') }}</span>
       </div>
     </div>
 
@@ -71,7 +71,7 @@
     <div class="menu-backdrop" *ngIf="algoAberto" (click)="fecharMenu()"></div>
 
     <!-- Próxima aula -->
-    <h2 class="section-title">Próxima Aula</h2>
+    <h2 class="section-title">{{ settingsService.t('proximaAula') }}</h2>
 
     <div class="lesson-card" *ngIf="proximaAula as aula" (click)="abrirDetalhesAula(aula)">
       <div class="lesson-top">
@@ -93,7 +93,7 @@
       <div class="popover" *ngIf="menuAbertoId === 'prox-' + aula.id" (click)="$event.stopPropagation()">
         <button class="popover-item" type="button" (click)="editarAula(aula, $event)">
           <ion-icon name="create-outline"></ion-icon>
-          <span>Detalhes</span>
+          <span>{{ settingsService.t('detalhes') }}</span>
         </button>
         <button class="popover-item" type="button" (click)="deletarAula(aula, $event)">
           <ion-icon name="trash-outline"></ion-icon>
@@ -102,11 +102,11 @@
       </div>
     </div>
 
-    <p class="empty" *ngIf="!proximaAula">Nenhuma aula agendada.</p>
+    <p class="empty" *ngIf="!proximaAula">{{ settingsService.t('nenhumaAulaAgendada') }}</p>
 
     <!-- Lista de aulas (máximo 3 próximas) -->
     <div class="aulas-header">
-      <h2 class="section-title no-margin">Aulas</h2>
+      <h2 class="section-title no-margin">{{ settingsService.t('aulas') }}</h2>
 
       <div class="filtro-wrap">
         <button class="filter-chip" type="button" (click)="toggleFiltro()">
@@ -152,7 +152,7 @@
       <div class="popover" *ngIf="menuAbertoId === 'lista-' + aula.id" (click)="$event.stopPropagation()">
         <button class="popover-item" type="button" (click)="editarAula(aula, $event)">
           <ion-icon name="create-outline"></ion-icon>
-          <span>Detalhes</span>
+          <span>{{ settingsService.t('detalhes') }}</span>
         </button>
         <button class="popover-item" type="button" (click)="deletarAula(aula, $event)">
           <ion-icon name="trash-outline"></ion-icon>
@@ -161,21 +161,21 @@
       </div>
     </div>
 
-    <p class="empty" *ngIf="aulasFiltradas.length === 0">Nenhuma aula encontrada.</p>
+    <p class="empty" *ngIf="aulasFiltradas.length === 0">{{ settingsService.t('nenhumaAulaEncontrada') }}</p>
 
     <!-- Atalhos -->
     <div class="action-card" (click)="abrirAtalho('/aluno/instrutores')">
       <div class="action-text">
-        <h3>Agendar Aula</h3>
-        <p>Escolha seu instrutor e horário</p>
+        <h3>{{ settingsService.t('agendarAula') }}</h3>
+        <p>{{ settingsService.t('escolhaInstrutorHorario') }}</p>
       </div>
       <ion-icon name="chevron-forward-outline"></ion-icon>
     </div>
 
     <div class="action-card" (click)="abrirAtalho('/aluno/instrutores')">
       <div class="action-text">
-        <h3>Instrutores</h3>
-        <p>Escolha seu instrutor</p>
+        <h3>{{ settingsService.t('instrutores') }}</h3>
+        <p>{{ settingsService.t('escolhaInstrutor') }}</p>
       </div>
       <ion-icon name="chevron-forward-outline"></ion-icon>
     </div>
