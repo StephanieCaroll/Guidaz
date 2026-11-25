@@ -1,7 +1,15 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot } from '@angular/router';
 import { Perfil } from '../models/user.model';
 import { AuthService } from '../services/auth.service';
+
+function isValidEntityId(rawId: string | null): boolean {
+  if (!rawId || rawId === 'undefined' || rawId === 'null') {
+    return false;
+  }
+  const parsed = Number(rawId);
+  return Number.isInteger(parsed) && parsed > 0;
+}
 
 /** Só entra quem está logado. */
 export const authGuard: CanActivateFn = () => {
@@ -23,4 +31,25 @@ export const visitanteGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const user = auth.usuario();
   return user ? inject(Router).createUrlTree([auth.rotaInicial(user.perfil)]) : true;
+};
+
+/** Valida parâmetro numérico de rota */
+export const idParamGuard: CanActivateFn = (
+  route: ActivatedRouteSnapshot,
+  _state: RouterStateSnapshot
+) => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  const paramName = (route.data?.['idParam'] as string) || 'id';
+  const rawId = route.paramMap.get(paramName);
+
+  if (isValidEntityId(rawId)) {
+    return true;
+  }
+
+  const fallbackRoute =
+    (route.data?.['fallbackRoute'] as string) ||
+    (auth.usuario() ? auth.rotaInicial(auth.usuario()!.perfil) : '/login');
+
+  return router.createUrlTree([fallbackRoute]);
 };

@@ -252,6 +252,26 @@
   }
 }
 
+.link-baixar-comprovante {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #1a6bff;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 15px;
+  }
+
+  &.baixando {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
 .horarios-box {
   margin-bottom: 12px;
 

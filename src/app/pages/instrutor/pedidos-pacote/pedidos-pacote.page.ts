@@ -20,6 +20,7 @@ import {
   cashOutline,
   checkmarkCircleOutline,
   closeCircleOutline,
+  downloadOutline,
   layersOutline,
   personOutline,
   receiptOutline,
@@ -73,6 +74,7 @@ export class PedidosPacotePage {
   readonly rejeitandoId = signal<number | null>(null);
   readonly erroAcao = signal('');
   readonly erroAcaoId = signal<number | null>(null);
+  readonly baixandoId = signal<number | null>(null);
 
   motivo = '';
 
@@ -97,6 +99,7 @@ export class PedidosPacotePage {
       cashOutline,
       checkmarkCircleOutline,
       closeCircleOutline,
+      downloadOutline,
       layersOutline,
       personOutline,
       receiptOutline,
@@ -150,7 +153,12 @@ export class PedidosPacotePage {
           const destaqueId = this.pedidoDestaqueId();
           if (destaqueId) {
             const encontrado = lista.find((p) => p.id === destaqueId);
-            if (encontrado && (encontrado.status === 'EM_ANALISE' || encontrado.status === 'PENDENTE_PAGAMENTO' || encontrado.status === 'APROVADO')) {
+            if (
+              encontrado &&
+              (encontrado.status === 'EM_ANALISE' ||
+                encontrado.status === 'PENDENTE_PAGAMENTO' ||
+                encontrado.status === 'APROVADO')
+            ) {
               this.filtroAtivo.set(encontrado.status);
             } else if (encontrado) {
               this.filtroAtivo.set('TODOS');
@@ -163,6 +171,112 @@ export class PedidosPacotePage {
           this.erroLista.set(erro.message);
         },
       });
+  }
+
+  obterComprovante(pedido: PedidoPacote): string | null {
+    const p = pedido as PedidoPacote & {
+      comprovanteUrl?: string | null;
+      urlComprovante?: string | null;
+      comprovante?: string | null;
+      comprovanteBase64?: string | null;
+    };
+    const valor =
+      p.comprovanteUrl || p.urlComprovante || p.comprovante || p.comprovanteBase64 || null;
+    return typeof valor === 'string' && valor.trim().length > 0 ? valor.trim() : null;
+  }
+
+  baixarComprovante(pedido: PedidoPacote, event?: Event): void {
+    event?.stopPropagation();
+
+    const origem = this.obterComprovante(pedido);
+    if (!origem || this.baixandoId() !== null) {
+      return;
+    }
+
+    this.baixandoId.set(pedido.id);
+    const nomeBase = `comprovante-pedido-${pedido.id}`;
+
+    try {
+      if (origem.startsWith('data:')) {
+        const mimeMatch = origem.match(/^data:([a-zA-Z0-9/+.-]+);base64,/);
+        const mime = mimeMatch?.[1] || 'application/octet-stream';
+        const extensao = this.obterExtensaoPorMime(mime) || 'png';
+        const base64Limpo = origem.split(',')[1] ?? '';
+        const byteCharacters = atob(base64Limpo);
+        const byteNumbers = new Array(byteCharacters.length);
+
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+
+        const blob = new Blob([new Uint8Array(byteNumbers)], { type: mime });
+        this.dispararDownloadBlob(blob, `${nomeBase}.${extensao}`);
+        this.baixandoId.set(null);
+        return;
+      }
+
+      fetch(origem)
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error('Falha ao baixar comprovante');
+          }
+          const contentType = res.headers.get('content-type') || '';
+          return res.blob().then((blob) => ({ blob, contentType }));
+        })
+        .then(({ blob, contentType }) => {
+          const extensao =
+            this.obterExtensaoPorMime(contentType) ||
+            this.obterExtensaoPorUrl(origem) ||
+            'png';
+          this.dispararDownloadBlob(blob, `${nomeBase}.${extensao}`);
+        })
+        .catch(() => {
+          const link = document.createElement('a');
+          link.href = origem;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.download = nomeBase;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        })
+        .finally(() => {
+          this.baixandoId.set(null);
+          this.cdr.detectChanges();
+        });
+    } catch {
+      this.baixandoId.set(null);
+      void this.toast.mostrar('Não foi possível baixar o comprovante.', 'erro');
+    }
+  }
+
+  private dispararDownloadBlob(blob: Blob, nomeComExtensao: string): void {
+    const urlBlob = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = urlBlob;
+    link.download = nomeComExtensao;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(urlBlob), 1000);
+  }
+
+  private obterExtensaoPorMime(mime: string): string {
+    const limpo = mime.toLowerCase().split(';')[0].trim();
+    if (limpo.includes('pdf')) return 'pdf';
+    if (limpo.includes('jpeg') || limpo.includes('jpg')) return 'jpg';
+    if (limpo.includes('png')) return 'png';
+    if (limpo.includes('webp')) return 'webp';
+    return '';
+  }
+
+  private obterExtensaoPorUrl(url: string): string {
+    const semQuery = url.split('?')[0];
+    const partes = semQuery.split('.');
+    if (partes.length > 1) {
+      return partes.pop()!.toLowerCase();
+    }
+    return '';
   }
 
   aprovar(pedido: PedidoPacote): void {
@@ -201,7 +315,11 @@ export class PedidosPacotePage {
     );
   }
 
-  private executar(pedido: PedidoPacote, chamada: ReturnType<PedidoPacoteService['aprovar']>, sucesso: string): void {
+  private executar(
+    pedido: PedidoPacote,
+    chamada: ReturnType<PedidoPacoteService['aprovar']>,
+    sucesso: string
+  ): void {
     const instrutorId = this.instrutorId();
     if (!Number.isInteger(instrutorId) || instrutorId <= 0) {
       this.erroAcao.set('Não foi possível identificar o instrutor logado. Entre novamente.');
@@ -253,7 +371,10 @@ export class PedidosPacotePage {
   }
 
   formatarPreco(valor?: number): string {
-    return (valor ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (valor ?? 0).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   }
 
   formatarData(dataIso: string): string {

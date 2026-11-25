@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export type StatusApi = 'AGENDADA' | 'CONCLUIDA' | 'CANCELADA' | 'FALTA' | 'FALTA_ALUNO';
+export type PerfilApi = 'ALUNO' | 'INSTRUTOR';
 
 export interface ResumoHoras {
   horasContratadas: number;
@@ -53,7 +54,7 @@ export interface ResumoInstrutor {
 
 export interface AvaliacaoRequest {
   usuarioId?: number;
-  tipoAvaliador: 'ALUNO' | 'INSTRUTOR';
+  tipoAvaliador: PerfilApi;
   nota: number;
   comentario?: string;
 }
@@ -87,13 +88,16 @@ export class AulaService {
     return this.http.post<AulaHistoricoApi>(`${this.api}/aulas`, payload);
   }
 
-  buscarPorId(aulaId: number, perfil: 'ALUNO' | 'INSTRUTOR' = 'ALUNO'): Observable<AulaHistoricoApi> {
+  buscarPorId(aulaId: number, perfil: PerfilApi = 'ALUNO'): Observable<AulaHistoricoApi> {
     const params = new HttpParams().set('perfil', perfil);
     return this.http.get<AulaHistoricoApi>(`${this.api}/aulas/${aulaId}`, { params });
   }
 
-  editarAula(aulaId: number, payload: EditarAulaPayload): Observable<AulaHistoricoApi> {
-    return this.http.put<AulaHistoricoApi>(`${this.api}/aulas/${aulaId}`, payload);
+  /** O perfil identifica quem está reagendando (regras de prazo e aviso à outra parte). */
+  editarAula(aulaId: number, payload: EditarAulaPayload, perfil?: PerfilApi): Observable<AulaHistoricoApi> {
+    return this.http.put<AulaHistoricoApi>(`${this.api}/aulas/${aulaId}`, payload, {
+      params: this.paramsPerfil(perfil)
+    });
   }
 
   resumoHoras(alunoId: number): Observable<ResumoHoras> {
@@ -124,11 +128,18 @@ export class AulaService {
     return this.http.patch<AulaHistoricoApi>(`${this.api}/aulas/${aulaId}/concluir`, {});
   }
 
-  cancelarAula(aulaId: number): Observable<AulaHistoricoApi> {
-    return this.http.patch<AulaHistoricoApi>(`${this.api}/aulas/${aulaId}/cancelar`, {});
+  /** O perfil define se o crédito é devolvido (cancelamento tardio do aluno vira falta). */
+  cancelarAula(aulaId: number, perfil?: PerfilApi): Observable<AulaHistoricoApi> {
+    return this.http.patch<AulaHistoricoApi>(`${this.api}/aulas/${aulaId}/cancelar`, {}, {
+      params: this.paramsPerfil(perfil)
+    });
   }
 
   avaliar(aulaId: number, body: AvaliacaoRequest): Observable<void> {
     return this.http.post<void>(`${this.api}/aulas/${aulaId}/avaliacoes`, body);
+  }
+
+  private paramsPerfil(perfil?: PerfilApi): HttpParams {
+    return perfil ? new HttpParams().set('perfil', perfil) : new HttpParams();
   }
 }

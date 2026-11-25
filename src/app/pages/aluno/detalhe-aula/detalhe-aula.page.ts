@@ -1,8 +1,8 @@
-import { ChangeDetectorRef, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, signal } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { IonContent, IonIcon } from '@ionic/angular/standalone';
+import { AlertController, IonContent, IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
   arrowBackOutline, bookmarkOutline, bookmark, star, starOutline, timeOutline,
@@ -11,7 +11,7 @@ import {
   createOutline, locationOutline
 } from 'ionicons/icons';
 
-import { AulaHistoricoApi, AulaService } from '../../../core/services/aula.service';
+import { AulaHistoricoApi, AulaService, PerfilApi } from '../../../core/services/aula.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
@@ -44,6 +44,8 @@ interface DetalheAula {
   inclusos: string[];
 }
 
+const PRAZO_CANCELAMENTO_HORAS = 24;
+
 @Component({
   selector: 'app-detalhe-aula',
   templateUrl: './detalhe-aula.page.html',
@@ -51,13 +53,14 @@ interface DetalheAula {
   standalone: true,
   imports: [CommonModule, FormsModule, IonContent, IonIcon, BottomNavComponent]
 })
-export class DetalheAulaPage implements OnInit {
+export class DetalheAulaPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
   private readonly aulaService = inject(AulaService);
   private readonly authService = inject(AuthService);
   private readonly toastService = inject(ToastService);
+  private readonly alertController = inject(AlertController);
   private readonly cdr = inject(ChangeDetectorRef);
 
   readonly favorito = signal(false);
@@ -113,12 +116,23 @@ export class DetalheAulaPage implements OnInit {
     });
   }
 
+  // Perfil e permissões
+ 
   get isInstrutor(): boolean {
     return this.router.url.startsWith('/instrutor') || this.authService.usuario()?.perfil === 'instrutor';
   }
 
+  get perfilApi(): PerfilApi {
+    return this.isInstrutor ? 'INSTRUTOR' : 'ALUNO';
+  }
+
   get podeAlterarStatus(): boolean {
     return this.aula.statusRaw === 'AGENDADA';
+  }
+
+  // Somente o instrutor conclui, e apenas depois do início da aula. 
+  get podeConcluir(): boolean {
+    return this.isInstrutor && this.podeAlterarStatus && this.aulaJaIniciou();
   }
 
   get podeAvaliar(): boolean {
@@ -129,20 +143,17 @@ export class DetalheAulaPage implements OnInit {
     return this.aula.statusRaw === 'CONCLUIDA' && this.aula.minhaNota !== null;
   }
 
-  ngOnInit(): void {
-    this.carregarAula();
-  }
-
   ionViewWillEnter(): void {
     this.carregarAula();
   }
 
+  // Carga dos dados
+ 
   private carregarAula(): void {
     const id = Number(this.route.snapshot.queryParamMap.get('id'));
     if (!Number.isInteger(id) || id <= 0) return;
 
-    const perfil = this.isInstrutor ? 'INSTRUTOR' : 'ALUNO';
-    this.aulaService.buscarPorId(id, perfil).subscribe({
+    this.aulaService.buscarPorId(id, this.perfilApi).subscribe({
       next: (dados: AulaHistoricoApi) => {
         const fotoPessoa = this.normalizarFoto(
           this.isInstrutor ? dados.alunoFoto : dados.instrutorFoto
@@ -164,6 +175,7 @@ export class DetalheAulaPage implements OnInit {
           AGENDADA: 'Agendada',
           CONCLUIDA: 'Concluída',
           CANCELADA: 'Cancelada',
+          FALTA: 'Falta',
           FALTA_ALUNO: 'Falta'
         };
 
@@ -185,7 +197,7 @@ export class DetalheAulaPage implements OnInit {
           nota: dados.minhaNota ?? 5.0,
           avaliacoes: dados.minhaNota ? 1 : 0,
           categoria: dados.categoria || 'B',
-          duracaoMin: 60,
+          duracaoMin: this.minutosEntre(horaInicioCurta, horaFimCurta) || 60,
           valor: 120,
           dataIso: dados.dataAula || '',
           horaInicioIso: horaInicioCurta,
@@ -210,7 +222,10 @@ export class DetalheAulaPage implements OnInit {
         };
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Erro ao carregar detalhes da aula:', err)
+      error: (err) => {
+        console.error('Erro ao carregar detalhes da aula:', err);
+        void this.toastService.mostrar(this.mensagemErro(err, 'Não foi possível carregar os detalhes da aula.'), 'erro');
+      }
     });
   }
 
@@ -244,7 +259,19 @@ export class DetalheAulaPage implements OnInit {
     }
   }
 
+   // Reagendamento
+  
   abrirEdicao(): void {
+    if (!this.podeAlterarStatus) return;
+
+    if (!this.isInstrutor && this.dentroDoPrazoCritico()) {
+      void this.toastService.mostrar(
+        `Reagendamentos devem ser feitos com pelo menos ${PRAZO_CANCELAMENTO_HORAS} horas de antecedência. Fale com o seu instrutor.`,
+        'erro'
+      );
+      return;
+    }
+
     this.editDataAula = this.aula.dataIso;
     this.editHoraInicio = this.aula.horaInicioIso;
     this.editHoraFim = this.aula.horaFimIso;
@@ -270,6 +297,16 @@ export class DetalheAulaPage implements OnInit {
       return;
     }
 
+    const horarioMudou =
+      this.editDataAula !== this.aula.dataIso ||
+      this.editHoraInicio !== this.aula.horaInicioIso ||
+      this.editHoraFim !== this.aula.horaFimIso;
+
+    if (horarioMudou && new Date(`${this.editDataAula}T${this.editHoraInicio}:00`).getTime() < Date.now()) {
+      void this.toastService.mostrar('Escolha uma data e um horário futuros.', 'erro');
+      return;
+    }
+
     this.salvandoEdicao = true;
     this.aulaService.editarAula(this.aula.id, {
       dataAula: this.editDataAula,
@@ -277,7 +314,7 @@ export class DetalheAulaPage implements OnInit {
       horaFim: this.editHoraFim,
       localEncontro: this.editLocalEncontro.trim() || undefined,
       observacoes: this.editObservacoes.trim() || undefined
-    }).subscribe({
+    }, this.perfilApi).subscribe({
       next: () => {
         this.salvandoEdicao = false;
         this.editando = false;
@@ -286,15 +323,28 @@ export class DetalheAulaPage implements OnInit {
       },
       error: (err) => {
         this.salvandoEdicao = false;
-        const msg = err?.error?.message || err?.error?.erro || 'Não foi possível editar a aula.';
-        void this.toastService.mostrar(msg, 'erro');
+        void this.toastService.mostrar(this.mensagemErro(err, 'Não foi possível editar a aula.'), 'erro');
+        this.cdr.detectChanges();
       }
     });
   }
 
-  concluirAula(): void {
+  // Conclusão e cancelamento
+  
+  async concluirAula(): Promise<void> {
     if (!this.aula.id || this.processando) return;
-    if (!window.confirm('Confirmar conclusão desta aula?')) return;
+
+    if (!this.isInstrutor) {
+      void this.toastService.mostrar('Apenas o instrutor pode concluir a aula.', 'erro');
+      return;
+    }
+    if (!this.aulaJaIniciou()) {
+      void this.toastService.mostrar('A aula só pode ser concluída após o horário de início.', 'erro');
+      return;
+    }
+
+    const confirmou = await this.confirmar('Concluir aula', 'Confirmar a conclusão desta aula?', 'Concluir');
+    if (!confirmou) return;
 
     this.processando = true;
     this.aulaService.concluirAula(this.aula.id).subscribe({
@@ -305,44 +355,64 @@ export class DetalheAulaPage implements OnInit {
       },
       error: (err) => {
         this.processando = false;
-        const msg = err?.error?.message || 'Não foi possível concluir a aula.';
-        void this.toastService.mostrar(msg, 'erro');
+        void this.toastService.mostrar(this.mensagemErro(err, 'Não foi possível concluir a aula.'), 'erro');
+        this.cdr.detectChanges();
       }
     });
   }
 
-  cancelarAula(): void {
+  async cancelarAula(): Promise<void> {
     if (!this.aula.id || this.processando) return;
-    if (!window.confirm('Tem certeza que deseja cancelar esta aula?')) return;
+
+    const tardio = !this.isInstrutor && this.dentroDoPrazoCritico();
+    let mensagem: string;
+    if (tardio) {
+      mensagem = `Faltam menos de ${PRAZO_CANCELAMENTO_HORAS} horas para a aula. Ao cancelar agora, ela será registrada como falta e o crédito não será devolvido. Deseja continuar?`;
+    } else if (this.isInstrutor) {
+      mensagem = 'Tem certeza que deseja cancelar esta aula? O aluno será avisado e o crédito será devolvido.';
+    } else {
+      mensagem = 'Tem certeza que deseja cancelar esta aula? O crédito será devolvido e o horário liberado.';
+    }
+
+    const confirmou = await this.confirmar('Cancelar aula', mensagem, 'Cancelar aula');
+    if (!confirmou) return;
 
     this.processando = true;
-    this.aulaService.cancelarAula(this.aula.id).subscribe({
-      next: () => {
+    this.aulaService.cancelarAula(this.aula.id, this.perfilApi).subscribe({
+      next: (resposta) => {
         this.processando = false;
-        void this.toastService.mostrar('Aula cancelada com sucesso.', 'ok');
+        const registradaComoFalta = resposta?.status === 'FALTA_ALUNO';
+        void this.toastService.mostrar(
+          registradaComoFalta
+            ? 'Aula cancelada fora do prazo e registrada como falta.'
+            : 'Aula cancelada com sucesso.',
+          'ok'
+        );
         this.location.back();
       },
       error: (err) => {
         this.processando = false;
-        const msg = err?.error?.message || 'Não foi possível cancelar a aula.';
-        void this.toastService.mostrar(msg, 'erro');
+        void this.toastService.mostrar(this.mensagemErro(err, 'Não foi possível cancelar a aula.'), 'erro');
+        this.cdr.detectChanges();
       }
     });
   }
 
+  // Avaliação
+ 
   selecionarNota(estrela: number): void {
     this.notaSelecionada = estrela;
   }
 
   enviarAvaliacao(): void {
-    if (!this.aula.id || this.enviandoAvaliacao) return;
+    if (!this.aula.id || this.enviandoAvaliacao || !this.podeAvaliar) return;
     const usuario = this.authService.usuario();
     const usuarioId = Number(usuario?.id);
 
     this.enviandoAvaliacao = true;
     this.aulaService.avaliar(this.aula.id, {
       usuarioId: Number.isInteger(usuarioId) && usuarioId > 0 ? usuarioId : undefined,
-      tipoAvaliador: this.isInstrutor ? 'INSTRUTOR' : 'ALUNO',
+      tipoAvaliador: this.perfilApi,
       nota: this.notaSelecionada,
       comentario: this.comentarioAvaliacao.trim() || undefined
     }).subscribe({
@@ -354,9 +424,57 @@ export class DetalheAulaPage implements OnInit {
       },
       error: (err) => {
         this.enviandoAvaliacao = false;
-        const msg = err?.error?.message || 'Não foi possível registrar sua avaliação.';
-        void this.toastService.mostrar(msg, 'erro');
+        void this.toastService.mostrar(this.mensagemErro(err, 'Não foi possível registrar sua avaliação.'), 'erro');
+        this.cdr.detectChanges();
       }
     });
+  }
+
+  // Utilitários
+  
+  private inicioDaAula(): Date | null {
+    if (!this.aula.dataIso || !this.aula.horaInicioIso) return null;
+    const inicio = new Date(`${this.aula.dataIso}T${this.aula.horaInicioIso}:00`);
+    return Number.isNaN(inicio.getTime()) ? null : inicio;
+  }
+
+  private aulaJaIniciou(): boolean {
+    const inicio = this.inicioDaAula();
+    return inicio !== null && inicio.getTime() <= Date.now();
+  }
+
+  private dentroDoPrazoCritico(): boolean {
+    const inicio = this.inicioDaAula();
+    return inicio !== null && inicio.getTime() - Date.now() < PRAZO_CANCELAMENTO_HORAS * 60 * 60 * 1000;
+  }
+
+  private minutosEntre(inicio: string, fim: string): number {
+    if (!inicio || !fim) return 0;
+    const [hi, mi] = inicio.split(':').map(Number);
+    const [hf, mf] = fim.split(':').map(Number);
+    const total = (hf * 60 + mf) - (hi * 60 + mi);
+    return Number.isFinite(total) && total > 0 ? total : 0;
+  }
+
+  private async confirmar(header: string, message: string, confirmText: string): Promise<boolean> {
+    const alerta = await this.alertController.create({
+      header,
+      message,
+      buttons: [
+        { text: 'Voltar', role: 'cancel' },
+        { text: confirmText, role: 'confirm' }
+      ]
+    });
+    await alerta.present();
+    const { role } = await alerta.onDidDismiss();
+    return role === 'confirm';
+  }
+
+  private mensagemErro(err: any, padrao: string): string {
+    const corpo = err?.error;
+    if (typeof corpo === 'string' && corpo.trim() && corpo.length < 200) {
+      return corpo;
+    }
+    return corpo?.message || corpo?.erro || corpo?.mensagem || padrao;
   }
 }

@@ -14,6 +14,11 @@ export interface SalvarPacotePayload {
   preco: number;
 }
 
+export interface InformarComprovantePayload {
+  comprovanteUrl?: string;
+  comprovanteNome?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PedidoPacoteService {
   private readonly http = inject(HttpClient);
@@ -65,7 +70,10 @@ export class PedidoPacoteService {
   }
 
   /** POST /pedidos-pacote: cria o pedido e reserva as aulas semanais geradas pelo back-end. */
-  criar(dados: Omit<CriarPedidoPacoteRequest, 'pacoteId'>, categoria: string): Observable<PedidoPacote> {
+  criar(
+    dados: Omit<CriarPedidoPacoteRequest, 'pacoteId'>,
+    categoria: string
+  ): Observable<PedidoPacote> {
     return this.buscarPacoteId(categoria, dados.instrutorId).pipe(
       switchMap((pacoteId) =>
         this.http.post<PedidoPacote>(`${this.apiUrl}/pedidos-pacote`, { ...dados, pacoteId })
@@ -81,10 +89,20 @@ export class PedidoPacoteService {
     );
   }
 
-  /** POST /pedidos-pacote/{id}/comprovante-informado: nenhum arquivo é enviado. */
-  informarComprovante(pedidoId: number, alunoId: number): Observable<PedidoPacote> {
+  /** POST /pedidos-pacote/{id}/comprovante-informado: envia alunoId e comprovante em base64/url. */
+  informarComprovante(
+    pedidoId: number,
+    alunoId: number,
+    payload?: InformarComprovantePayload
+  ): Observable<PedidoPacote> {
+    const body = {
+      alunoId,
+      ...(payload?.comprovanteUrl ? { comprovanteUrl: payload.comprovanteUrl } : {}),
+      ...(payload?.comprovanteNome ? { comprovanteNome: payload.comprovanteNome } : {}),
+    };
+
     return this.http
-      .post<PedidoPacote>(`${this.apiUrl}/pedidos-pacote/${pedidoId}/comprovante-informado`, { alunoId })
+      .post<PedidoPacote>(`${this.apiUrl}/pedidos-pacote/${pedidoId}/comprovante-informado`, body)
       .pipe(
         timeout(20000),
         catchError((erro) => throwError(() => this.traduzirErro(erro, 'informar o comprovante')))
@@ -133,20 +151,30 @@ export class PedidoPacoteService {
   private traduzirErro(erro: unknown, acao: string): Error {
     if (erro instanceof HttpErrorResponse) {
       if (erro.status === 0) {
-        return new Error('Não foi possível conectar à API. Verifique se o servidor está em execução.');
+        return new Error(
+          'Não foi possível conectar à API. Verifique se o servidor está em execução.'
+        );
       }
       const corpo = erro.error;
       const mensagemApi =
-        typeof corpo === 'string' ? corpo : (corpo?.message ?? corpo?.mensagem ?? corpo?.erro);
+        typeof corpo === 'string'
+          ? corpo
+          : (corpo?.message ?? corpo?.mensagem ?? corpo?.erro);
       if (typeof mensagemApi === 'string' && mensagemApi.trim()) {
         return new Error(mensagemApi.trim());
       }
-      if (erro.status === 409) return new Error('Este horário já foi reservado. Escolha outro horário.');
-      if (erro.status === 404) return new Error(`Recurso não encontrado ao ${acao}.`);
+      if (erro.status === 409) {
+        return new Error('Este horário já foi reservado. Escolha outro horário.');
+      }
+      if (erro.status === 404) {
+        return new Error(`Recurso não encontrado ao ${acao}.`);
+      }
       return new Error(`Falha ao ${acao} (erro ${erro.status}). Tente novamente.`);
     }
     if (erro instanceof Error) {
-      if (erro.name === 'TimeoutError') return new Error(`Tempo esgotado ao ${acao}. Tente novamente.`);
+      if (erro.name === 'TimeoutError') {
+        return new Error(`Tempo esgotado ao ${acao}. Tente novamente.`);
+      }
       return erro;
     }
     return new Error(`Falha ao ${acao}. Tente novamente.`);

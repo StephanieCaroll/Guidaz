@@ -129,6 +129,21 @@
                 <strong class="detalhe-valor">{{ formatarDataHora(pedido.comprovanteInformadoEm) }}</strong>
               </div>
             }
+
+            @if (obterComprovante(pedido)) {
+              <div class="detalhe-linha comprovante-linha">
+                <span class="detalhe-label"><ion-icon name="receipt-outline"></ion-icon> Comprovante</span>
+                <a
+                  class="link-baixar-comprovante"
+                  href="javascript:void(0)"
+                  [class.baixando]="baixandoId() === pedido.id"
+                  (click)="baixarComprovante(pedido, $event)"
+                >
+                  <ion-icon name="download-outline"></ion-icon>
+                  <span>{{ baixandoId() === pedido.id ? 'Baixando...' : 'Baixar comprovante' }}</span>
+                </a>
+              </div>
+            }
           </div>
 
           @if (pedido.horarios.length) {

@@ -44,6 +44,8 @@ export interface PedidoPacote {
   precoTotal?: number;
   criadoEm?: string;
   comprovanteInformadoEm?: string | null;
+  comprovanteUrl?: string | null;
+  comprovanteNome?: string | null;
   analisadoEm?: string | null;
   canceladoEm?: string | null;
   motivoRejeicao?: string | null;

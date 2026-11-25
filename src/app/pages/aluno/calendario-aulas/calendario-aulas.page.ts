@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
@@ -6,7 +6,7 @@ import { addIcons } from 'ionicons';
 import { arrowUndoOutline, ellipsisVertical, chevronBackOutline, chevronForwardOutline } from 'ionicons/icons';
 
 import { AuthService } from '../../../core/services/auth.service';
-import { AulaHistoricoApi, AulaService } from '../../../core/services/aula.service';
+import { AulaHistoricoApi, AulaService, StatusApi } from '../../../core/services/aula.service';
 import { BottomNavComponent } from '../../../shared/components/bottom-nav/bottom-nav.component';
 
 interface DiaMes {
@@ -23,6 +23,7 @@ interface AulaDia {
   titulo: string;
   hora: string;
   completa: boolean;
+  status: StatusApi;
 }
 
 const MESES_LONGOS = [
@@ -46,7 +47,7 @@ function paraIso(d: Date): string {
   standalone: true,
   imports: [CommonModule, IonicModule, BottomNavComponent]
 })
-export class CalendarioAulasPage implements OnInit {
+export class CalendarioAulasPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
@@ -64,6 +65,9 @@ export class CalendarioAulasPage implements OnInit {
   gradeDias: DiaMes[] = [];
   todasAulas: AulaDia[] = [];
 
+  carregando = false;
+  erroCarregamento = '';
+
   constructor() {
     addIcons({ arrowUndoOutline, ellipsisVertical, chevronBackOutline, chevronForwardOutline });
   }
@@ -72,13 +76,8 @@ export class CalendarioAulasPage implements OnInit {
     return this.router.url.startsWith('/instrutor');
   }
 
-  ngOnInit(): void {
-    this.lerDataDaRota();
-    this.montarGrade();
-    this.carregarAulas();
-  }
-
   ionViewWillEnter(): void {
+    this.hojeIso = paraIso(new Date());
     this.lerDataDaRota();
     this.montarGrade();
     this.carregarAulas();
@@ -118,15 +117,26 @@ export class CalendarioAulasPage implements OnInit {
       ? this.aulaService.historicoInstrutor(usuarioId)
       : this.aulaService.historicoAluno(usuarioId);
 
+    this.carregando = true;
+    this.erroCarregamento = '';
+
     req$.subscribe({
       next: (lista) => {
+        // Aulas canceladas liberam o horário e não aparecem no calendário.
         this.todasAulas = (lista || [])
           .filter(a => a.status !== 'CANCELADA')
-          .map(a => this.mapearAula(a));
+          .map(a => this.mapearAula(a))
+          .sort((a, b) => a.iso.localeCompare(b.iso) || a.hora.localeCompare(b.hora));
+        this.carregando = false;
         this.montarGrade();
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Erro ao carregar aulas no calendário:', err)
+      error: (err) => {
+        console.error('Erro ao carregar aulas no calendário:', err);
+        this.carregando = false;
+        this.erroCarregamento = 'Não foi possível carregar suas aulas. Tente novamente.';
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -136,24 +146,30 @@ export class CalendarioAulasPage implements OnInit {
     const complemento = this.isInstrutor && (item.alunoNome || item.nomeOutraPessoa)
       ? ` • ${item.alunoNome || item.nomeOutraPessoa}`
       : '';
+    const sufixoFalta = item.status === 'FALTA_ALUNO' || item.status === 'FALTA' ? ' • Falta' : '';
+    const base = hora ? `${item.titulo} (${hora})` : item.titulo;
+
     return {
       id: item.id,
       iso,
-      titulo: hora ? `${item.titulo} (${hora})${complemento}` : `${item.titulo}${complemento}`,
+      titulo: `${base}${complemento}${sufixoFalta}`,
       hora,
-      completa: item.status === 'CONCLUIDA'
+      completa: item.status === 'CONCLUIDA',
+      status: item.status
     };
   }
 
   montarGrade(): void {
     const diasComAula = new Set(this.todasAulas.map(a => a.iso));
     const primeiroDiaMes = new Date(this.anoAtual, this.mesAtual, 1);
+    const diasNoMes = new Date(this.anoAtual, this.mesAtual + 1, 0).getDate();
 
-    const offsetInicio = (primeiroDiaMes.getDay() + 6) % 7;
+    const offsetInicio = (primeiroDiaMes.getDay() + 6) % 7; // 0 = Seg ... 6 = Dom
     const inicioGrade = new Date(this.anoAtual, this.mesAtual, 1 - offsetInicio);
+    const totalCelulas = Math.ceil((offsetInicio + diasNoMes) / 7) * 7;
 
     const dias: DiaMes[] = [];
-    for (let i = 0; i < 35; i++) {
+    for (let i = 0; i < totalCelulas; i++) {
       const d = new Date(inicioGrade.getFullYear(), inicioGrade.getMonth(), inicioGrade.getDate() + i);
       const iso = paraIso(d);
       dias.push({
@@ -163,21 +179,6 @@ export class CalendarioAulasPage implements OnInit {
         mesAtual: d.getMonth() === this.mesAtual,
         temAula: diasComAula.has(iso)
       });
-    }
-
-    const ultimoDiaMes = new Date(this.anoAtual, this.mesAtual + 1, 0);
-    if (dias[dias.length - 1].data < ultimoDiaMes) {
-      for (let i = 35; i < 42; i++) {
-        const d = new Date(inicioGrade.getFullYear(), inicioGrade.getMonth(), inicioGrade.getDate() + i);
-        const iso = paraIso(d);
-        dias.push({
-          data: d,
-          iso,
-          numero: String(d.getDate()).padStart(2, '0'),
-          mesAtual: d.getMonth() === this.mesAtual,
-          temAula: diasComAula.has(iso)
-        });
-      }
     }
 
     this.gradeDias = dias;

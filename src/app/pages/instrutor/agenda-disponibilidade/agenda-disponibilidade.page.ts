@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
+import { Component, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -23,7 +23,14 @@ import {
   informationCircleOutline
 } from 'ionicons/icons';
 
-import { AgendaService, DisponibilidadeInstrutor, BloqueioAgenda, InstrutorInfo } from '../../../core/services/agenda.service';
+import {
+  AgendaService,
+  DisponibilidadeInstrutor,
+  BloqueioAgenda,
+  InstrutorInfo,
+  horaCurta
+} from '../../../core/services/agenda.service';
+import { AulaHistoricoApi, AulaService } from '../../../core/services/aula.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 
@@ -40,6 +47,8 @@ export interface DiaCalendarioMes {
   data: Date;
   noMesAtual: boolean;
   temAula: boolean;
+  temDisponibilidade: boolean;
+  temBloqueio: boolean;
 }
 
 export interface AulaDiaAgenda {
@@ -63,17 +72,21 @@ export interface AulaDiaAgenda {
     IonSpinner
   ]
 })
-export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
+export class AgendaDisponibilidadePage implements ViewWillEnter {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
+  private readonly agendaService = inject(AgendaService);
+  private readonly aulaService = inject(AulaService);
+  private readonly toastService = inject(ToastService);
+  private readonly location = inject(Location);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   instrutorId: number | null = null;
   alunoIdSelecionado: number | null = null;
   alunoNomeSelecionado: string = '';
   alunoCategoriaSelecionada: string = '';
 
-  // Propriedade para controlar o Foco Pedagógico da Aula
   focoSelecionado: string = 'vias';
 
   nomeInstrutor: string = 'Instrutor';
@@ -124,29 +137,29 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
   horariosOcupados: BloqueioAgenda[] = [];
   disponabilidadesSalvas: DisponibilidadeInstrutor[] = [];
   disponabilidades: DisponibilidadeInstrutor[] = [];
+  private aulasInstrutor: AulaHistoricoApi[] = [];
 
   carregando: boolean = false;
   salvando: boolean = false;
   bloqueando: boolean = false;
+  alteracoesPendentes: boolean = false;
 
   mostrarFormularioDisponibilidade: boolean = false;
   mostrarFormularioBloqueio: boolean = false;
+
+  /** Índice do horário em edição; null quando o formulário está adicionando um novo. */
+  indiceEdicao: number | null = null;
 
   novoHorarioDia: string = 'MONDAY';
   horaInicio: string = '08:00';
   horaFim: string = '12:00';
 
-  novoBloqueioData: string = new Date().toISOString().split('T')[0];
+  novoBloqueioData: string = this.formatarChaveData(new Date());
   horaBloqueioInicio: string = '10:00';
   horaBloqueioFim: string = '11:00';
   motivoBloqueio: string = 'Compromisso Pessoal';
 
-  constructor(
-    private agendaService: AgendaService,
-    private toastService: ToastService,
-    private location: Location,
-    private cdr: ChangeDetectorRef
-  ) {
+  constructor() {
     addIcons({
       arrowBackOutline,
       notificationsOutline,
@@ -162,10 +175,6 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
     this.gerarCalendarioMes(this.mesAtualReferencia);
   }
 
-  ngOnInit() {
-    this.inicializarTela();
-  }
-
   ionViewWillEnter() {
     this.inicializarTela();
     this.auth.buscarDoBanco().subscribe({
@@ -177,11 +186,35 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
     });
   }
 
+  // ------------------------------------------------------------------
+  // Getters de apoio ao template
+  // ------------------------------------------------------------------
+
+  get rotuloBotaoHorario(): string {
+    return this.indiceEdicao !== null ? 'Atualizar horário' : 'Adicionar horário';
+  }
+
+  get bloqueiosDoDia(): BloqueioAgenda[] {
+    return this.bloqueios.filter(b => b.data === this.diaSelecionadoChave);
+  }
+
+  // ------------------------------------------------------------------
+  // Calendário
+  // ------------------------------------------------------------------
+
   private formatarChaveData(data: Date): string {
     const ano = data.getFullYear();
     const mes = String(data.getMonth() + 1).padStart(2, '0');
     const dia = String(data.getDate()).padStart(2, '0');
     return `${ano}-${mes}-${dia}`;
+  }
+
+  private dataDaAula(aula: AulaHistoricoApi): string {
+    return aula.dataAula || (aula.dataHora ? aula.dataHora.slice(0, 10) : '');
+  }
+
+  private horaInicioDaAula(aula: AulaHistoricoApi): string {
+    return horaCurta(aula.horaInicio) || (aula.dataHora ? aula.dataHora.slice(11, 16) : '');
   }
 
   gerarCalendarioMes(referencia: Date) {
@@ -205,6 +238,8 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
     const diasAtivos = new Set(
       this.disponabilidadesSalvas.filter(d => d.ativo).map(d => d.diaSemana)
     );
+    const diasComAula = new Set(this.aulasInstrutor.map(a => this.dataDaAula(a)));
+    const diasComBloqueio = new Set(this.bloqueios.map(b => b.data));
 
     const celulas: DiaCalendarioMes[] = [];
     for (let i = 0; i < 42; i++) {
@@ -221,7 +256,9 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
         numero: atual.getDate(),
         data: atual,
         noMesAtual: atual.getMonth() === mes,
-        temAula: diasAtivos.has(diaValor)
+        temAula: diasComAula.has(chave),
+        temDisponibilidade: diasAtivos.has(diaValor),
+        temBloqueio: diasComBloqueio.has(chave)
       });
     }
 
@@ -258,13 +295,39 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
       this.gerarCalendarioMes(this.mesAtualReferencia);
     }
 
+    this.atualizarAulasDoDia();
     this.cdr.detectChanges();
+  }
+
+  private atualizarAulasDoDia() {
+    const statusTexto: Record<string, string> = {
+      AGENDADA: 'Agendada',
+      CONCLUIDA: 'Concluída'
+    };
+
+    this.aulasDoDia = this.aulasInstrutor
+      .filter(a => this.dataDaAula(a) === this.diaSelecionadoChave)
+      .sort((a, b) => this.horaInicioDaAula(a).localeCompare(this.horaInicioDaAula(b)))
+      .map(a => {
+        const inicio = this.horaInicioDaAula(a);
+        const fim = horaCurta(a.horaFim);
+        return {
+          horario: fim ? `${inicio} - ${fim}` : inicio,
+          titulo: a.titulo,
+          aluno: a.alunoNome || a.nomeOutraPessoa || '',
+          status: statusTexto[a.status] || a.status
+        };
+      });
   }
 
   abrirNotificacoes() {
     this.temNotificacao = false;
     this.toastService.mostrar('Nenhuma nova notificação no momento.', 'ok');
   }
+
+  // ------------------------------------------------------------------
+  // Inicialização e carga de dados
+  // ------------------------------------------------------------------
 
   private inicializarTela() {
     this.resolverInstrutorLogado();
@@ -322,6 +385,10 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
   }
 
   voltar() {
+    if (this.alteracoesPendentes &&
+        !window.confirm('Você tem alterações de disponibilidade não salvas. Deseja sair mesmo assim?')) {
+      return;
+    }
     this.location.back();
   }
 
@@ -350,6 +417,7 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
     if (!this.instrutorId) return;
     this.carregarDisponibilidades();
     this.carregarBloqueios();
+    this.carregarAulas();
   }
 
   carregarDisponibilidades() {
@@ -360,16 +428,14 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
 
     this.agendaService.getDisponibilidades(this.instrutorId).subscribe({
       next: (res: DisponibilidadeInstrutor[]) => {
-        this.disponabilidadesSalvas = [...res];
-        this.disponabilidades = [...res];
-        this.sincronizarBotoesDias();
-        this.gerarCalendarioMes(this.mesAtualReferencia);
+        this.aplicarListaDoServidor(res);
+        this.alteracoesPendentes = false;
         this.carregando = false;
         this.cdr.detectChanges();
       },
       error: (err: any) => {
         console.error('Erro ao carregar disponibilidades:', err);
-        this.toastService.mostrar('Erro ao carregar disponibilidades da API', 'erro');
+        this.toastService.mostrar(this.mensagemErro(err, 'Erro ao carregar disponibilidades.'), 'erro');
         this.carregando = false;
         this.cdr.detectChanges();
       }
@@ -381,8 +447,13 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
 
     this.agendaService.getBloqueios(this.instrutorId).subscribe({
       next: (res: BloqueioAgenda[]) => {
-        this.bloqueios = [...res];
-        this.horariosOcupados = [...res];
+        const hoje = this.formatarChaveData(new Date());
+        this.bloqueios = (res ?? [])
+          .map(b => ({ ...b, horaInicio: horaCurta(b.horaInicio), horaFim: horaCurta(b.horaFim) }))
+          .filter(b => b.data >= hoje)
+          .sort((a, b) => a.data.localeCompare(b.data) || a.horaInicio.localeCompare(b.horaInicio));
+        this.horariosOcupados = [...this.bloqueios];
+        this.gerarCalendarioMes(this.mesAtualReferencia);
         this.cdr.detectChanges();
       },
       error: (err: any) => {
@@ -391,6 +462,36 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
       }
     });
   }
+
+  private carregarAulas() {
+    if (!this.instrutorId) return;
+
+    this.aulaService.historicoInstrutor(this.instrutorId).subscribe({
+      next: (lista) => {
+        this.aulasInstrutor = (lista ?? []).filter(a => a.status === 'AGENDADA' || a.status === 'CONCLUIDA');
+        this.atualizarAulasDoDia();
+        this.gerarCalendarioMes(this.mesAtualReferencia);
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Erro ao carregar aulas do instrutor:', err);
+      }
+    });
+  }
+
+  private aplicarListaDoServidor(lista: DisponibilidadeInstrutor[]) {
+    this.disponabilidadesSalvas = (lista ?? []).map(d => ({
+      ...d,
+      horaInicio: horaCurta(d.horaInicio),
+      horaFim: horaCurta(d.horaFim)
+    }));
+    this.disponabilidades = [...this.disponabilidadesSalvas];
+    this.sincronizarBotoesDias();
+  }
+
+  // ------------------------------------------------------------------
+  // Disponibilidade recorrente
+  // ------------------------------------------------------------------
 
   sincronizarBotoesDias() {
     const diasComDisponibilidade = new Set(this.disponabilidadesSalvas.filter(d => d.ativo).map(d => d.diaSemana));
@@ -413,27 +514,36 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
     }
   }
 
+  /**
+   * Liga/desliga o dia da semana sem perder os horários cadastrados:
+   * desativa os existentes, reativa os desativados ou cria um horário padrão.
+   */
   toggleDiaSemana(dia: DiaSemanaItem) {
     if (!this.instrutorId) return;
 
-    dia.selecionado = !dia.selecionado;
-    if (!dia.selecionado) {
-      this.disponabilidadesSalvas = this.disponabilidadesSalvas.filter(d => d.diaSemana !== dia.valor);
+    const doDia = this.disponabilidadesSalvas.filter(d => d.diaSemana === dia.valor);
+
+    if (doDia.some(d => d.ativo)) {
+      doDia.forEach(d => (d.ativo = false));
+    } else if (doDia.length > 0) {
+      doDia.forEach(d => (d.ativo = true));
     } else {
-      const existe = this.disponabilidadesSalvas.some(d => d.diaSemana === dia.valor);
-      if (!existe) {
-        this.disponabilidadesSalvas.push({
-          instrutorId: this.instrutorId,
-          diaSemana: dia.valor,
-          horaInicio: '08:00',
-          horaFim: '12:00',
-          ativo: true
-        });
-      }
+      this.disponabilidadesSalvas.push({
+        instrutorId: this.instrutorId,
+        diaSemana: dia.valor,
+        horaInicio: '08:00',
+        horaFim: '12:00',
+        ativo: true
+      });
     }
+
+    this.aplicarAlteracaoDisponibilidade();
+  }
+
+  private aplicarAlteracaoDisponibilidade() {
     this.disponabilidades = [...this.disponabilidadesSalvas];
-    this.gerarCalendarioMes(this.mesAtualReferencia);
-    this.cdr.detectChanges();
+    this.alteracoesPendentes = true;
+    this.sincronizarBotoesDias();
   }
 
   private timeToMinutes(timeStr: string): number {
@@ -453,6 +563,15 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
     return start1 < end2 && end1 > start2;
   }
 
+  private existeConflitoDisponibilidade(dia: string, inicio: string, fim: string, ignorarIndice: number | null): boolean {
+    return this.disponabilidadesSalvas.some((d, i) =>
+      i !== ignorarIndice &&
+      d.ativo &&
+      d.diaSemana === dia &&
+      this.existeConflitoHorario(inicio, fim, d.horaInicio, d.horaFim)
+    );
+  }
+
   private formatarTimeParaBackend(hora: string): string {
     if (!hora) return '00:00:00';
     const clean = hora.trim();
@@ -463,71 +582,211 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
   }
 
   abrirFormularioDisponibilidade() {
-    this.mostrarFormularioDisponibilidade = !this.mostrarFormularioDisponibilidade;
+    if (this.mostrarFormularioDisponibilidade) {
+      this.cancelarFormularioDisponibilidade();
+      return;
+    }
+    this.indiceEdicao = null;
+    this.mostrarFormularioDisponibilidade = true;
     this.mostrarFormularioBloqueio = false;
     this.cdr.detectChanges();
   }
 
+  cancelarFormularioDisponibilidade() {
+    this.mostrarFormularioDisponibilidade = false;
+    this.indiceEdicao = null;
+    this.cdr.detectChanges();
+  }
+
+  /** Carrega um horário existente no formulário para edição. */
+  editarHorarioCadastrado(index: number) {
+    const item = this.disponabilidadesSalvas[index];
+    if (!item) return;
+
+    this.indiceEdicao = index;
+    this.novoHorarioDia = item.diaSemana;
+    this.horaInicio = horaCurta(item.horaInicio);
+    this.horaFim = horaCurta(item.horaFim);
+    this.mostrarFormularioDisponibilidade = true;
+    this.mostrarFormularioBloqueio = false;
+    this.cdr.detectChanges();
+  }
+
+  /** Cria um novo horário ou atualiza o que está em edição. */
   confirmarAdicionarHorario() {
     if (!this.instrutorId) return;
 
-    const startMin = this.timeToMinutes(this.horaInicio);
-    const endMin = this.timeToMinutes(this.horaFim);
-
-    if (startMin >= endMin) {
+    if (this.timeToMinutes(this.horaInicio) >= this.timeToMinutes(this.horaFim)) {
       this.toastService.mostrar('A hora de início deve ser anterior à hora de término.', 'erro');
       return;
     }
 
-    const conflito = this.disponabilidadesSalvas.some(d =>
-      d.diaSemana === this.novoHorarioDia &&
-      this.existeConflitoHorario(this.horaInicio, this.horaFim, d.horaInicio, d.horaFim)
-    );
+    const emEdicao = this.indiceEdicao !== null ? this.disponabilidadesSalvas[this.indiceEdicao] : null;
+    const ficaAtivo = emEdicao ? emEdicao.ativo : true;
 
-    if (conflito) {
-      this.toastService.mostrar('Já existe um horário cadastrado que entra em conflito neste dia!', 'erro');
+    if (ficaAtivo && this.existeConflitoDisponibilidade(this.novoHorarioDia, this.horaInicio, this.horaFim, this.indiceEdicao)) {
+      this.toastService.mostrar('Já existe um horário ativo que entra em conflito neste dia!', 'erro');
       return;
     }
 
-    this.disponabilidadesSalvas.push({
-      instrutorId: this.instrutorId,
-      diaSemana: this.novoHorarioDia,
-      horaInicio: this.horaInicio,
-      horaFim: this.horaFim,
-      ativo: true
-    });
-    this.disponabilidades = [...this.disponabilidadesSalvas];
-    this.sincronizarBotoesDias();
+    if (emEdicao) {
+      emEdicao.diaSemana = this.novoHorarioDia;
+      emEdicao.horaInicio = this.horaInicio;
+      emEdicao.horaFim = this.horaFim;
+    } else {
+      this.disponabilidadesSalvas.push({
+        instrutorId: this.instrutorId,
+        diaSemana: this.novoHorarioDia,
+        horaInicio: this.horaInicio,
+        horaFim: this.horaFim,
+        ativo: true
+      });
+    }
 
+    this.indiceEdicao = null;
     this.mostrarFormularioDisponibilidade = false;
-    this.toastService.mostrar('Horário adicionado! Clique em Salvar Alterações para persistir no banco.', 'ok');
+    this.aplicarAlteracaoDisponibilidade();
+    this.toastService.mostrar(
+      emEdicao
+        ? 'Horário atualizado! Clique em Salvar Alterações para confirmar.'
+        : 'Horário adicionado! Clique em Salvar Alterações para confirmar.',
+      'ok'
+    );
+  }
+
+  /** Ativa ou desativa um horário sem removê-lo. */
+  alternarAtivoHorario(index: number) {
+    const item = this.disponabilidadesSalvas[index];
+    if (!item) return;
+
+    const novoEstado = !item.ativo;
+    if (novoEstado && this.existeConflitoDisponibilidade(item.diaSemana, item.horaInicio, item.horaFim, index)) {
+      this.toastService.mostrar('Não é possível ativar: há outro horário ativo em conflito neste dia.', 'erro');
+      return;
+    }
+
+    item.ativo = novoEstado;
+    this.aplicarAlteracaoDisponibilidade();
+  }
+
+  removerHorarioCadastrado(index: number) {
+    if (index < 0 || index >= this.disponabilidadesSalvas.length) return;
+
+    this.disponabilidadesSalvas.splice(index, 1);
+
+    if (this.indiceEdicao === index) {
+      this.mostrarFormularioDisponibilidade = false;
+      this.indiceEdicao = null;
+    } else if (this.indiceEdicao !== null && this.indiceEdicao > index) {
+      this.indiceEdicao--;
+    }
+
+    this.aplicarAlteracaoDisponibilidade();
+  }
+
+  private validarDisponibilidadesLocais(): string | null {
+    for (let i = 0; i < this.disponabilidadesSalvas.length; i++) {
+      const d = this.disponabilidadesSalvas[i];
+      if (this.timeToMinutes(d.horaInicio) >= this.timeToMinutes(d.horaFim)) {
+        return `${this.getNomeDia(d.diaSemana)}: a hora de início deve ser anterior à hora de término.`;
+      }
+      if (d.ativo && this.existeConflitoDisponibilidade(d.diaSemana, d.horaInicio, d.horaFim, i)) {
+        return `${this.getNomeDia(d.diaSemana)}: existem horários ativos sobrepostos.`;
+      }
+    }
+    return null;
+  }
+
+  salvarAlteracoes() {
+    if (!this.instrutorId) return;
+
+    if (!this.alteracoesPendentes) {
+      this.toastService.mostrar('Nenhuma alteração para salvar.', 'ok');
+      return;
+    }
+
+    const erroValidacao = this.validarDisponibilidadesLocais();
+    if (erroValidacao) {
+      this.toastService.mostrar(erroValidacao, 'erro');
+      return;
+    }
+
+    this.salvando = true;
     this.cdr.detectChanges();
+
+    const instrutorAtualId = this.instrutorId;
+    const payload = this.disponabilidadesSalvas.map(d => ({
+      ...d,
+      instrutorId: instrutorAtualId,
+      horaInicio: this.formatarTimeParaBackend(d.horaInicio),
+      horaFim: this.formatarTimeParaBackend(d.horaFim)
+    }));
+
+    this.agendaService.salvarDisponibilidades(instrutorAtualId, payload).subscribe({
+      next: (res: DisponibilidadeInstrutor[]) => {
+        this.aplicarListaDoServidor(res);
+        this.alteracoesPendentes = false;
+        this.toastService.mostrar('Disponibilidades salvas com sucesso!', 'ok');
+        this.salvando = false;
+        this.cdr.detectChanges();
+
+        void this.router.navigate(['/instrutor/home']);
+      },
+      error: (err: any) => {
+        console.error('Erro ao salvar disponibilidades:', err);
+        this.toastService.mostrar(this.mensagemErro(err, 'Erro ao salvar disponibilidades.'), 'erro');
+        this.salvando = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   abrirFormularioBloqueio() {
     this.mostrarFormularioBloqueio = !this.mostrarFormularioBloqueio;
     this.mostrarFormularioDisponibilidade = false;
+    this.indiceEdicao = null;
     this.cdr.detectChanges();
   }
 
   cadastrarBloqueio() {
     if (!this.instrutorId) return;
 
-    const startMin = this.timeToMinutes(this.horaBloqueioInicio);
-    const endMin = this.timeToMinutes(this.horaBloqueioFim);
+    if (!this.novoBloqueioData) {
+      this.toastService.mostrar('Informe a data do bloqueio.', 'erro');
+      return;
+    }
 
-    if (startMin >= endMin) {
+    if (this.novoBloqueioData < this.formatarChaveData(new Date())) {
+      this.toastService.mostrar('Não é possível bloquear uma data que já passou.', 'erro');
+      return;
+    }
+
+    if (this.timeToMinutes(this.horaBloqueioInicio) >= this.timeToMinutes(this.horaBloqueioFim)) {
       this.toastService.mostrar('A hora de início do bloqueio deve ser anterior à hora de fim.', 'erro');
       return;
     }
 
-    const conflito = this.bloqueios.some(b =>
+    const conflitoBloqueio = this.bloqueios.some(b =>
       b.data === this.novoBloqueioData &&
       this.existeConflitoHorario(this.horaBloqueioInicio, this.horaBloqueioFim, b.horaInicio, b.horaFim)
     );
-
-    if (conflito) {
+    if (conflitoBloqueio) {
       this.toastService.mostrar('Já existe um bloqueio agendado que entra em conflito nesta mesma data!', 'erro');
+      return;
+    }
+
+    const conflitoAula = this.aulasInstrutor.some(a =>
+      a.status === 'AGENDADA' &&
+      this.dataDaAula(a) === this.novoBloqueioData &&
+      this.existeConflitoHorario(
+        this.horaBloqueioInicio,
+        this.horaBloqueioFim,
+        this.horaInicioDaAula(a),
+        horaCurta(a.horaFim) || this.somarUmaHora(this.horaInicioDaAula(a))
+      )
+    );
+    if (conflitoAula) {
+      this.toastService.mostrar('Há uma aula agendada nesse período. Cancele ou reagende a aula antes de bloquear.', 'erro');
       return;
     }
 
@@ -552,7 +811,7 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
       },
       error: (err: any) => {
         console.error('Erro ao criar bloqueio:', err);
-        this.toastService.mostrar('Erro ao criar bloqueio no servidor.', 'erro');
+        this.toastService.mostrar(this.mensagemErro(err, 'Erro ao criar bloqueio no servidor.'), 'erro');
         this.bloqueando = false;
         this.cdr.detectChanges();
       }
@@ -561,6 +820,8 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
 
   removerBloqueio(id?: number) {
     if (!id) return;
+    if (!window.confirm('Deseja remover este bloqueio? O horário voltará a ficar disponível para reservas.')) return;
+
     this.agendaService.removerBloqueio(id).subscribe({
       next: () => {
         this.toastService.mostrar('Bloqueio removido com sucesso!', 'ok');
@@ -569,48 +830,7 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
       },
       error: (err: any) => {
         console.error('Erro ao remover bloqueio:', err);
-        this.toastService.mostrar('Erro ao remover bloqueio.', 'erro');
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  removerHorarioCadastrado(index: number) {
-    this.disponabilidadesSalvas.splice(index, 1);
-    this.disponabilidades = [...this.disponabilidadesSalvas];
-    this.sincronizarBotoesDias();
-    this.cdr.detectChanges();
-  }
-
-  salvarAlteracoes() {
-    if (!this.instrutorId) return;
-
-    this.salvando = true;
-    this.cdr.detectChanges();
-
-    const instrutorAtualId = this.instrutorId;
-    const payload = this.disponabilidadesSalvas.map(d => ({
-      ...d,
-      instrutorId: instrutorAtualId,
-      horaInicio: this.formatarTimeParaBackend(d.horaInicio),
-      horaFim: this.formatarTimeParaBackend(d.horaFim)
-    }));
-
-    this.agendaService.salvarDisponibilidades(instrutorAtualId, payload).subscribe({
-      next: (res: DisponibilidadeInstrutor[]) => {
-        this.disponabilidadesSalvas = [...res];
-        this.disponabilidades = [...res];
-        this.sincronizarBotoesDias();
-        this.toastService.mostrar('Disponibilidades salvas com sucesso!', 'ok');
-        this.salvando = false;
-        this.cdr.detectChanges();
-
-        this.router.navigate(['/instrutor/home']);
-      },
-      error: (err: any) => {
-        console.error('Erro ao salvar disponibilidades:', err);
-        this.toastService.mostrar('Erro ao salvar disponibilidades.', 'erro');
-        this.salvando = false;
+        this.toastService.mostrar(this.mensagemErro(err, 'Erro ao remover bloqueio.'), 'erro');
         this.cdr.detectChanges();
       }
     });
@@ -618,5 +838,20 @@ export class AgendaDisponibilidadePage implements OnInit, ViewWillEnter {
 
   getNomeDia(key: string): string {
     return this.mapaDias[key] || key;
+  }
+
+  private somarUmaHora(hora: string): string {
+    const minutos = this.timeToMinutes(hora) + 60;
+    const h = Math.min(Math.floor(minutos / 60), 23);
+    const m = minutos >= 24 * 60 ? 59 : minutos % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+
+  private mensagemErro(err: any, padrao: string): string {
+    const corpo = err?.error;
+    if (typeof corpo === 'string' && corpo.trim() && corpo.length < 200) {
+      return corpo;
+    }
+    return corpo?.message || corpo?.erro || corpo?.mensagem || padrao;
   }
 }

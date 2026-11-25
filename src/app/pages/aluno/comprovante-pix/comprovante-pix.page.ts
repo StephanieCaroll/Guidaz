@@ -141,12 +141,28 @@ export class ComprovantePixPage {
     this.arquivo.set(arquivo);
   }
 
-  enviarComprovante(): void {
+  private lerArquivoComoDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result);
+        } else {
+          reject(new Error('Não foi possível ler o arquivo selecionado.'));
+        }
+      };
+      reader.onerror = () => reject(new Error('Falha ao ler o arquivo do comprovante.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async enviarComprovante(): Promise<void> {
     if (this.enviando() || !this.pedidoId) {
       return;
     }
 
-    if (!this.arquivo()) {
+    const arquivoSelecionado = this.arquivo();
+    if (!arquivoSelecionado) {
       this.erroArquivo.set('Selecione o comprovante antes de continuar.');
       return;
     }
@@ -160,23 +176,43 @@ export class ComprovantePixPage {
     this.erroEnvio.set('');
     this.enviando.set(true);
 
-    // O comprovante é simulado: apenas informamos à API que o pagamento foi realizado.
-    this.pedidoService.informarComprovante(this.pedidoId, alunoId).pipe(
-      finalize(() => this.enviando.set(false))
-    ).subscribe({
-      next: (pedido) => {
-        if (pedido?.status === 'EM_ANALISE') {
-          this.pedido = pedido;
-          this.status.set('analise');
-        } else {
-          this.erroEnvio.set(`A API retornou um status inesperado (${pedido?.status ?? 'vazio'}). Tente novamente.`);
-        }
-      },
-      error: (erro: Error) => {
-        console.error('Erro ao informar comprovante:', erro);
-        this.erroEnvio.set(erro.message);
-      }
-    });
+    try {
+      const comprovanteBase64 = await this.lerArquivoComoDataUrl(arquivoSelecionado);
+
+      this.pedidoService
+        .informarComprovante(this.pedidoId, alunoId, {
+          comprovanteUrl: comprovanteBase64,
+          comprovanteNome: arquivoSelecionado.name,
+        })
+        .pipe(finalize(() => this.enviando.set(false)))
+        .subscribe({
+          next: (pedido) => {
+            if (pedido?.status === 'EM_ANALISE') {
+              const pedidoComArquivo = {
+                ...pedido,
+                comprovanteUrl:
+                  (pedido as PedidoPacote & { comprovanteUrl?: string }).comprovanteUrl ||
+                  comprovanteBase64,
+              };
+              this.pedido = pedidoComArquivo;
+              this.status.set('analise');
+            } else {
+              this.erroEnvio.set(
+                `A API retornou um status inesperado (${pedido?.status ?? 'vazio'}). Tente novamente.`
+              );
+            }
+          },
+          error: (erro: Error) => {
+            console.error('Erro ao informar comprovante:', erro);
+            this.erroEnvio.set(erro.message);
+          },
+        });
+    } catch (erro) {
+      this.enviando.set(false);
+      this.erroEnvio.set(
+        erro instanceof Error ? erro.message : 'Erro ao processar o arquivo do comprovante.'
+      );
+    }
   }
 
   formatarPreco(valor: number): string {

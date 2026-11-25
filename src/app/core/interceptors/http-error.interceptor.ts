@@ -1,45 +1,49 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { ToastService } from '../services/toast.service';
 
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const toastService = inject(ToastService);
-  const router = inject(Router);
 
-  const token = localStorage.getItem('guidaz_token');
+  return next(req).pipe(
+    catchError((error: unknown) => {
+      const httpErr = error instanceof HttpErrorResponse ? error : null;
+      const status = httpErr?.status ?? (error as { status?: number })?.status ?? 0;
 
-  const authReq = token
-    ? req.clone({
-        setHeaders: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-    : req;
+      const rawPayload = httpErr?.error ?? (error as { error?: unknown })?.error;
+      const payloadMessage =
+        typeof rawPayload === 'string'
+          ? rawPayload
+          : (rawPayload as { message?: string; error?: string } | null)?.message ||
+            (rawPayload as { message?: string; error?: string } | null)?.error ||
+            '';
 
-  return next(authReq).pipe(
-    catchError((error: HttpErrorResponse) => {
-      let mensagem = 'Ocorreu um erro inesperado. Tente novamente.';
+      const fallbackMessage = (error as { message?: string })?.message || '';
+      const combinedMessage = `${payloadMessage} ${fallbackMessage}`.toLowerCase();
 
-      if (error.status === 0) {
-        mensagem = 'Não foi possível conectar ao servidor. Verifique se o backend está rodando.';
-      } else if (error.status === 401) {
-        mensagem = 'Sessão expirada ou não autorizada. Faça login novamente.';
-        localStorage.removeItem('guidaz_token');
-        localStorage.removeItem('guidaz_user');
-        router.navigateByUrl('/login', { replaceUrl: true });
-      } else if (error.status === 403) {
-        mensagem = 'Você não tem permissão para realizar esta ação.';
-      } else if (error.status === 404) {
-        mensagem = error.error?.mensagem || error.error?.erro || 'Recurso não encontrado.';
-      } else if (error.status === 400) {
-        mensagem = error.error?.mensagem || error.error?.erro || 'Dados inválidos enviados.';
-      } else if (error.status >= 500) {
-        mensagem = 'Erro interno no servidor. Tente novamente em instantes.';
+      const isNotFound =
+        status === 404 ||
+        combinedMessage.includes('recurso não encontrado') ||
+        combinedMessage.includes('recurso nao encontrado') ||
+        combinedMessage.includes('not found');
+
+      if (isNotFound) {
+        return throwError(() => ({
+          status,
+          error: rawPayload,
+          message: '',
+          friendlyMessage: '',
+          silentNotFound: true,
+        }));
       }
 
-      toastService.mostrar(mensagem, 'erro');
+      if (status === 0) {
+        toastService.mostrar?.('Não foi possível conectar ao servidor.', 'warning');
+      } else if (status >= 500) {
+        toastService.mostrar?.('Erro interno no servidor. Tente novamente.', 'danger');
+      }
+
       return throwError(() => error);
     })
   );

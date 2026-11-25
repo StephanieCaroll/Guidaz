@@ -57,6 +57,8 @@ interface PacoteResumo {
   preco: number;
 }
 
+const DURACAO_AULA_MIN = 60;
+
 @Component({
   selector: 'app-agendamento-aulas',
   templateUrl: './agendamento-aulas.page.html',
@@ -79,6 +81,7 @@ export class AgendamentoAulasPage {
 
   instrutorId: number | null = null;
   alunoId: number | null = null;
+  alunoCategoria: string | undefined;
   instrutor: InstrutorResumo | null = null;
   instrutorNome: string | undefined;
   pacote: PacoteResumo | undefined;
@@ -93,9 +96,10 @@ export class AgendamentoAulasPage {
   erroReserva = '';
   mensagemSucesso = '';
 
-  readonly dataMinima = this.dataLocal(new Date());
-  readonly diasDisponiveis = this.criarDiasDisponiveis();
+  dataMinima = this.dataLocal(new Date());
+  diasDisponiveis: DiaAgenda[] = this.criarDiasDisponiveis();
   private requisicaoHorarios = 0;
+  private redirecionamento?: ReturnType<typeof setTimeout>;
 
   constructor() {
     addIcons({
@@ -113,6 +117,8 @@ export class AgendamentoAulasPage {
   }
 
   ionViewWillEnter(): void {
+    this.atualizarJanelaDeDatas();
+
     const queryAlunoId = Number(this.route.snapshot.queryParamMap.get('alunoId'));
     const stateAlunoId = Number(history.state?.['alunoId']);
     this.alunoId = Number.isInteger(queryAlunoId) && queryAlunoId > 0
@@ -120,8 +126,15 @@ export class AgendamentoAulasPage {
       : (Number.isInteger(stateAlunoId) && stateAlunoId > 0 ? stateAlunoId : null);
 
     if (this.alunoId) {
-      const usuarioLogado = this.auth.usuario();
-      this.instrutorId = usuarioLogado ? Number(usuarioLogado.id) : 1;
+      // Fluxo do instrutor agendando diretamente para o aluno
+      const idLogado = Number(this.auth.usuario()?.id);
+      if (!Number.isInteger(idLogado) || idLogado <= 0) {
+        this.instrutorId = null;
+        void this.router.navigateByUrl('/login', { replaceUrl: true });
+        return;
+      }
+      this.instrutorId = idLogado;
+      this.alunoCategoria = this.route.snapshot.queryParamMap.get('alunoCategoria') || undefined;
     } else {
       const queryId = Number(this.route.snapshot.queryParamMap.get('instrutorId'));
       const stateId = Number(history.state?.['instrutorId']);
@@ -159,6 +172,13 @@ export class AgendamentoAulasPage {
     }
   }
 
+  ionViewWillLeave(): void {
+    if (this.redirecionamento) {
+      clearTimeout(this.redirecionamento);
+      this.redirecionamento = undefined;
+    }
+  }
+
   private carregarInstrutor(): void {
     if (!this.instrutorId) return;
 
@@ -168,11 +188,14 @@ export class AgendamentoAulasPage {
       next: (instrutor) => {
         this.instrutor = instrutor;
         this.carregandoInstrutor = false;
+        this.cdr.detectChanges();
       },
       error: (erro) => {
         console.error('Erro ao carregar dados do instrutor:', erro);
         this.instrutor = null;
+        this.erroInstrutor = 'Não foi possível carregar os dados do instrutor.';
         this.carregandoInstrutor = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -188,14 +211,20 @@ export class AgendamentoAulasPage {
     return `${diaSemana}, dia ${dia}`;
   }
 
-  carregarHorarios(): void {
+  /**
+   * Carrega apenas os horários livres (disponibilidade - bloqueios - aulas - reservas).
+   * Use manterMensagens=true para recarregar sem apagar um erro/sucesso recém-exibido.
+   */
+  carregarHorarios(manterMensagens = false): void {
     if (!this.instrutorId || !this.dataSelecionada) return;
 
     const requisicaoAtual = ++this.requisicaoHorarios;
     this.carregando = true;
     this.erroHorarios = '';
-    this.erroReserva = '';
-    this.mensagemSucesso = '';
+    if (!manterMensagens) {
+      this.erroReserva = '';
+      this.mensagemSucesso = '';
+    }
     this.horarios = [];
 
     this.http.get<HorarioApi[]>(
@@ -263,7 +292,8 @@ export class AgendamentoAulasPage {
         instrutorId: this.instrutorId,
         dataAula: this.dataSelecionada,
         horaInicio,
-        horaFim: this.calcularHoraFim(horaInicio)
+        horaFim: this.calcularHoraFim(horaInicio),
+        categoria: this.alunoCategoria
       }).pipe(
         finalize(() => {
           this.reservando = false;
@@ -273,19 +303,21 @@ export class AgendamentoAulasPage {
       ).subscribe({
         next: () => {
           this.mensagemSucesso = 'Aula agendada com sucesso para o aluno!';
-          setTimeout(() => {
+          this.redirecionamento = setTimeout(() => {
             void this.router.navigateByUrl('/instrutor/gestao-alunos');
           }, 1200);
         },
         error: (erro) => {
           console.error('Erro ao agendar aula pelo instrutor:', erro);
-          this.erroReserva = erro?.error?.erro || 'Não foi possível concluir o agendamento. Tente novamente.';
+          this.erroReserva = this.mensagemErro(erro, 'Não foi possível concluir o agendamento. Tente novamente.');
+          // O horário pode ter sido ocupado nesse meio tempo: atualiza a lista.
+          this.carregarHorarios(true);
         }
       });
       return;
     }
 
-    // Fluxo do Aluno (com pacote e Pix)
+    // Fluxo do aluno (com pacote e Pix)
     if (!this.pacote) {
       void this.router.navigate(['/aluno/pacotes'], {
         queryParams: { instrutorId: this.instrutorId },
@@ -339,19 +371,32 @@ export class AgendamentoAulasPage {
       },
       error: (erro: Error) => {
         console.error('Erro ao criar pedido do pacote:', erro);
-        this.erroReserva = erro.message;
+        this.erroReserva = erro.message || 'Não foi possível reservar o horário. Tente novamente.';
+        this.carregarHorarios(true);
       }
     });
   }
 
   calcularHoraFim(horaInicio: string): string {
     const [hora, minuto] = horaInicio.split(':').map(Number);
-    const fim = new Date(2000, 0, 1, hora, minuto + 60);
+    const fim = new Date(2000, 0, 1, hora, minuto + DURACAO_AULA_MIN);
     return `${String(fim.getHours()).padStart(2, '0')}:${String(fim.getMinutes()).padStart(2, '0')}`;
   }
 
   voltar(): void {
     this.navCtrl.back();
+  }
+
+  /** Mantém a lista de dias coerente caso a tela permaneça em cache de um dia para o outro. */
+  private atualizarJanelaDeDatas(): void {
+    const hoje = this.dataLocal(new Date());
+    if (hoje === this.dataMinima) return;
+
+    this.dataMinima = hoje;
+    this.diasDisponiveis = this.criarDiasDisponiveis();
+    if (this.dataSelecionada < hoje) {
+      this.dataSelecionada = hoje;
+    }
   }
 
   private dataLocal(data: Date): string {
@@ -381,5 +426,13 @@ export class AgendamentoAulasPage {
 
   private valorHora(valor: unknown): string {
     return typeof valor === 'string' ? valor.slice(0, 5) : '';
+  }
+
+  private mensagemErro(erro: any, padrao: string): string {
+    const corpo = erro?.error;
+    if (typeof corpo === 'string' && corpo.trim() && corpo.length < 200) {
+      return corpo;
+    }
+    return corpo?.message || corpo?.erro || corpo?.mensagem || padrao;
   }
 }

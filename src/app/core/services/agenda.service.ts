@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -29,17 +29,24 @@ export interface BloqueioAgenda {
   motivo?: string;
 }
 
+export type StatusSlot = 'LIVRE' | 'OCUPADO' | 'OCUPADO_AULA' | 'BLOQUEADO_PESSOAL' | 'PASSADO';
+
 export interface SlotDisponivel {
   hora: string;
   disponivel: boolean;
-  status: 'LIVRE' | 'OCUPADO_AULA' | 'BLOQUEADO_PESSOAL';
+  status: StatusSlot;
+}
+
+/** Converte "08:00:00" em "08:00". */
+export function horaCurta(valor?: string | null): string {
+  return typeof valor === 'string' ? valor.slice(0, 5) : '';
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class AgendaService {
-  private apiUrl = `${environment.apiUrl || 'http://localhost:8080/api'}`;
+  private readonly apiUrl = environment.apiUrl || 'http://localhost:8080/api';
 
   constructor(private http: HttpClient) {}
 
@@ -64,7 +71,8 @@ export class AgendaService {
   }
 
   getSlotsDoDia(instrutorId: number, dataIso: string): Observable<SlotDisponivel[]> {
-    return this.http.get<SlotDisponivel[]>(`${this.apiUrl}/disponibilidades/instrutor/${instrutorId}/slots?data=${dataIso}`);
+    const params = new HttpParams().set('data', dataIso);
+    return this.http.get<SlotDisponivel[]>(`${this.apiUrl}/disponibilidades/instrutor/${instrutorId}/slots`, { params });
   }
 
   getBloqueios(instrutorId: number): Observable<BloqueioAgenda[]> {
