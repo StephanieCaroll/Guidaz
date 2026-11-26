@@ -8,10 +8,9 @@
  * For more information on global stylesheets, visit the documentation:
  * https://ionicframework.com/docs/layout/global-stylesheets
  */
-
+@use 'theme/auth.scss';
 /* Core CSS required for Ionic components to work properly */
 @import "@ionic/angular/css/core.css";
-@import 'theme/auth.scss';
 
 /* Basic CSS for apps built with Ionic */
 @import "@ionic/angular/css/normalize.css";
@@ -39,4 +38,100 @@
 
 html, body, ion-app {
   background-color: #ffffff !important;
+}
+
+/* Estilos Globais Guidaz */
+
+/* Suporte Global ao Modo Escuro */
+body.dark {
+  --ion-background-color: #121212;
+  --ion-background-color-rgb: 18, 18, 18;
+  --ion-text-color: #ffffff;
+  --ion-text-color-rgb: 255, 255, 255;
+  --ion-item-background: #1e1e1e;
+  --ion-card-background: #1e1e1e;
+
+  ion-content {
+    --background: #121212;
+    --color: #ffffff;
+  }
+}
+
+/* Tamanho de Fonte Global */
+body.font-pequeno {
+  font-size: 85% !important;
+
+  h1, h2, h3, h4, ion-title {
+    font-size: 90% !important;
+  }
+}
+
+body.font-normal {
+  font-size: 100% !important;
+}
+
+body.font-grande {
+  font-size: 115% !important;
+
+  h1, h2, h3, h4, ion-title {
+    font-size: 120% !important;
+  }
+}
+
+/* Guidaz Toast — Alto contraste e leitura nítida */
+
+ion-toast.guidaz-toast {
+  --color: #ffffff;
+  --button-color: #ffffff;
+  --border-radius: 14px;
+  --box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+  --min-height: 52px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+ion-toast.guidaz-toast::part(container) {
+  padding: 6px 10px;
+}
+
+ion-toast.guidaz-toast::part(message) {
+  color: #ffffff !important;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+ion-toast.guidaz-toast::part(icon) {
+  color: #ffffff !important;
+  font-size: 22px;
+}
+
+ion-toast.guidaz-toast::part(button) {
+  color: #ffffff !important;
+  opacity: 0.9;
+}
+
+ion-toast.guidaz-toast--ok {
+  --background: #15803d; 
+}
+
+ion-toast.guidaz-toast--erro {
+  --background: #dc2626; 
+}
+
+ion-toast.guidaz-toast--warning {
+  --background: #d97706; 
+}
+
+ion-toast.guidaz-toast--info {
+  --background: #1d4ed8; 
+}
+
+ion-router-outlet {
+  transition: opacity 300ms ease-in-out;
+}
+
+body.carregando-pagina ion-router-outlet {
+  opacity: 0;
+  transition: none;
+  pointer-events: none;
 }

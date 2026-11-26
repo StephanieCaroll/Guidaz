@@ -1,0 +1,41 @@
+<ion-content [fullscreen]="true" class="progresso">
+  <header class="topo">
+    <button class="btn-redondo" (click)="voltar()" aria-label="Voltar">
+      <ion-icon name="arrow-undo"></ion-icon>
+    </button>
+    <div>
+      <h1>Minha Evolução</h1>
+      <p>Categoria {{ categoria }}</p>
+    </div>
+  </header>
+
+  <section class="corpo">
+    <div class="numeros">
+      <div><strong>{{ contratadas }}</strong><span>Contratadas</span></div>
+      <div><strong>{{ realizadas }}</strong><span>Realizadas</span></div>
+      <div><strong>{{ restantes }}</strong><span>Restantes</span></div>
+    </div>
+
+    <div class="cartao-progresso">
+      <div class="linha">
+        <b>Seu Progresso</b>
+        <span class="pill">Categoria {{ categoria }}</span>
+      </div>
+      <h2>{{ realizadas }} de {{ contratadas }} Aulas</h2>
+      <div class="barra" role="progressbar" [attr.aria-valuenow]="percentual" aria-valuemin="0" aria-valuemax="100">
+        <span [style.width.%]="percentual"></span>
+      </div>
+      <div class="linha legenda">
+        <span>{{ realizadas }} Realizadas</span>
+        <span>{{ restantes }} Pendentes</span>
+      </div>
+    </div>
+
+    <app-historico-aulas [aulas]="aulas" (filtrar)="abrirFiltro()" (opcoes)="abrirOpcoes($event)">
+    </app-historico-aulas>
+  </section>
+</ion-content>
+
+<ion-footer class="ion-no-border">
+  <app-bottom-nav perfil="aluno"></app-bottom-nav>
+</ion-footer>

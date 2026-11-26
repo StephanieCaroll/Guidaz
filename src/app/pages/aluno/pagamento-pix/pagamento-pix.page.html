@@ -1,0 +1,154 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="pix-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/aluno/agendamento-aulas" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>Pagamento via Pix</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="pix-content" [fullscreen]="true">
+  @if (pacote) {
+    <!-- Destaque do valor -->
+    <div class="hero">
+      <span class="hero-label">Total a pagar</span>
+      <strong class="hero-valor">
+        <small>R$</small> {{ formatarPreco(pacote.preco) }}
+      </strong>
+      @if (pedidoId) {
+        <span class="hero-pedido">
+          <ion-icon name="receipt-outline" aria-hidden="true"></ion-icon>
+          Pedido #{{ pedidoId }}
+        </span>
+      }
+    </div>
+  }
+
+  <div class="page-container" [class.com-hero]="pacote">
+    @if (pacote) {
+      <section class="resumo-card" aria-label="Resumo do pacote selecionado">
+        <h2 class="card-title">Resumo do pacote</h2>
+
+        <ul class="info-list">
+          <li class="info-row">
+            <span class="info-icon"><ion-icon name="ribbon-outline" aria-hidden="true"></ion-icon></span>
+            <span class="info-text">
+              <small>Categoria</small>
+              <strong>Pacote de aulas — Categoria {{ pacote.categoria }}</strong>
+            </span>
+          </li>
+          <li class="info-row">
+            <span class="info-icon"><ion-icon name="car-sport-outline" aria-hidden="true"></ion-icon></span>
+            <span class="info-text">
+              <small>Veículo</small>
+              <strong>{{ pacote.veiculo }}</strong>
+            </span>
+          </li>
+          <li class="info-row">
+            <span class="info-icon"><ion-icon name="layers-outline" aria-hidden="true"></ion-icon></span>
+            <span class="info-text">
+              <small>Quantidade</small>
+              <strong>{{ pacote.aulas }} aulas</strong>
+            </span>
+          </li>
+          @if (instrutorNome || instrutorId) {
+            <li class="info-row">
+              <span class="info-icon"><ion-icon name="person-outline" aria-hidden="true"></ion-icon></span>
+              <span class="info-text">
+                <small>Instrutor</small>
+                <strong>{{ instrutorNome || ('ID ' + instrutorId) }}</strong>
+              </span>
+            </li>
+          }
+          @if (data) {
+            <li class="info-row">
+              <span class="info-icon"><ion-icon name="calendar-outline" aria-hidden="true"></ion-icon></span>
+              <span class="info-text">
+                <small>Data</small>
+                <strong>{{ formatarData(data) }}</strong>
+              </span>
+            </li>
+          }
+          @if (horaInicio) {
+            <li class="info-row">
+              <span class="info-icon"><ion-icon name="time-outline" aria-hidden="true"></ion-icon></span>
+              <span class="info-text">
+                <small>Horário</small>
+                <strong>{{ horaInicio }}{{ horaFim ? ' – ' + horaFim : '' }}</strong>
+              </span>
+            </li>
+          }
+        </ul>
+
+        @if (horariosDoPedido().length) {
+          <div class="aulas-reservadas">
+            <h3>Aulas reservadas</h3>
+            <ol>
+              @for (horario of horariosDoPedido(); track $index) {
+                <li>
+                  <span class="aula-num">{{ $index + 1 }}ª</span>
+                  <span class="aula-desc">{{ descreverHorario(horario) }}</span>
+                </li>
+              }
+            </ol>
+          </div>
+        }
+
+        <div class="resumo-total">
+          <span>Valor</span>
+          <strong class="resumo-valor">R$ {{ formatarPreco(pacote.preco) }}</strong>
+        </div>
+      </section>
+
+      <section class="qr-card" aria-labelledby="qr-title">
+        <h2 id="qr-title" class="card-title">QR Code Pix</h2>
+        <div class="qr-frame">
+          <div class="qr-placeholder" aria-label="Área ilustrativa, não é um QR Code válido">
+            <ion-icon name="qr-code-outline" aria-hidden="true"></ion-icon>
+            <span>Área ilustrativa</span>
+          </div>
+        </div>
+        <p class="aviso-qr">
+          <ion-icon name="information-circle" aria-hidden="true"></ion-icon>
+          Apenas ilustrativo. Não válido para pagamento.
+        </p>
+      </section>
+
+      <section class="chave-card">
+        <span class="chave-icon"><ion-icon name="key-outline" aria-hidden="true"></ion-icon></span>
+        <div class="chave-info">
+          <span class="chave-label">Chave Pix fictícia</span>
+          <strong>{{ chavePix }}</strong>
+        </div>
+      </section>
+
+      <button class="btn-secundario" type="button" (click)="copiarChavePix()">
+        <ion-icon name="copy-outline" aria-hidden="true"></ion-icon>
+        <span>Copiar chave Pix</span>
+      </button>
+
+      <button class="btn-principal" type="button" [disabled]="!pedidoId" (click)="informarComprovante()">
+        <ion-icon name="checkmark-circle-outline" aria-hidden="true"></ion-icon>
+        <span>Já realizei o pagamento</span>
+      </button>
+
+      @if (!pedidoId) {
+        <p class="alerta-pedido" role="alert">
+          <ion-icon name="alert-circle" aria-hidden="true"></ion-icon>
+          <span>Pedido não encontrado. Volte e selecione o horário novamente para reservar suas aulas.</span>
+        </p>
+      }
+    } @else {
+      <section class="sem-pacote-card">
+        <span class="sem-pacote-icon"><ion-icon name="layers-outline" aria-hidden="true"></ion-icon></span>
+        <h2>Nenhum pacote selecionado</h2>
+        <p>Volte à tela de Pacotes e escolha um pacote para ver o resumo.</p>
+        <button class="btn-principal" type="button" (click)="voltarParaPacotes()">
+          Escolher pacote
+        </button>
+      </section>
+    }
+  </div>
+</ion-content>
+
+<app-bottom-nav activeTab="agenda"></app-bottom-nav>

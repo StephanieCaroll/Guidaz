@@ -1,0 +1,251 @@
+<ion-content [fullscreen]="true" class="det">
+
+  <!-- Topo azul -->
+  <div class="hero">
+    <button type="button" class="hero__btn" aria-label="Voltar" (click)="voltar()">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+    </button>
+    <button type="button" class="hero__btn" aria-label="Favoritar" (click)="alternarFavorito()">
+      <ion-icon [name]="favorito() ? 'bookmark' : 'bookmark-outline'"></ion-icon>
+    </button>
+  </div>
+
+  <!-- Folha de conteúdo -->
+  <div class="folha">
+    <div class="folha__container">
+
+      <span class="tag">{{ aula.tipo }}</span>
+      <h1 class="titulo">{{ aula.titulo }}</h1>
+
+      <div class="meta">
+        <span class="meta__status" [class.meta__status--off]="!aula.disponivel">
+          <i class="ponto"></i>{{ aula.statusTexto }}
+        </span>
+        <span class="meta__nota" *ngIf="aula.dataFormatada">
+          <ion-icon name="calendar-outline"></ion-icon>
+          <strong>{{ aula.dataFormatada }}</strong>
+          <span *ngIf="aula.horarioFormatado">({{ aula.horarioFormatado }})</span>
+        </span>
+      </div>
+
+      <!-- Informações rápidas -->
+      <div class="info">
+        <div class="info__item">
+          <ion-icon name="layers-outline"></ion-icon>
+          <span class="info__rotulo">Categoria</span>
+          <strong class="info__valor">{{ aula.categoria }}</strong>
+        </div>
+        <div class="info__item">
+          <ion-icon name="time-outline"></ion-icon>
+          <span class="info__rotulo">Duração</span>
+          <strong class="info__valor">{{ aula.duracaoMin }} min</strong>
+        </div>
+        <div class="info__item">
+          <ion-icon name="pricetag-outline"></ion-icon>
+          <span class="info__rotulo">Status</span>
+          <strong class="info__valor">{{ aula.statusTexto }}</strong>
+        </div>
+      </div>
+
+      <div class="conteudo">
+        <div class="conteudo__principal">
+
+          <h2 class="secao">{{ isInstrutor ? 'Aluno' : 'Instrutor' }}</h2>
+          <button type="button" class="instrutor" (click)="verPerfil()">
+            <span class="instrutor__foto">
+              <img *ngIf="aula.instrutor.foto; else semFoto" [src]="aula.instrutor.foto" alt="" />
+              <ng-template #semFoto><ion-icon name="person-outline"></ion-icon></ng-template>
+            </span>
+            <span class="instrutor__texto">
+              <strong>{{ aula.instrutor.nome }}</strong>
+              <small>{{ aula.instrutor.funcao }}</small>
+            </span>
+            <span class="instrutor__link">
+              Ver perfil <ion-icon name="chevron-forward"></ion-icon>
+            </span>
+          </button>
+
+          <h2 class="secao">Descrição</h2>
+          <p class="descricao">{{ aula.descricao }}</p>
+
+          <h2 class="secao">O que está incluso</h2>
+          <ul class="inclusos">
+            <li *ngFor="let item of aula.inclusos">
+              <ion-icon name="checkmark-circle"></ion-icon>
+              <span>{{ item }}</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Ações quando a aula está AGENDADA -->
+        <aside class="conteudo__lateral" *ngIf="podeAlterarStatus">
+          <div class="reserva">
+            <p class="reserva__rotulo">Gerenciar aula</p>
+            <p class="reserva__valor">{{ aula.dataFormatada || aula.statusTexto }}</p>
+
+            <!-- Formulário de Edição do Instrutor -->
+            <div *ngIf="isInstrutor && editando" class="edit-box">
+              <div class="edit-box__header">
+                <h3>Editar Agendamento</h3>
+                <p>Ajuste data, horários e local da aula</p>
+              </div>
+
+              <div class="input-grupo">
+                <label>Data da aula</label>
+                <div class="input-wrapper">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  <input type="date" [(ngModel)]="editDataAula" />
+                </div>
+              </div>
+
+              <div class="input-grid">
+                <div class="input-grupo">
+                  <label>Início</label>
+                  <div class="input-wrapper">
+                    <ion-icon name="time-outline"></ion-icon>
+                    <input type="time" [(ngModel)]="editHoraInicio" />
+                  </div>
+                </div>
+                <div class="input-grupo">
+                  <label>Término</label>
+                  <div class="input-wrapper">
+                    <ion-icon name="time-outline"></ion-icon>
+                    <input type="time" [(ngModel)]="editHoraFim" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="input-grupo">
+                <label>Local de encontro</label>
+                <div class="input-wrapper">
+                  <ion-icon name="location-outline"></ion-icon>
+                  <input type="text" [(ngModel)]="editLocalEncontro" placeholder="Ex.: Em frente à autoescola" />
+                </div>
+              </div>
+
+              <div class="input-grupo">
+                <label>Observações</label>
+                <textarea
+                  rows="2"
+                  [(ngModel)]="editObservacoes"
+                  placeholder="Ex.: Foco em baliza e controle de embreagem"
+                ></textarea>
+              </div>
+
+              <div class="edit-actions">
+                <button
+                  type="button"
+                  class="cta cta--primary"
+                  [disabled]="salvandoEdicao"
+                  (click)="salvarEdicao()"
+                >
+                  <ion-icon name="checkmark-circle"></ion-icon>
+                  {{ salvandoEdicao ? 'Salvando...' : 'Salvar alterações' }}
+                </button>
+
+                <button
+                  type="button"
+                  class="cta cta--ghost"
+                  [disabled]="salvandoEdicao"
+                  (click)="cancelarEdicao()"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+
+            <!-- Botões principais quando NÃO está editando -->
+            <ng-container *ngIf="!editando">
+              <button
+                *ngIf="isInstrutor"
+                type="button"
+                class="cta cta--edit"
+                [disabled]="processando"
+                (click)="abrirEdicao()"
+              >
+                <ion-icon name="create-outline"></ion-icon>
+                Editar aula
+              </button>
+
+              <button
+                *ngIf="isInstrutor"
+                type="button"
+                class="cta cta--concluir"
+                [disabled]="processando"
+                (click)="concluirAula()"
+              >
+                <ion-icon name="checkmark-circle"></ion-icon>
+                {{ processando ? 'Processando...' : 'Concluir aula' }}
+              </button>
+
+              <button
+                type="button"
+                class="cta cta--cancelar"
+                [disabled]="processando"
+                (click)="cancelarAula()"
+              >
+                <ion-icon name="close-circle-outline"></ion-icon>
+                {{ processando ? 'Processando...' : 'Cancelar aula' }}
+              </button>
+            </ng-container>
+          </div>
+        </aside>
+
+        <!-- Avaliação quando a aula está CONCLUÍDA -->
+        <aside class="conteudo__lateral" *ngIf="podeAvaliar || jaAvaliada">
+          <div class="reserva">
+            <p class="reserva__rotulo">Avaliação da aula</p>
+
+            <ng-container *ngIf="jaAvaliada; else formAvaliacao">
+              <p class="reserva__valor" style="display: flex; align-items: center; gap: 6px;">
+                <ion-icon name="star" style="color: #f5b400;"></ion-icon>
+                Sua nota: {{ aula.minhaNota }}/5
+              </p>
+              <p style="margin: 6px 0 0; font-size: 12.5px; color: #555;">
+                Você já avaliou esta aula. Obrigado pelo seu feedback!
+              </p>
+            </ng-container>
+
+            <ng-template #formAvaliacao>
+              <p style="margin: 4px 0 10px; font-size: 12.5px; color: #555;">
+                Como foi a aula com {{ aula.instrutor.nome }}?
+              </p>
+
+              <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 12px;">
+                <button
+                  *ngFor="let estrela of estrelas"
+                  type="button"
+                  (click)="selecionarNota(estrela)"
+                  style="background: transparent; border: 0; padding: 4px; cursor: pointer; font-size: 26px; color: #f5b400;"
+                  [attr.aria-label]="'Nota ' + estrela"
+                >
+                  <ion-icon [name]="estrela <= notaSelecionada ? 'star' : 'star-outline'"></ion-icon>
+                </button>
+              </div>
+
+              <textarea
+                rows="3"
+                [(ngModel)]="comentarioAvaliacao"
+                placeholder="Deixe um comentário opcional sobre a aula..."
+                style="width: 100%; border-radius: 12px; border: 1.5px solid #d5d7e0; padding: 10px; font-size: 13px; color: #111; background: #fafafa; margin-bottom: 10px; resize: none;"
+              ></textarea>
+
+              <button
+                type="button"
+                class="cta"
+                [disabled]="enviandoAvaliacao"
+                (click)="enviarAvaliacao()"
+              >
+                <ion-icon name="send-outline"></ion-icon>
+                {{ enviandoAvaliacao ? 'Enviando...' : 'Enviar avaliação' }}
+              </button>
+            </ng-template>
+          </div>
+        </aside>
+      </div>
+
+    </div>
+  </div>
+</ion-content>
+
+<app-bottom-nav activeTab="agenda"></app-bottom-nav>

@@ -1,0 +1,68 @@
+<ion-content class="calendario-content">
+  <!-- Topo Azul com Calendário Mensal -->
+  <div class="top-blue">
+    <div class="top-bar">
+      <button type="button" class="back-btn" (click)="voltar()">
+        <ion-icon name="arrow-undo-outline"></ion-icon>
+      </button>
+
+      <div class="month-nav">
+        <button type="button" class="nav-arrow" (click)="mudarMes(-1)">
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </button>
+        <button type="button" class="nav-arrow" (click)="mudarMes(1)">
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </button>
+      </div>
+    </div>
+
+    <h1 class="month-title">{{ tituloMesAno }}</h1>
+
+    <div class="weekdays-row">
+      <span *ngFor="let s of diasSemana">{{ s }}</span>
+    </div>
+
+    <div class="days-grid">
+      <button
+        type="button"
+        class="day-cell"
+        *ngFor="let dia of gradeDias"
+        [class.out-month]="!dia.mesAtual"
+        [class.has-lesson]="dia.temAula && dia.iso !== dataSelecionadaIso"
+        [class.selected]="dia.iso === dataSelecionadaIso"
+        (click)="selecionarDia(dia)"
+      >
+        {{ dia.numero }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Painel Branco Inferior com as Aulas do Dia -->
+  <div class="bottom-sheet">
+    <h2 class="day-heading">{{ tituloDiaSelecionado }}</h2>
+
+    <div
+      class="aula-card"
+      *ngFor="let aula of aulasDoDia"
+      (click)="abrirDetalhes(aula)"
+    >
+      <div class="aula-info">
+        <span class="aula-title">{{ aula.titulo }}</span>
+        <div class="aula-status">
+          <span class="status-dot" [class.ok]="aula.completa" [class.pendente]="!aula.completa"></span>
+          <span>{{ aula.completa ? 'Completa' : 'Incompleta' }}</span>
+        </div>
+      </div>
+
+      <span class="more-badge">
+        <ion-icon name="ellipsis-vertical"></ion-icon>
+      </span>
+    </div>
+
+    <p class="empty-msg" *ngIf="aulasDoDia.length === 0">
+      Nenhuma aula marcada para este dia.
+    </p>
+  </div>
+</ion-content>
+
+<app-bottom-nav activeTab="agenda"></app-bottom-nav>

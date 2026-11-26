@@ -1,0 +1,141 @@
+<ion-content [fullscreen]="true" class="page-container">
+  <!-- Backdrop para fechar o popover ao clicar fora -->
+  <div class="menu-backdrop" *ngIf="filtroAberto" (click)="toggleFiltroMenu()"></div>
+
+  <!-- Header Azul -->
+  <div class="header-blue">
+    <div class="top-row">
+      <button class="btn-back" (click)="voltar()" type="button" aria-label="Voltar">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </button>
+      <h1 class="page-title">Instrutores</h1>
+    </div>
+
+    <!-- Barra de Pesquisa + Ícone de Filtro -->
+    <div class="search-bar-row">
+      <div class="search-input-wrapper">
+        <ion-icon name="search-outline" class="search-icon"></ion-icon>
+        <input
+          type="text"
+          placeholder="Pesquisar por nome ou categoria"
+          [(ngModel)]="termoBusca"
+          (ngModelChange)="aplicarFiltros()"
+        />
+        <button *ngIf="termoBusca" class="btn-clear" (click)="termoBusca = ''; aplicarFiltros()" type="button">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="filter-btn-wrapper">
+        <button
+          class="btn-filter"
+          [class.active]="filtroSelecionado !== 'todas'"
+          (click)="toggleFiltroMenu()"
+          type="button"
+          aria-label="Filtrar"
+        >
+          <ion-icon name="funnel-outline"></ion-icon>
+          <span class="filter-dot" *ngIf="filtroSelecionado !== 'todas'"></span>
+        </button>
+
+        <!-- Popover de Opções de Filtro -->
+        <div class="filter-popover" *ngIf="filtroAberto">
+          <div class="popover-header">Filtrar por</div>
+          <button
+            class="popover-item"
+            type="button"
+            *ngFor="let op of opcoesFiltro"
+            [class.selected]="op.id === filtroSelecionado"
+            (click)="selecionarFiltro(op.id)"
+          >
+            <span>{{ op.label }}</span>
+            <ion-icon name="checkmark-outline" *ngIf="op.id === filtroSelecionado"></ion-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Conteúdo Principal -->
+  <div class="list-container">
+    <!-- Estado: Carregando -->
+    <div *ngIf="carregando" class="state-card">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+      <p>Carregando instrutores...</p>
+    </div>
+
+    <!-- Estado: Erro -->
+    <div *ngIf="!carregando && erroCarregamento" class="state-card">
+      <ion-icon name="alert-circle-outline" class="state-icon error"></ion-icon>
+      <p>Erro ao conectar com o servidor.</p>
+      <button class="btn-action" (click)="carregarInstrutores()" type="button">
+        Tentar novamente
+      </button>
+    </div>
+
+    <!-- Estado Vazio: Nenhum resultado -->
+    <div *ngIf="!carregando && !erroCarregamento && instrutoresFiltrados.length === 0" class="state-card empty-state">
+      <div class="empty-icon-wrap">
+        <ion-icon name="search-outline"></ion-icon>
+      </div>
+      <h3>Nenhum instrutor encontrado</h3>
+      <p *ngIf="filtroSelecionado !== 'todas' || termoBusca">
+        Não há instrutores cadastrados correspondentes à busca atual.
+      </p>
+      <p *ngIf="filtroSelecionado === 'todas' && !termoBusca">
+        Ainda não existem instrutores cadastrados na plataforma.
+      </p>
+      <button
+        class="btn-action"
+        *ngIf="filtroSelecionado !== 'todas' || termoBusca"
+        (click)="limparFiltros()"
+        type="button"
+      >
+        Limpar busca e filtros
+      </button>
+    </div>
+
+    <!-- Lista de Instrutores -->
+    <div class="instructor-card" *ngFor="let item of instrutoresFiltrados" (click)="verPerfil(item)">
+      <div class="avatar-container">
+        <img
+          *ngIf="getFotoUrl(item) && !item.hasImgError"
+          [src]="getFotoUrl(item)"
+          (error)="onImgError(item)"
+          alt="Foto {{ item.nome }}"
+          class="avatar-img"
+        />
+        <div *ngIf="!getFotoUrl(item) || item.hasImgError" class="avatar-placeholder">
+          <ion-icon name="person-outline"></ion-icon>
+        </div>
+      </div>
+
+      <div class="info-container">
+        <div class="name-row">
+          <h2 class="instructor-name">{{ item.nome }}</h2>
+          <button class="btn-agendar" (click)="$event.stopPropagation(); agendarAula(item)" type="button">
+            Agendar aula
+          </button>
+        </div>
+
+        <div class="rating-row">
+          <ion-icon name="star" class="star-icon"></ion-icon>
+          <span class="rating-text">
+            {{ item.notaMedia ? (item.notaMedia | number:'1.1-1') : '5,0' }}
+            ({{ item.totalAvaliacoes ?? 100 }} Avaliações)
+          </span>
+        </div>
+
+        <p class="category-text">
+          Categoria: {{ item.categoriasLecionadas || 'A, B' }}
+        </p>
+
+        <p class="bio-text">
+          {{ item.biografia || 'Instrutor autônomo com experiência profissional.' }}
+        </p>
+      </div>
+    </div>
+  </div>
+</ion-content>
+
+<app-bottom-nav activeTab="inicio"></app-bottom-nav>

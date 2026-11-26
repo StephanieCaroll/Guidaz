@@ -1,0 +1,857 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Montserrat:wght@500;600;700;800&display=swap');
+
+$azul: #1a6bff;
+$fundo: #f2f2f7;
+$verde: #3be03b;
+$cinza: #7a7a7a;
+$sombra: 0 8px 18px rgba(0, 0, 0, 0.14);
+
+:host {
+  font-family: 'Montserrat', sans-serif;
+}
+
+button {
+  font-family: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.bg-light {
+  --background: #{$fundo};
+}
+
+/* Cabeçalho */
+.header-toolbar {
+  --background: #{$fundo};
+  --border-width: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  padding-top: 8px;
+  overflow: visible;
+}
+
+.profile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 22px 18px;
+  z-index: 20;
+  cursor: default;
+
+  .profile-trigger {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: fit-content;
+    max-width: calc(100% - 64px);
+    cursor: pointer;
+    outline: none;
+  }
+
+  .avatar {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: #d6d6d6;
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    .profile-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    ion-icon {
+      font-size: 32px;
+      color: $cinza;
+    }
+  }
+
+  .profile-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.35;
+    cursor: pointer;
+
+    .greeting {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: $cinza;
+    }
+    .name-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .name {
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      color: #000;
+    }
+    .name-chevron {
+      font-size: 14px;
+      color: $cinza;
+    }
+  }
+
+  .bell {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    ion-icon {
+      font-size: 36px;
+      color: #000;
+    }
+    .bell-dot {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: $verde;
+    }
+  }
+}
+
+.profile-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  background: transparent;
+  cursor: default;
+}
+
+.profile-popover.profile-popover-fixed {
+  position: fixed;
+  top: 86px;
+  left: 22px;
+  width: 264px;
+  max-width: calc(100vw - 44px);
+  z-index: 9999;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: default;
+}
+
+.popover-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+  .popover-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: rgba(26, 107, 255, 0.14);
+    color: $azul;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .popover-user-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    .popover-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .popover-email {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      color: $cinza;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+}
+
+.popover-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-row-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: $fundo;
+
+  &.wallet-row-card {
+    background: rgba(59, 224, 59, 0.1);
+    border: 1px solid rgba(59, 224, 59, 0.28);
+  }
+
+  .stat-icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    ion-icon {
+      font-size: 16px;
+    }
+
+    &.star-box {
+      background: rgba(255, 193, 7, 0.18);
+      color: #d99300;
+    }
+
+    &.lessons-box {
+      background: rgba(26, 107, 255, 0.14);
+      color: $azul;
+    }
+
+    &.wallet-box {
+      background: rgba(59, 224, 59, 0.18);
+      color: #169c16;
+    }
+  }
+
+  .stat-texts {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+
+    strong {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111;
+    }
+
+    .wallet-value {
+      color: #148c14;
+    }
+
+    span {
+      font-family: 'Inter', sans-serif;
+      font-size: 9px;
+      font-weight: 600;
+      color: $cinza;
+      letter-spacing: 0.2px;
+    }
+  }
+}
+
+.stat-btn {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: #e8e8f2;
+  }
+}
+
+.popover-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.06);
+  margin: 2px 0;
+}
+
+.popover-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #222;
+  text-align: left;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 16px;
+    color: $cinza;
+  }
+
+  &:hover {
+    background: $fundo;
+  }
+
+  &.danger {
+    color: #d93025;
+
+    ion-icon {
+      color: #d93025;
+    }
+  }
+}
+
+/* Calendário centralizado */
+.calendar-card {
+  margin: 14px 24px 0;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: $sombra;
+  padding: 16px 16px 18px;
+}
+
+.calendar-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.calendar-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  .calendar-header-icon {
+    font-size: 18px;
+    color: $azul;
+  }
+
+  .month-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+  }
+
+  .week-badge {
+    background: rgba(26, 107, 255, 0.12);
+    color: $azul;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.3px;
+  }
+}
+
+.calendar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .today-btn {
+    font-size: 11px;
+    font-weight: 700;
+    color: $azul;
+    background: rgba(26, 107, 255, 0.1);
+    padding: 5px 10px;
+    border-radius: 999px;
+  }
+
+  .nav-arrow-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: $fundo;
+    color: #111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    ion-icon {
+      font-size: 15px;
+    }
+
+    &:active {
+      background: rgba(26, 107, 255, 0.16);
+    }
+  }
+}
+
+/* Botão de expandir/recolher */
+.expand-btn {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: $fundo;
+  color: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 16px;
+  }
+
+  &:active {
+    background: $azul;
+    color: #fff;
+  }
+}
+
+/* Vista semanal (SEG a DOM) */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  align-items: center;
+}
+
+.week-day-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 2px;
+  border-radius: 16px;
+  -webkit-tap-highlight-color: transparent;
+
+  .day-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: $cinza;
+  }
+
+  .day-number {
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: $fundo;
+    color: #111;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &.outside-month {
+    opacity: 0.45;
+  }
+
+  &.active {
+    .day-name {
+      color: $azul;
+    }
+
+    .day-number {
+      width: 100%;
+      max-width: 96px;
+      padding: 0 18px;
+      background: $azul;
+      color: #fff;
+      font-weight: 700;
+      outline: none;
+      box-shadow: none;
+    }
+  }
+
+  &.tem-aula .day-number {
+    background: $verde;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 4px 10px rgba(59, 224, 59, 0.35);
+  }
+
+  &.tem-aula.active .day-number {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px $azul;
+  }
+}
+
+/* Grade mensal expandida com setas laterais */
+.month-expanded-stage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.side-month-btn {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 16px;
+  }
+
+  &:active {
+    background: rgba(26, 107, 255, 0.12);
+    color: $azul;
+  }
+}
+
+.month-expanded-wrapper {
+  flex: 1;
+}
+
+.month-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 10px;
+
+  span {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: $cinza;
+  }
+}
+
+.month-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 8px;
+  column-gap: 4px;
+  justify-items: center;
+}
+
+.month-day-cell {
+  min-width: 34px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: transparent;
+  color: #111;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &.outside-month {
+    color: #b5b5be;
+  }
+
+  &.tem-aula {
+    background: $verde;
+    color: #fff;
+    font-weight: 700;
+  }
+
+  &.active {
+    width: 100%;
+    max-width: 112px;
+    padding: 0 22px;
+    background: $azul;
+    color: #fff;
+    font-weight: 700;
+    border: 0;
+    box-shadow: none;
+  }
+}
+
+/* Conteúdo (com espaço embaixo para o menu fixo) */
+.page-content {
+  padding: 22px 24px calc(90px + env(safe-area-inset-bottom));
+}
+
+/* Card principal */
+.main-card {
+  background: $azul;
+  color: #fff;
+  border-radius: 24px;
+  padding: 22px 24px 20px;
+
+  .main-title {
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .main-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 12px;
+  }
+
+  .main-left,
+  .main-right {
+    display: flex;
+    flex-direction: column;
+  }
+  .main-right {
+    align-items: flex-end;
+  }
+
+  .big-number {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .big-money {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .main-label {
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+}
+
+/* Cards pequenos */
+.mini-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.mini-card {
+  background: $azul;
+  color: #fff;
+  border-radius: 22px;
+  height: 78px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  strong {
+    font-size: 22px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    line-height: 1.2;
+
+    ion-icon {
+      font-size: 18px;
+    }
+  }
+  span {
+    font-size: 11px;
+    font-weight: 600;
+  }
+}
+
+.mini-card-btn {
+  width: 100%;
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Título de seção */
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #000;
+  margin: 28px 0 18px 12px;
+}
+
+/* Cards de aula */
+.lesson-card {
+  background: $fundo;
+  border-radius: 22px;
+  box-shadow: $sombra;
+  padding: 14px 16px 14px 14px;
+  margin-bottom: 20px;
+  position: relative;
+  cursor: pointer;
+
+  .lesson-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .date-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: $azul;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 10px;
+
+    ion-icon {
+      font-size: 11px;
+    }
+  }
+
+  .dots-btn {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: $azul;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 12px;
+    right: 14px;
+
+    ion-icon {
+      color: #fff;
+      font-size: 12px;
+    }
+  }
+
+  .lesson-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #111;
+    margin: 6px 0 2px;
+  }
+
+  .lesson-student {
+    font-size: 11px;
+    color: $cinza;
+    margin: 0 0 2px;
+  }
+
+  .lesson-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #222;
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: $azul;
+    }
+  }
+}
+
+.empty {
+  text-align: center;
+  color: $cinza;
+  font-size: 13px;
+  margin: 10px 0 20px;
+}
+
+/* Popover Editar / Deletar */
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  background: transparent;
+}
+
+.popover {
+  position: absolute;
+  top: 38px;
+  right: 14px;
+  z-index: 10;
+  background: $fundo;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  padding: 12px 18px 12px 16px;
+  min-width: 128px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .popover-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #111;
+    text-align: left;
+
+    ion-icon {
+      font-size: 18px;
+      color: #111;
+    }
+
+    &:active {
+      opacity: 0.6;
+    }
+  }
+}
+
+/* Atalhos */
+.action-card {
+  background: $fundo;
+  border-radius: 24px;
+  box-shadow: $sombra;
+  padding: 24px 26px;
+  margin-top: 30px;
+  min-height: 96px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  cursor: pointer;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #000;
+    margin: 0 0 4px;
+  }
+  p {
+    font-size: 13px;
+    font-weight: 500;
+    color: #222;
+    margin: 0;
+  }
+  ion-icon {
+    font-size: 20px;
+    color: #000;
+    margin-top: 8px;
+  }
+}

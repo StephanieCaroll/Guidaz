@@ -1,0 +1,120 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="pedidos-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/aluno/home" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>Meus pedidos</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="pedidos-content" [fullscreen]="true">
+  <ion-refresher slot="fixed" (ionRefresh)="carregar($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="page-container">
+    @if (!carregado() || (carregando() && pedidos().length === 0)) {
+      <p class="estado-texto">Carregando seus pedidos...</p>
+    } @else if (erro()) {
+      <div class="alerta-erro" role="alert">
+        <ion-icon name="alert-circle" aria-hidden="true"></ion-icon>
+        <span>{{ erro() }}</span>
+      </div>
+      <button class="btn-secundario" type="button" (click)="carregar()">Tentar novamente</button>
+    } @else if (pedidos().length === 0) {
+      <section class="vazio-card">
+        <span class="vazio-icon"><ion-icon name="layers-outline" aria-hidden="true"></ion-icon></span>
+        <h2>Você ainda não tem pedidos</h2>
+        <p>Escolha um instrutor e contrate um pacote de aulas.</p>
+        <a class="btn-principal" routerLink="/aluno/instrutores">Escolher instrutor</a>
+      </section>
+    } @else {
+      @for (pedido of pedidos(); track pedido.id) {
+        <article class="pedido-card" [class.encerrado]="encerrado(pedido)">
+          <header class="pedido-topo">
+            <div>
+              <span class="pedido-numero">
+                <ion-icon name="receipt-outline" aria-hidden="true"></ion-icon>
+                Pedido #{{ pedido.id }}
+              </span>
+              <h2 class="pedido-titulo">{{ pedido.nomePacote || ('Categoria ' + pedido.categoria) }}</h2>
+            </div>
+            <span class="status-pill" [class]="'status-pill status-' + info(pedido).classe">
+              <ion-icon [name]="info(pedido).icone" aria-hidden="true"></ion-icon>
+              {{ info(pedido).rotulo }}
+            </span>
+          </header>
+
+          <!-- Linha do tempo: Pedido → Comprovante → Aprovado -->
+          <ol class="linha-tempo" [class.encerrada]="encerrado(pedido)" aria-label="Andamento do pedido">
+            @for (etapa of etapas; track etapa.status; let i = $index) {
+              <li class="etapa" [class.feita]="etapaConcluida(pedido, i)">
+                <span class="etapa-ponto" aria-hidden="true"></span>
+                <span class="etapa-rotulo">{{ etapa.rotulo }}</span>
+              </li>
+            }
+          </ol>
+
+          <p class="status-descricao">{{ info(pedido).descricao }}</p>
+
+          @if (pedido.status === 'REJEITADO' && pedido.motivoRejeicao) {
+            <p class="motivo">
+              <strong>Motivo:</strong> {{ pedido.motivoRejeicao }}
+            </p>
+          }
+
+          <ul class="info-list">
+            <li>
+              <ion-icon name="layers-outline" aria-hidden="true"></ion-icon>
+              <span>{{ pedido.quantidadeAulas }} aulas · R$ {{ formatarPreco(pedido.precoTotal) }}</span>
+            </li>
+            <li>
+              <ion-icon name="person-outline" aria-hidden="true"></ion-icon>
+              <span>{{ nomeInstrutor(pedido) }}</span>
+            </li>
+            @if (pedido.horarios.length) {
+              <li>
+                <ion-icon name="calendar-outline" aria-hidden="true"></ion-icon>
+                <span>
+                  @for (h of pedido.horarios; track h.data + h.horaInicio; let ultimo = $last) {
+                    {{ formatarData(h.data) }} {{ h.horaInicio.slice(0, 5) }}{{ ultimo ? '' : ' · ' }}
+                  }
+                </span>
+              </li>
+            }
+            @if (pedido.criadoEm) {
+              <li class="info-discreta">
+                <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
+                <span>Criado em {{ formatarDataHora(pedido.criadoEm) }}</span>
+              </li>
+            }
+          </ul>
+
+          @if (podeEnviarComprovante(pedido) || podeCancelar(pedido)) {
+            <div class="acoes">
+              @if (podeEnviarComprovante(pedido)) {
+                <button class="btn-principal" type="button" (click)="enviarComprovante(pedido)">
+                  <ion-icon name="cloud-upload-outline" aria-hidden="true"></ion-icon>
+                  <span>Enviar comprovante</span>
+                </button>
+              }
+              @if (podeCancelar(pedido)) {
+                <button
+                  class="btn-cancelar"
+                  type="button"
+                  [disabled]="cancelandoId() !== null"
+                  (click)="cancelar(pedido)"
+                >
+                  <ion-icon name="close-circle-outline" aria-hidden="true"></ion-icon>
+                  <span>{{ cancelandoId() === pedido.id ? 'Cancelando...' : 'Cancelar pedido' }}</span>
+                </button>
+              }
+            </div>
+          }
+        </article>
+      }
+    }
+  </div>
+</ion-content>
+
+<app-bottom-nav activeTab="agenda"></app-bottom-nav>

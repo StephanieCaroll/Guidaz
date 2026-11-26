@@ -1,0 +1,58 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="alunos-toolbar" color="primary">
+    <div class="header-top" style="display: flex; align-items: center; padding: 12px 16px; gap: 12px;">
+      <button type="button" class="back-btn" (click)="voltar()" aria-label="Voltar" style="background: rgba(255, 255, 255, 0.2); border: none; border-radius: 50%; width: 40px; height: 40px; min-width: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white;">
+        <ion-icon name="arrow-back-outline" style="font-size: 20px;"></ion-icon>
+      </button>
+      <div class="header-text">
+        <h1 style="margin: 0; font-size: 1.2rem; font-weight: 700; color: white;">Aulas de {{ alunoNome }}</h1>
+        <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: rgba(255,255,255,0.85);">Histórico completo de agendamentos</p>
+      </div>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding bg-light" style="--background: #f4f6f9;">
+  
+  <!-- Loading Spinner -->
+  <div *ngIf="carregando" class="spinner-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; color: #64748b;">
+    <ion-spinner name="crescent" color="primary" style="width: 40px; height: 40px; margin-bottom: 10px;"></ion-spinner>
+    <p style="margin: 0; font-size: 0.9rem;">Carregando aulas...</p>
+  </div>
+
+  <!-- Lista de Aulas -->
+  <div *ngIf="!carregando && aulas.length > 0" class="aulas-list" style="max-width: 600px; margin: 0 auto; padding-bottom: 24px;">
+    <ion-card *ngFor="let aula of aulas" class="aula-card" mode="ios" style="margin: 0 0 12px 0; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); background: #ffffff;">
+      <ion-card-content style="padding: 16px;">
+        <div class="aula-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <span class="data-badge" style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #1e293b; font-size: 0.9rem;">
+            <ion-icon name="calendar-outline" style="color: #2563eb; font-size: 18px;"></ion-icon> 
+            {{ aula.data || aula.dataAula | date:'dd/MM/yyyy' }}
+          </span>
+          <ion-badge [color]="getStatusColor(aula.status)" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 999px;">
+            {{ aula.status }}
+          </ion-badge>
+        </div>
+        <div class="aula-details" style="display: flex; flex-direction: column; gap: 6px;">
+          <p style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #475569; margin: 0;">
+            <ion-icon name="time-outline" style="font-size: 16px; color: #2563eb;"></ion-icon> Horário: <strong style="color: #1e293b;">{{ aula.horario || aula.horaInicio | slice:0:5 }}</strong>
+          </p>
+          <p style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #475569; margin: 0;">
+            <ion-icon name="location-outline" style="font-size: 16px; color: #2563eb;"></ion-icon> Local: <strong style="color: #1e293b;">{{ aula.local || 'Ponto de encontro padrão' }}</strong>
+          </p>
+          <p *ngIf="aula.observacoes" style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #475569; margin: 0;">
+            <ion-icon name="document-text-outline" style="font-size: 16px; color: #2563eb;"></ion-icon> Obs: {{ aula.observacoes }}
+          </p>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Estado Vazio -->
+  <div *ngIf="!carregando && aulas.length === 0" class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; height: 50vh; color: #94a3b8; padding: 20px;">
+    <ion-icon name="calendar-clear-outline" style="font-size: 64px; margin-bottom: 12px; color: #cbd5e1;"></ion-icon>
+    <h3 style="margin: 0 0 6px 0; font-size: 1.1rem; font-weight: 600; color: #475569;">Nenhuma aula registrada</h3>
+    <p style="margin: 0; font-size: 0.9rem; max-width: 280px;">Este aluno ainda não possui histórico de aulas cadastradas no sistema.</p>
+  </div>
+
+</ion-content>

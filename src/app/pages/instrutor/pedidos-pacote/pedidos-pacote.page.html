@@ -1,0 +1,240 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="pedidos-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/instrutor/home" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>Pedidos e Pagamentos Pix</ion-title>
+    <ion-buttons slot="end">
+      <button type="button" class="btn-header-refresh" aria-label="Atualizar" (click)="carregar()">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="pedidos-content">
+  <ion-refresher slot="fixed" (ionRefresh)="recarregar($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="hero-resumo">
+    <div class="hero-resumo__inner">
+      <p>Gerencie os pacotes solicitados pelos alunos e confirme os pagamentos via Pix.</p>
+      <div class="filtros-tabs" role="tablist">
+        <button
+          type="button"
+          class="tab-pill"
+          [class.ativo]="filtroAtivo() === 'EM_ANALISE'"
+          (click)="selecionarFiltro('EM_ANALISE')"
+        >
+          Em análise
+          @if (contagemEmAnalise() > 0) {
+            <span class="badge-count">{{ contagemEmAnalise() }}</span>
+          }
+        </button>
+
+        <button
+          type="button"
+          class="tab-pill"
+          [class.ativo]="filtroAtivo() === 'PENDENTE_PAGAMENTO'"
+          (click)="selecionarFiltro('PENDENTE_PAGAMENTO')"
+        >
+          Aguardando Pix
+          @if (contagemPendente() > 0) {
+            <span class="badge-count">{{ contagemPendente() }}</span>
+          }
+        </button>
+
+        <button
+          type="button"
+          class="tab-pill"
+          [class.ativo]="filtroAtivo() === 'APROVADO'"
+          (click)="selecionarFiltro('APROVADO')"
+        >
+          Aprovados
+        </button>
+
+        <button
+          type="button"
+          class="tab-pill"
+          [class.ativo]="filtroAtivo() === 'TODOS'"
+          (click)="selecionarFiltro('TODOS')"
+        >
+          Todos
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-container">
+    @if (carregando()) {
+      <div class="estado">
+        <ion-spinner name="crescent"></ion-spinner>
+        <span>Carregando pedidos...</span>
+      </div>
+    } @else if (erroLista()) {
+      <section class="card erro" role="alert">
+        <p>{{ erroLista() }}</p>
+        <button class="btn-secundario" type="button" (click)="carregar()">Tentar novamente</button>
+      </section>
+    } @else if (!pedidosFiltrados().length) {
+      <section class="card vazio">
+        <div class="vazio__icone">
+          <ion-icon name="receipt-outline"></ion-icon>
+        </div>
+        <strong>Nenhum pedido nesta aba</strong>
+        <p>
+          @if (filtroAtivo() === 'EM_ANALISE') {
+            Quando um aluno enviar o comprovante Pix, ele aparecerá aqui para sua aprovação.
+          } @else {
+            Não há pedidos registrados com este filtro no momento.
+          }
+        </p>
+      </section>
+    } @else {
+      @for (pedido of pedidosFiltrados(); track pedido.id) {
+        <section class="card pedido-card" [class.destaque]="pedidoDestaqueId() === pedido.id">
+          <div class="card-topo">
+            <span class="pedido-numero">Pedido #{{ pedido.id }}</span>
+            <span class="status-badge" [ngClass]="pedido.status.toLowerCase()">
+              {{ traduzirStatus(pedido.status) }}
+            </span>
+          </div>
+
+          <h2 class="pacote-titulo">
+            {{ pedido.nomePacote || ('Categoria ' + pedido.categoria) }}
+          </h2>
+
+          <div class="detalhes-grid">
+            <div class="detalhe-linha">
+              <span class="detalhe-label"><ion-icon name="person-outline"></ion-icon> Aluno</span>
+              <strong class="detalhe-valor">{{ pedido.alunoNome || ('Aluno #' + pedido.alunoId) }}</strong>
+            </div>
+
+            <div class="detalhe-linha">
+              <span class="detalhe-label"><ion-icon name="layers-outline"></ion-icon> Pacote</span>
+              <strong class="detalhe-valor">
+                Cat. {{ pedido.categoria }} • {{ pedido.quantidadeAulas }} {{ pedido.quantidadeAulas === 1 ? 'aula' : 'aulas' }}
+              </strong>
+            </div>
+
+            <div class="detalhe-linha">
+              <span class="detalhe-label"><ion-icon name="cash-outline"></ion-icon> Valor Pix</span>
+              <strong class="detalhe-valor valor-pix">R$ {{ formatarPreco(pedido.precoTotal) }}</strong>
+            </div>
+
+            @if (pedido.comprovanteInformadoEm) {
+              <div class="detalhe-linha">
+                <span class="detalhe-label"><ion-icon name="time-outline"></ion-icon> Comprovante enviado</span>
+                <strong class="detalhe-valor">{{ formatarDataHora(pedido.comprovanteInformadoEm) }}</strong>
+              </div>
+            }
+
+            @if (obterComprovante(pedido)) {
+              <div class="detalhe-linha comprovante-linha">
+                <span class="detalhe-label"><ion-icon name="receipt-outline"></ion-icon> Comprovante</span>
+                <a
+                  class="link-baixar-comprovante"
+                  href="javascript:void(0)"
+                  [class.baixando]="baixandoId() === pedido.id"
+                  (click)="baixarComprovante(pedido, $event)"
+                >
+                  <ion-icon name="download-outline"></ion-icon>
+                  <span>{{ baixandoId() === pedido.id ? 'Baixando...' : 'Baixar comprovante' }}</span>
+                </a>
+              </div>
+            }
+          </div>
+
+          @if (pedido.horarios.length) {
+            <div class="horarios-box">
+              <span class="horarios-titulo">Aulas reservadas ({{ pedido.horarios.length }})</span>
+              <div class="horarios-lista">
+                @for (horario of pedido.horarios; track $index) {
+                  <div class="horario-item">
+                    <ion-icon name="calendar-outline"></ion-icon>
+                    <span><strong>{{ $index + 1 }}ª aula:</strong> {{ descreverHorario(horario) }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          @if (pedido.status === 'PENDENTE_PAGAMENTO') {
+            <div class="aviso-info">
+              Aguardando o aluno informar o pagamento Pix para liberar a aprovação.
+            </div>
+          }
+
+          @if (pedido.status === 'REJEITADO' && pedido.motivoRejeicao) {
+            <div class="aviso-rejeitado">
+              <strong>Motivo da rejeição:</strong> {{ pedido.motivoRejeicao }}
+            </div>
+          }
+
+          @if (pedido.status === 'EM_ANALISE') {
+            @if (rejeitandoId() === pedido.id) {
+              <div class="rejeicao-area">
+                <label class="rotulo" [attr.for]="'motivo-' + pedido.id">Motivo da rejeição</label>
+                <textarea
+                  [attr.id]="'motivo-' + pedido.id"
+                  rows="3"
+                  maxlength="200"
+                  [(ngModel)]="motivo"
+                  placeholder="Ex.: Valor não localizado na conta Pix."
+                ></textarea>
+                @if (erroAcao()) {
+                  <p class="erro-msg" role="alert">{{ erroAcao() }}</p>
+                }
+                <div class="acoes">
+                  <button
+                    class="btn-secundario"
+                    type="button"
+                    [disabled]="processandoId() !== null"
+                    (click)="cancelarRejeicao()"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    class="btn-rejeitar"
+                    type="button"
+                    [disabled]="processandoId() !== null"
+                    (click)="confirmarRejeicao(pedido)"
+                  >
+                    {{ processandoId() === pedido.id ? 'Rejeitando...' : 'Confirmar rejeição' }}
+                  </button>
+                </div>
+              </div>
+            } @else {
+              @if (erroAcao() && erroAcaoId() === pedido.id) {
+                <p class="erro-msg" role="alert">{{ erroAcao() }}</p>
+              }
+              <div class="acoes">
+                <button
+                  class="btn-rejeitar"
+                  type="button"
+                  [disabled]="processandoId() !== null"
+                  (click)="abrirRejeicao(pedido)"
+                >
+                  <ion-icon name="close-circle-outline"></ion-icon>
+                  Rejeitar
+                </button>
+                <button
+                  class="btn-principal"
+                  type="button"
+                  [disabled]="processandoId() !== null"
+                  (click)="aprovar(pedido)"
+                >
+                  <ion-icon name="checkmark-circle-outline"></ion-icon>
+                  {{ processandoId() === pedido.id ? 'Aprovando...' : 'Aceitar Pix' }}
+                </button>
+              </div>
+            }
+          }
+        </section>
+      }
+    }
+  </div>
+</ion-content>
+
+<app-bottom-nav activeTab="inicio"></app-bottom-nav>

@@ -1,0 +1,348 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="header-toolbar">
+    <div class="profile">
+      <div
+        class="profile-trigger"
+        role="button"
+        tabindex="0"
+        (click)="togglePerfilMenu($event)"
+        (keydown.enter)="togglePerfilMenu($event)"
+      >
+        <div class="avatar">
+          <img
+            *ngIf="temFoto"
+            [src]="fotoUrl"
+            alt="Foto do Instrutor"
+            class="profile-img"
+            (error)="onImgError($event)"
+          />
+          <ion-icon *ngIf="!temFoto" name="person-outline"></ion-icon>
+        </div>
+
+        <div class="profile-text">
+          <span class="greeting">Bem-vindo Instrutor</span>
+          <span class="name-row">
+            <span class="name">{{ nomeInstrutor }}</span>
+            <ion-icon name="chevron-down-outline" class="name-chevron"></ion-icon>
+          </span>
+        </div>
+      </div>
+
+      <button class="bell" type="button" (click)="abrirNotificacoes()">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <span class="bell-dot" *ngIf="temNotificacao"></span>
+      </button>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<div
+  class="profile-backdrop"
+  *ngIf="perfilMenuAberto"
+  (click)="fecharPerfilMenu()"
+></div>
+
+<!-- Popover de dados do instrutor fora do ion-toolbar -->
+<div
+  class="profile-popover profile-popover-fixed"
+  *ngIf="perfilMenuAberto"
+  (click)="$event.stopPropagation()"
+>
+  <div class="popover-header">
+    <div class="popover-badge">{{ iniciaisInstrutor }}</div>
+    <div class="popover-user-info">
+      <strong class="popover-name">{{ nomeInstrutor || 'Instrutor' }}</strong>
+      <span class="popover-email" *ngIf="emailInstrutor">{{ emailInstrutor }}</span>
+    </div>
+  </div>
+
+  <div class="popover-stats">
+    <button
+      class="stat-row-card stat-btn"
+      type="button"
+      (click)="irParaAvaliacoesPerfil()"
+    >
+      <div class="stat-icon-box star-box">
+        <ion-icon name="star"></ion-icon>
+      </div>
+      <div class="stat-texts">
+        <strong>{{ mediaTexto }}</strong>
+        <span>AVALIAÇÃO ({{ totalAvaliacoes }})</span>
+      </div>
+    </button>
+
+    <button
+      class="stat-row-card stat-btn"
+      type="button"
+      (click)="irParaAulasDadas()"
+    >
+      <div class="stat-icon-box lessons-box">
+        <ion-icon name="easel-outline"></ion-icon>
+      </div>
+      <div class="stat-texts">
+        <strong>{{ totalAulasDadas }}</strong>
+        <span>AULAS DADAS</span>
+      </div>
+    </button>
+
+    <div class="stat-row-card wallet-row-card">
+      <div class="stat-icon-box wallet-box">
+        <ion-icon name="wallet-outline"></ion-icon>
+      </div>
+      <div class="stat-texts">
+        <strong class="wallet-value">R$ {{ saldoDisponivel }}</strong>
+        <span>SALDO DISPONÍVEL</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="popover-divider"></div>
+
+  <button class="popover-action" type="button" (click)="irParaMeuPerfil()">
+    <ion-icon name="person-outline"></ion-icon>
+    <span>Meu Perfil</span>
+  </button>
+
+  <div class="popover-divider"></div>
+
+  <button class="popover-action danger" type="button" (click)="sairConta()">
+    <ion-icon name="log-out-outline"></ion-icon>
+    <span>Sair</span>
+  </button>
+</div>
+
+<ion-content class="bg-light">
+  <!-- Calendário centralizado com expansão mensal -->
+  <div class="calendar-card" [class.is-expanded]="expandido">
+    <div class="calendar-topbar">
+      <div class="calendar-title-group">
+        <ion-icon name="calendar-outline" class="calendar-header-icon"></ion-icon>
+        <span class="month-label">{{ mesAnoExibido }}</span>
+        <span class="week-badge">SEMANA {{ numeroSemana }}</span>
+      </div>
+
+      <div class="calendar-actions">
+        <button
+          *ngIf="!hojeSelecionado"
+          class="today-btn"
+          type="button"
+          (click)="irParaHoje()"
+        >
+          Hoje
+        </button>
+
+        <button
+          *ngIf="!expandido"
+          class="nav-arrow-btn"
+          type="button"
+          aria-label="Semana anterior"
+          (click)="semanaAnterior()"
+        >
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </button>
+
+        <button
+          *ngIf="!expandido"
+          class="nav-arrow-btn"
+          type="button"
+          aria-label="Próxima semana"
+          (click)="proximaSemana()"
+        >
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </button>
+
+        <button
+          class="expand-btn"
+          type="button"
+          [attr.aria-label]="expandido ? 'Recolher calendário' : 'Expandir calendário mensal'"
+          [title]="expandido ? 'Recolher calendário' : 'Expandir calendário mensal'"
+          (click)="alternarExpandir()"
+        >
+          <ion-icon [name]="expandido ? 'contract-outline' : 'expand-outline'"></ion-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Vista semanal (SEG a DOM) -->
+    <div class="week-grid" *ngIf="!expandido">
+      <button
+        type="button"
+        class="week-day-item"
+        *ngFor="let dia of diasSemana; trackBy: trackDia"
+        [class.tem-aula]="diaTemAula(dia)"
+        [class.active]="dia.chave === selecionadoChave && !diaTemAula(dia)"
+        [class.outside-month]="!dia.noMesAtual"
+        (click)="selecionarDia(dia)"
+      >
+        <span class="day-name">{{ dia.nomeMaiusculo }}</span>
+        <span class="day-number">{{ dia.numero }}</span>
+      </button>
+    </div>
+
+    <!-- Vista mensal expandida com setas laterais -->
+    <div class="month-expanded-stage" *ngIf="expandido">
+      <button
+        class="side-month-btn"
+        type="button"
+        aria-label="Mês anterior"
+        (click)="mesAnterior()"
+      >
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </button>
+
+      <div class="month-expanded-wrapper">
+        <div class="month-weekdays">
+          <span *ngFor="let nomeDia of cabecalhoSemana">{{ nomeDia }}</span>
+        </div>
+
+        <div class="month-days-grid">
+          <button
+            type="button"
+            class="month-day-cell"
+            *ngFor="let dia of diasMesExpandido; trackBy: trackDia"
+            [class.outside-month]="!dia.noMesAtual"
+            [class.tem-aula]="diaTemAula(dia)"
+            [class.active]="dia.chave === selecionadoChave && !diaTemAula(dia)"
+            (click)="selecionarDia(dia)"
+          >
+            <span>{{ dia.numero }}</span>
+          </button>
+        </div>
+      </div>
+
+      <button
+        class="side-month-btn"
+        type="button"
+        aria-label="Próximo mês"
+        (click)="proximoMes()"
+      >
+        <ion-icon name="chevron-forward-outline"></ion-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <!-- Card principal -->
+    <div class="main-card">
+      <span class="main-title">{{ resumo.titulo }}</span>
+      <div class="main-row">
+        <div class="main-left">
+          <strong class="big-number">{{ resumo.quantidade }}</strong>
+          <span class="main-label">Aulas agendadas</span>
+        </div>
+        <div class="main-right">
+          <strong class="big-money">R$ {{ resumo.previstos }}</strong>
+          <span class="main-label">Previstos</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cards pequenos -->
+    <div class="mini-row">
+      <div class="mini-card">
+        <strong>{{ mini.alunos }}</strong>
+        <span>Alunos</span>
+      </div>
+      <div class="mini-card">
+        <strong>{{ mini.pendentes }}</strong>
+        <span>Pendentes</span>
+      </div>
+      <button
+        class="mini-card mini-card-btn"
+        type="button"
+        (click)="irParaAvaliacoesPerfil()"
+      >
+        <strong>
+          {{ mediaTexto }}
+          <ion-icon name="star"></ion-icon>
+        </strong>
+        <span>Média</span>
+      </button>
+    </div>
+
+    <!-- Próxima aula -->
+    <h2 class="section-title">Próxima Aula</h2>
+
+    <!-- Fundo invisível: toca fora e o popover fecha -->
+    <div class="menu-backdrop" *ngIf="menuAbertoId !== null" (click)="fecharMenu()"></div>
+
+    <div class="lesson-card" *ngFor="let aula of proximasAulas" (click)="abrirDetalhesAula(aula)">
+      <div class="lesson-top">
+        <span class="date-badge">
+          <ion-icon name="calendar-outline"></ion-icon>
+          {{ formatarData(aula.data) }}
+        </span>
+        <button class="dots-btn" type="button" (click)="toggleMenu(aula, $event)">
+          <ion-icon name="ellipsis-vertical"></ion-icon>
+        </button>
+      </div>
+
+      <h3 class="lesson-title">{{ aula.titulo }}</h3>
+      <p class="lesson-student">{{ aula.aluno }}</p>
+      <div class="lesson-status">
+        <span class="dot"></span>
+        <span>{{ aula.status }}</span>
+      </div>
+
+      <!-- Popover Concluir / Cancelar -->
+      <div class="popover" *ngIf="menuAbertoId === aula.id" (click)="$event.stopPropagation()">
+        <button
+          *ngIf="aula.status === 'Agendada'"
+          class="popover-item"
+          type="button"
+          (click)="editarAula(aula, $event)"
+        >
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
+          <span>Concluir</span>
+        </button>
+        <button
+          *ngIf="aula.status === 'Agendada'"
+          class="popover-item"
+          type="button"
+          (click)="deletarAula(aula, $event)"
+        >
+          <ion-icon name="trash-outline"></ion-icon>
+          <span>Cancelar</span>
+        </button>
+        <button
+          class="popover-item"
+          type="button"
+          (click)="abrirDetalhesAula(aula)"
+        >
+          <ion-icon name="create-outline"></ion-icon>
+          <span>Detalhes</span>
+        </button>
+      </div>
+    </div>
+
+    <p class="empty" *ngIf="proximasAulas.length === 0">Nenhuma aula agendada.</p>
+
+    <!-- Atalhos -->
+    <div class="action-card" (click)="abrirAtalho('/instrutor/gestao-alunos')">
+      <div class="action-text">
+        <h3>Meus Alunos</h3>
+        <p>{{ mini.alunos }} Alunos ativos</p>
+      </div>
+      <ion-icon name="chevron-forward-outline"></ion-icon>
+    </div>
+
+    <div class="action-card" (click)="abrirAtalho('/instrutor/agenda-disponibilidade')">
+      <div class="action-text">
+        <h3>Disponibilidade</h3>
+        <p>Ajuste seus horários</p>
+      </div>
+      <ion-icon name="chevron-forward-outline"></ion-icon>
+    </div>
+
+    <div class="action-card" (click)="abrirAtalho('/instrutor/pedidos-pacote')">
+      <div class="action-text">
+        <h3>Pagamentos</h3>
+        <p>Analisar comprovantes</p>
+      </div>
+      <ion-icon name="chevron-forward-outline"></ion-icon>
+    </div>
+  </div>
+</ion-content>
+
+<!-- Menu inferior compartilhado -->
+<app-bottom-nav activeTab="inicio"></app-bottom-nav>

@@ -1,0 +1,344 @@
+<ion-content [fullscreen]="true" class="agenda-content">
+  <div class="agenda-container">
+    <!-- Barra superior -->
+    <div class="top-bar">
+      <button type="button" class="circle-btn" aria-label="Voltar" (click)="voltar()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </button>
+
+      <button type="button" class="circle-btn bell-btn" aria-label="Notificações" (click)="abrirNotificacoes()">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <span class="bell-dot" *ngIf="temNotificacao"></span>
+      </button>
+    </div>
+
+    <!-- Cabeçalho do mês e setas -->
+    <div class="month-header">
+      <div class="month-left">
+        <div class="month-icon-box">
+          <ion-icon name="calendar-outline"></ion-icon>
+        </div>
+        <div class="month-titles">
+          <h1>{{ mesAnoLabel || 'Disponibilidade' }}</h1>
+          <p>Visualize suas datas e gerencie sua agenda</p>
+        </div>
+      </div>
+
+      <div class="month-arrows">
+        <button type="button" class="arrow-btn" aria-label="Mês anterior" (click)="mesAnterior()">
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </button>
+        <button type="button" class="arrow-btn" aria-label="Próximo mês" (click)="proximoMes()">
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Cartão do calendário mensal -->
+    <div class="calendar-card" *ngIf="diasDoMes.length">
+      <div class="weekdays-row">
+        <span>Seg</span>
+        <span>Ter</span>
+        <span>Qua</span>
+        <span>Qui</span>
+        <span>Sex</span>
+        <span>Sáb</span>
+        <span>Dom</span>
+      </div>
+
+      <div class="days-grid">
+        <button
+          type="button"
+          class="day-cell"
+          *ngFor="let dia of diasDoMes"
+          [class.outside]="!dia.noMesAtual"
+          [class.selected]="dia.chave === diaSelecionadoChave"
+          [class.has-lesson]="dia.temAula && dia.chave !== diaSelecionadoChave"
+          (click)="selecionarDiaCalendario(dia)"
+        >
+          <span>{{ dia.numero }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Cartão inferior: sem aulas ou aulas do dia -->
+    <div class="empty-schedule-card" *ngIf="aulasDoDia.length === 0">
+      <div class="empty-left">
+        <div class="empty-icon-box">
+          <ion-icon name="calendar-outline"></ion-icon>
+        </div>
+        <div class="empty-copy">
+          <strong>Nenhuma aula agendada</strong>
+          <p>Você ainda não possui aulas para este dia.</p>
+        </div>
+      </div>
+
+      <div class="empty-illustration" aria-hidden="true">
+        <ion-icon name="calendar-number-outline"></ion-icon>
+      </div>
+    </div>
+
+    <div class="lessons-list" *ngIf="aulasDoDia.length > 0">
+      <div class="lesson-item-card" *ngFor="let aula of aulasDoDia">
+        <div class="lesson-main">
+          <strong>{{ aula.horario }} — {{ aula.titulo }}</strong>
+          <span>{{ aula.aluno }}</span>
+        </div>
+        <span class="lesson-pill">{{ aula.status }}</span>
+      </div>
+    </div>
+
+    <!-- Card de Perfil do Instrutor -->
+    <div class="section-card instructor-card">
+      <div class="avatar-box">
+        <ion-avatar class="instructor-avatar">
+          <div class="avatar-placeholder">{{ nomeInstrutor[0] || 'I' }}</div>
+        </ion-avatar>
+      </div>
+      <div class="instructor-info">
+        <h2>{{ nomeInstrutor }}</h2>
+        <p class="role">{{ instrutorEspecialidade }}</p>
+        <p class="rating">
+          <span class="star">★</span> {{ notaInstrutor }}
+          <span class="reviews">({{ instrutorQtdAvaliacoes }} avaliações)</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Dias da Semana -->
+    <div class="section-card">
+      <h3 class="section-title">Dias da Semana</h3>
+      <p class="section-subtitle">Selecione os dias em que você está disponível para dar aulas.</p>
+      <div class="days-week-grid">
+        <button
+          type="button"
+          *ngFor="let dia of diasSemana"
+          class="week-btn"
+          [class.active]="diaEstaSelecionado(dia.valor)"
+          (click)="selecionarDia(dia.valor)"
+        >
+          {{ dia.nome }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Foco Pedagógico da Aula -->
+    <div class="section-card">
+      <h3 class="section-title">🎯 Foco Pedagógico da Aula</h3>
+      <p class="section-subtitle">Selecione o objetivo de treino com base no desempenho do aluno:</p>
+
+      <div class="focus-grid">
+        <div
+          class="focus-item"
+          [class.selected]="focoSelecionado === 'vias'"
+          (click)="selecionarFoco('vias')"
+        >
+          <div class="focus-title">1. Vias Públicas</div>
+          <div class="focus-desc">Ruas, avenidas e rodovias</div>
+        </div>
+
+        <div
+          class="focus-item"
+          [class.selected]="focoSelecionado === 'manejo'"
+          (click)="selecionarFoco('manejo')"
+        >
+          <div class="focus-title">2. Manejos Específicos</div>
+          <div class="focus-desc">Marchas, embreagem ou moto</div>
+        </div>
+
+        <div
+          class="focus-item"
+          [class.selected]="focoSelecionado === 'baliza'"
+          (click)="selecionarFoco('baliza')"
+        >
+          <div class="focus-title">3. Baliza e Estacionamento</div>
+          <div class="focus-desc">Vagas paralelas e garagens</div>
+        </div>
+
+        <div
+          class="focus-item"
+          [class.selected]="focoSelecionado === 'detran'"
+          (click)="selecionarFoco('detran')"
+        >
+          <div class="focus-title">4. Simulado Detran</div>
+          <div class="focus-desc">Percurso e exigências da prova</div>
+        </div>
+
+        <div
+          class="focus-item"
+          [class.selected]="focoSelecionado === 'fobia'"
+          (click)="selecionarFoco('fobia')"
+        >
+          <div class="focus-title">5. Superação de Medos</div>
+          <div class="focus-desc">Amaxofobia e insegurança</div>
+        </div>
+
+        <div
+          class="focus-item"
+          [class.selected]="focoSelecionado === 'pesado'"
+          (click)="selecionarFoco('pesado')"
+        >
+          <div class="focus-title">6. Trânsito Pesado</div>
+          <div class="focus-desc">Horários de pico e rodovias</div>
+        </div>
+
+        <div
+          class="focus-item"
+          [class.selected]="focoSelecionado === 'rampa'"
+          (click)="selecionarFoco('rampa')"
+        >
+          <div class="focus-title">7. Subidas e Rampas</div>
+          <div class="focus-desc">Controle de aclives/declives</div>
+        </div>
+
+        <div
+          class="focus-item"
+          [class.selected]="focoSelecionado === 'rotina'"
+          (click)="selecionarFoco('rotina')"
+        >
+          <div class="focus-title">8. Rotinas Personalizadas</div>
+          <div class="focus-desc">Trajeto casa-trabalho/escola</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Horários Ocupados / Bloqueados -->
+    <div class="section-card">
+      <div class="section-header-inline">
+        <h3 class="section-title">Horários ocupados</h3>
+        <span class="badge-status ocupado">• {{ horariosOcupados.length }} agendados/bloqueados</span>
+      </div>
+
+      <div class="blocked-list" *ngIf="horariosOcupados.length > 0">
+        <div class="blocked-item-card" *ngFor="let b of horariosOcupados">
+          <div class="blocked-details">
+            <span class="blocked-title">{{ b.motivo || 'Compromisso Pessoal' }}</span>
+            <span class="blocked-time">{{ b.data }} | {{ b.horaInicio }} - {{ b.horaFim }}</span>
+          </div>
+          <button type="button" class="icon-delete-btn" (click)="removerBloqueio(b.id)">
+            <ion-icon name="trash-outline"></ion-icon>
+          </button>
+        </div>
+      </div>
+
+      <p class="empty-text" *ngIf="horariosOcupados.length === 0">Nenhum Horário ocupado</p>
+
+      <div class="action-buttons-row">
+        <button type="button" class="outline-btn" (click)="abrirFormularioDisponibilidade()">
+          <ion-icon name="add-outline"></ion-icon>
+          <span>Adicionar Horário</span>
+        </button>
+        <button type="button" class="outline-btn" (click)="abrirFormularioBloqueio()">
+          <ion-icon name="ban-outline"></ion-icon>
+          <span>Bloquear Horário</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Form Inline: Adicionar Disponibilidade -->
+    <div class="inline-form-card" *ngIf="mostrarFormularioDisponibilidade">
+      <h4>Adicionar Novo Horário</h4>
+      <div class="form-group">
+        <label>Dia da Semana</label>
+        <select [(ngModel)]="novoHorarioDia" class="custom-select">
+          <option *ngFor="let d of diasSemana" [value]="d.valor">{{ d.nomeCompleto }}</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group flex-1">
+          <label>Início</label>
+          <input type="time" [(ngModel)]="horaInicio" class="custom-input" />
+        </div>
+        <div class="form-group flex-1">
+          <label>Fim</label>
+          <input type="time" [(ngModel)]="horaFim" class="custom-input" />
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" (click)="mostrarFormularioDisponibilidade = false">Cancelar</button>
+        <button type="button" class="btn-confirm" (click)="confirmarAdicionarHorario()">Confirmar</button>
+      </div>
+    </div>
+
+    <!-- Form Inline: Bloquear Horário -->
+    <div class="inline-form-card warning-border" *ngIf="mostrarFormularioBloqueio">
+      <h4>Bloquear Horário Pessoal</h4>
+      <div class="form-group">
+        <label>Data</label>
+        <input type="date" [(ngModel)]="novoBloqueioData" class="custom-input" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group flex-1">
+          <label>Início</label>
+          <input type="time" [(ngModel)]="horaBloqueioInicio" class="custom-input" />
+        </div>
+        <div class="form-group flex-1">
+          <label>Fim</label>
+          <input type="time" [(ngModel)]="horaBloqueioFim" class="custom-input" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Motivo</label>
+        <input type="text" [(ngModel)]="motivoBloqueio" placeholder="Ex: Médico, Almoço..." class="custom-input" />
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" (click)="mostrarFormularioBloqueio = false">Cancelar</button>
+        <button type="button" class="btn-confirm danger" [disabled]="bloqueando" (click)="cadastrarBloqueio()">
+          <span *ngIf="!bloqueando">Confirmar Bloqueio</span>
+          <ion-spinner name="crescent" *ngIf="bloqueando"></ion-spinner>
+        </button>
+      </div>
+    </div>
+
+    <!-- Lista de Horários Cadastrados -->
+    <div class="section-card">
+      <h3 class="section-title">Horários cadastrados</h3>
+      <p class="section-subtitle">Total de {{ disponabilidades.length }} horários configurados</p>
+
+      <div class="registered-loading" *ngIf="carregando">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+      </div>
+
+      <div class="registered-list" *ngIf="!carregando && disponabilidades.length > 0">
+        <div class="registered-card" *ngFor="let item of disponabilidades; let i = index">
+          <div class="registered-info">
+            <span class="blue-dot">•</span>
+            <strong class="day-name">{{ getNomeDia(item.diaSemana) }}</strong>
+          </div>
+          <div class="registered-right">
+            <span class="time-range">{{ item.horaInicio }} - {{ item.horaFim }}</span>
+            <button type="button" class="remove-btn" (click)="removerHorarioCadastrado(i)">
+              <ion-icon name="trash-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <p class="empty-text" *ngIf="!carregando && disponabilidades.length === 0">
+        Nenhum horário cadastrado ainda.
+      </p>
+    </div>
+
+    <!-- Aviso Importante -->
+    <div class="important-card">
+      <ion-icon name="information-circle-outline" class="info-icon"></ion-icon>
+      <div class="important-text">
+        <h4>Importante</h4>
+        <p>Lembre-se: seus horários são visíveis para os alunos apenas quando você estiver com o dia selecionado e com horários disponíveis.</p>
+      </div>
+    </div>
+
+    <!-- Botão de Salvar Alterações -->
+    <div class="footer-action">
+      <button type="button" class="primary-save-btn" [disabled]="salvando" (click)="salvarAlteracoes()">
+        <ion-spinner *ngIf="salvando" name="crescent"></ion-spinner>
+        <span>{{ salvando ? 'Salvando...' : 'Salvar Alterações' }}</span>
+      </button>
+    </div>
+  </div>
+</ion-content>
