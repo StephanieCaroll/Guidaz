@@ -185,6 +185,12 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'meus-pedidos',
+        title: 'Meus pedidos | Guidaz',
+        loadComponent: () =>
+          import('./pages/aluno/meus-pedidos/meus-pedidos.page').then((m) => m.MeusPedidosPage),
+      },
+      {
         path: 'comprovante-pix',
         title: 'Enviar comprovante | Guidaz',
         loadComponent: () =>
