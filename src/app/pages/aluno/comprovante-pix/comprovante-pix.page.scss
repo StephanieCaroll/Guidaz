@@ -522,6 +522,41 @@
   margin-top: 4px;
 }
 
+/* Cancelar pedido: ação secundária e destrutiva, abaixo do botão principal */
+.btn-cancelar {
+  display: flex;
+  width: 100%;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  border: 1.5px solid rgba(220, 38, 38, 0.35);
+  border-radius: 16px;
+  background: transparent;
+  color: var(--erro-cor);
+  font: 700 14px var(--guidaz-font, 'Montserrat', sans-serif);
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+
+  ion-icon {
+    font-size: 19px;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--erro-bg);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 /* Alertas */
 .alerta-erro {
   display: flex;

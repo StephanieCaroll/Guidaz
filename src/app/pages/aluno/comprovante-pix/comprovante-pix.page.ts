@@ -1,10 +1,12 @@
 import { Component, inject, signal } from '@angular/core';
 import { finalize } from 'rxjs';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { PedidoPacoteService } from '../../../core/services/pedido-pacote.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { HorarioPedidoPacote, PedidoPacote } from '../../../core/models/pedido-pacote.model';
 import {
+  AlertController,
   IonBackButton,
   IonButtons,
   IonContent,
@@ -58,6 +60,9 @@ type StatusComprovante = 'selecionar' | 'analise';
 export class ComprovantePixPage {
   private readonly auth = inject(AuthService);
   private readonly pedidoService = inject(PedidoPacoteService);
+  private readonly alertController = inject(AlertController);
+  private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
 
   pedidoId = history.state?.['pedidoId'] as number | undefined;
   pedido = history.state?.['pedido'] as PedidoPacote | undefined;
@@ -69,6 +74,7 @@ export class ComprovantePixPage {
   horaFim = history.state?.['horaFim'] as string | undefined;
 
   readonly enviando = signal(false);
+  readonly cancelando = signal(false);
   readonly erroEnvio = signal('');
   readonly status = signal<StatusComprovante>('selecionar');
   readonly arquivo = signal<File | null>(null);
@@ -213,6 +219,56 @@ export class ComprovantePixPage {
         erro instanceof Error ? erro.message : 'Erro ao processar o arquivo do comprovante.'
       );
     }
+  }
+
+  /** O botão só aparece antes de o comprovante ser enviado (pedido PENDENTE_PAGAMENTO). */
+  podeCancelar(): boolean {
+    const statusPedido = this.pedido?.status ?? 'PENDENTE_PAGAMENTO';
+    return !!this.pedidoId && this.status() === 'selecionar' && statusPedido === 'PENDENTE_PAGAMENTO';
+  }
+
+  async cancelarPedido(): Promise<void> {
+    if (this.cancelando() || this.enviando() || !this.pedidoId) {
+      return;
+    }
+
+    const alunoId = Number(this.auth.usuario()?.id);
+    if (!Number.isInteger(alunoId) || alunoId <= 0) {
+      this.erroEnvio.set('Não foi possível identificar o aluno logado. Entre novamente.');
+      return;
+    }
+
+    const alerta = await this.alertController.create({
+      header: 'Cancelar pedido?',
+      message: 'Os horários reservados para este pacote serão liberados. Essa ação não pode ser desfeita.',
+      buttons: [
+        { text: 'Voltar', role: 'cancel' },
+        { text: 'Cancelar pedido', role: 'confirm' },
+      ],
+    });
+    await alerta.present();
+    const { role } = await alerta.onDidDismiss();
+    if (role !== 'confirm') {
+      return;
+    }
+
+    this.erroEnvio.set('');
+    this.cancelando.set(true);
+
+    this.pedidoService
+      .cancelar(this.pedidoId, alunoId)
+      .pipe(finalize(() => this.cancelando.set(false)))
+      .subscribe({
+        next: (pedido) => {
+          this.pedido = pedido;
+          void this.toast.mostrar('Pedido cancelado. Os horários foram liberados.', 'ok');
+          void this.router.navigate(['/aluno/home'], { replaceUrl: true });
+        },
+        error: (erro: Error) => {
+          console.error('Erro ao cancelar pedido:', erro);
+          this.erroEnvio.set(erro.message);
+        },
+      });
   }
 
   formatarPreco(valor: number): string {

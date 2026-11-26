@@ -62,7 +62,7 @@
             <span>{{ arquivo() ? 'Trocar arquivo' : 'Selecionar arquivo' }}</span>
           </button>
 
-          <p class="formatos">Imagem ou PDF, até 10 MB. O arquivo fica neste dispositivo e não é enviado à API.</p>
+          <p class="formatos">Imagem ou PDF, até 10 MB. O comprovante será enviado ao instrutor para análise.</p>
 
           @if (erroArquivo()) {
             <p class="erro-arquivo" role="alert">
@@ -142,12 +142,24 @@
         <button
           class="btn-principal"
           type="button"
-          [disabled]="enviando() || !pedidoId || !arquivo()"
+          [disabled]="enviando() || cancelando() || !pedidoId || !arquivo()"
           (click)="enviarComprovante()"
         >
           <ion-icon name="checkmark-circle-outline" aria-hidden="true"></ion-icon>
           <span>{{ enviando() ? "Confirmando pagamento..." : "Enviar comprovante" }}</span>
         </button>
+
+        @if (podeCancelar()) {
+          <button
+            class="btn-cancelar"
+            type="button"
+            [disabled]="cancelando() || enviando()"
+            (click)="cancelarPedido()"
+          >
+            <ion-icon name="close-circle-outline" aria-hidden="true"></ion-icon>
+            <span>{{ cancelando() ? "Cancelando pedido..." : "Cancelar pedido" }}</span>
+          </button>
+        }
 
         @if (!pedidoId) {
           <p class="alerta-erro" role="alert">

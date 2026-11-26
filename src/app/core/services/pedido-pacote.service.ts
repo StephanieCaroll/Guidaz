@@ -109,6 +109,32 @@ export class PedidoPacoteService {
       );
   }
 
+  /** GET /pedidos-pacote/aluno/{id}: pedidos do aluno, do mais recente para o mais antigo. */
+  listarPorAluno(alunoId: number): Observable<PedidoPacote[]> {
+    return this.http.get<PedidoPacote[]>(`${this.apiUrl}/pedidos-pacote/aluno/${alunoId}`).pipe(
+      timeout(15000),
+      map((lista) => {
+        if (!Array.isArray(lista)) throw new Error('Resposta inesperada da API ao listar seus pedidos.');
+        return lista;
+      }),
+      catchError((erro) => throwError(() => this.traduzirErro(erro, 'carregar seus pedidos')))
+    );
+  }
+
+  /**
+   * POST /pedidos-pacote/{id}/cancelar: o aluno cancela o próprio pedido.
+   * A API só aceita enquanto o pedido está PENDENTE_PAGAMENTO (ou EM_ANALISE após 72h)
+   * e libera os horários que estavam reservados.
+   */
+  cancelar(pedidoId: number, alunoId: number): Observable<PedidoPacote> {
+    return this.http
+      .post<PedidoPacote>(`${this.apiUrl}/pedidos-pacote/${pedidoId}/cancelar`, { alunoId })
+      .pipe(
+        timeout(20000),
+        catchError((erro) => throwError(() => this.traduzirErro(erro, 'cancelar o pedido')))
+      );
+  }
+
   /** GET /pedidos-pacote/instrutor/{id}?status=... (se status for vazio/TODOS, traz todos) */
   listarPorInstrutor(instrutorId: number, status?: string): Observable<PedidoPacote[]> {
     let params = new HttpParams();
