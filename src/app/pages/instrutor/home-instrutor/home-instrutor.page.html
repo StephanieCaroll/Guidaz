@@ -122,8 +122,12 @@
       </div>
 
       <div class="calendar-actions">
+        <span *ngIf="!hojeSelecionado" class="selected-day-label">
+          {{ diaSelecionadoNome }}
+        </span>
+
         <button
-          *ngIf="!hojeSelecionado"
+          *ngIf="hojeSelecionado"
           class="today-btn"
           type="button"
           (click)="irParaHoje()"
@@ -192,7 +196,7 @@
 
       <div class="month-expanded-wrapper">
         <div class="month-weekdays">
-          <span *ngFor="let nomeDia of cabecalhoSemana">{{ nomeDia }}</span>
+          <span *ngFor="let nomeDia of cabecalhoSemanaExpandido">{{ nomeDia }}</span>
         </div>
 
         <div class="month-days-grid">

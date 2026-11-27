@@ -1,20 +1,31 @@
 <ion-header class="ion-no-border">
   <ion-toolbar class="header-toolbar">
     <div class="profile">
-      <div class="avatar">
-        <img
-          *ngIf="temFoto"
-          [src]="fotoUrl"
-          alt="Foto do Aluno"
-          class="profile-img"
-          (error)="onImgError($event)"
-        />
-        <ion-icon *ngIf="!temFoto" name="person-outline"></ion-icon>
-      </div>
+      <div
+        class="profile-trigger"
+        role="button"
+        tabindex="0"
+        (click)="togglePerfilMenu($event)"
+        (keydown.enter)="togglePerfilMenu($event)"
+      >
+        <div class="avatar">
+          <img
+            *ngIf="temFoto"
+            [src]="fotoUrl"
+            alt="Foto do Aluno"
+            class="profile-img"
+            (error)="onImgError($event)"
+          />
+          <ion-icon *ngIf="!temFoto" name="person-outline"></ion-icon>
+        </div>
 
-      <div class="profile-text">
-        <span class="greeting">Bem-vindo Aluno</span>
-        <span class="name">{{ nomeAluno }}</span>
+        <div class="profile-text">
+          <span class="greeting">Bem-vindo Aluno</span>
+          <span class="name-row">
+            <span class="name">{{ nomeAluno }}</span>
+            <ion-icon name="chevron-down-outline" class="name-chevron"></ion-icon>
+          </span>
+        </div>
       </div>
 
       <button class="bell" type="button" (click)="abrirNotificacoes()">
@@ -25,25 +36,181 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="bg-light">
-  <!-- Calendário horizontal infinito -->
-  <div class="calendar-header">
-    <span class="month-label">{{ mesAno }}</span>
-    <button class="today-btn" type="button" *ngIf="!hojeSelecionado" (click)="irParaHoje()">
-      Ir para hoje
+<div
+  class="profile-backdrop"
+  *ngIf="perfilMenuAberto"
+  (click)="fecharPerfilMenu()"
+></div>
+
+<div
+  class="profile-popover profile-popover-fixed"
+  *ngIf="perfilMenuAberto"
+  (click)="$event.stopPropagation()"
+>
+  <div class="popover-header">
+    <div class="popover-badge">{{ iniciaisAluno }}</div>
+    <div class="popover-user-info">
+      <strong class="popover-name">{{ nomeAluno || 'Aluno' }}</strong>
+      <span class="popover-email" *ngIf="emailAluno">{{ emailAluno }}</span>
+    </div>
+  </div>
+
+  <div class="popover-stats">
+    <button
+      class="stat-row-card stat-btn"
+      type="button"
+      (click)="irParaAgendaAulas()"
+    >
+      <div class="stat-icon-box calendar-box">
+        <ion-icon name="calendar-outline"></ion-icon>
+      </div>
+      <div class="stat-texts">
+        <strong>Agenda de Aulas</strong>
+        <span>VER CALENDÁRIO E HORÁRIOS</span>
+      </div>
+    </button>
+
+    <button
+      class="stat-row-card stat-btn"
+      type="button"
+      (click)="irParaHistorico()"
+    >
+      <div class="stat-icon-box lessons-box">
+        <ion-icon name="time-outline"></ion-icon>
+      </div>
+      <div class="stat-texts">
+        <strong>{{ progresso.realizadas }} de {{ progresso.total }}</strong>
+        <span>HISTÓRICO DE AULAS</span>
+      </div>
     </button>
   </div>
 
-  <div class="calendar-scroll" #calendario (scroll)="onScroll()">
-    <div
-      class="day-item"
-      *ngFor="let dia of dias; trackBy: trackDia"
-      [class.tem-aula]="diaTemAula(dia)"
-      [class.active]="dia.chave === selecionadoChave && !diaTemAula(dia)"
-      (click)="selecionarDia(dia)"
-    >
-      <span class="day-name">{{ dia.nome }}</span>
-      <div class="day-number">{{ dia.numero }}</div>
+  <div class="popover-divider"></div>
+
+  <button class="popover-action" type="button" (click)="irParaMeuPerfil()">
+    <ion-icon name="person-outline"></ion-icon>
+    <span>Perfil</span>
+  </button>
+
+  <div class="popover-divider"></div>
+
+  <button class="popover-action danger" type="button" (click)="sairConta()">
+    <ion-icon name="log-out-outline"></ion-icon>
+    <span>Sair</span>
+  </button>
+</div>
+
+<ion-content class="bg-light">
+  <!-- Calendário centralizado com expansão mensal -->
+  <div class="calendar-card" [class.is-expanded]="expandido">
+    <div class="calendar-topbar">
+      <div class="calendar-title-group">
+        <ion-icon name="calendar-outline" class="calendar-header-icon"></ion-icon>
+        <span class="month-label">{{ mesAnoExibido }}</span>
+        <span class="week-badge">SEMANA {{ numeroSemana }}</span>
+      </div>
+
+      <div class="calendar-actions">
+        <span *ngIf="!hojeSelecionado" class="selected-day-label">
+          {{ diaSelecionadoNome }}
+        </span>
+
+        <button
+          *ngIf="hojeSelecionado"
+          class="today-btn"
+          type="button"
+          (click)="irParaHoje()"
+        >
+          Hoje
+        </button>
+
+        <button
+          *ngIf="!expandido"
+          class="nav-arrow-btn"
+          type="button"
+          aria-label="Semana anterior"
+          (click)="semanaAnterior()"
+        >
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </button>
+
+        <button
+          *ngIf="!expandido"
+          class="nav-arrow-btn"
+          type="button"
+          aria-label="Próxima semana"
+          (click)="proximaSemana()"
+        >
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </button>
+
+        <button
+          class="expand-btn"
+          type="button"
+          [attr.aria-label]="expandido ? 'Recolher calendário' : 'Expandir calendário mensal'"
+          [title]="expandido ? 'Recolher calendário' : 'Expandir calendário mensal'"
+          (click)="alternarExpandir()"
+        >
+          <ion-icon [name]="expandido ? 'contract-outline' : 'expand-outline'"></ion-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Vista semanal (SEG a DOM) -->
+    <div class="week-grid" *ngIf="!expandido">
+      <button
+        type="button"
+        class="week-day-item"
+        *ngFor="let dia of diasSemana; trackBy: trackDia"
+        [class.tem-aula]="diaTemAula(dia)"
+        [class.active]="dia.chave === selecionadoChave && !diaTemAula(dia)"
+        [class.outside-month]="!dia.noMesAtual"
+        (click)="selecionarDia(dia)"
+      >
+        <span class="day-name">{{ dia.nomeMaiusculo }}</span>
+        <span class="day-number">{{ dia.numero }}</span>
+      </button>
+    </div>
+
+    <!-- Vista mensal expandida com setas laterais -->
+    <div class="month-expanded-stage" *ngIf="expandido">
+      <button
+        class="side-month-btn"
+        type="button"
+        aria-label="Mês anterior"
+        (click)="mesAnterior()"
+      >
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </button>
+
+      <div class="month-expanded-wrapper">
+        <div class="month-weekdays">
+          <span *ngFor="let nomeDia of cabecalhoSemanaExpandido">{{ nomeDia }}</span>
+        </div>
+
+        <div class="month-days-grid">
+          <button
+            type="button"
+            class="month-day-cell"
+            *ngFor="let dia of diasMesExpandido; trackBy: trackDia"
+            [class.outside-month]="!dia.noMesAtual"
+            [class.tem-aula]="diaTemAula(dia)"
+            [class.active]="dia.chave === selecionadoChave && !diaTemAula(dia)"
+            (click)="selecionarDia(dia)"
+          >
+            <span>{{ dia.numero }}</span>
+          </button>
+        </div>
+      </div>
+
+      <button
+        class="side-month-btn"
+        type="button"
+        aria-label="Próximo mês"
+        (click)="proximoMes()"
+      >
+        <ion-icon name="chevron-forward-outline"></ion-icon>
+      </button>
     </div>
   </div>
 

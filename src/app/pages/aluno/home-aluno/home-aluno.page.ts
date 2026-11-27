@@ -1,10 +1,7 @@
 import {
-  AfterViewInit,
   ChangeDetectorRef,
   Component,
-  ElementRef,
   OnInit,
-  ViewChild,
   inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -18,9 +15,14 @@ import {
   calendarOutline,
   chevronForwardOutline,
   chevronDownOutline,
+  chevronBackOutline,
+  expandOutline,
+  contractOutline,
   createOutline,
   trashOutline,
-  personOutline
+  personOutline,
+  timeOutline,
+  logOutOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { AulaHistoricoApi, AulaService } from '../../../core/services/aula.service';
@@ -33,7 +35,9 @@ interface DiaCalendario {
   chave: string;
   iso: string;
   nome: string;
+  nomeMaiusculo: string;
   numero: number;
+  noMesAtual: boolean;
 }
 
 interface Aula {
@@ -45,10 +49,25 @@ interface Aula {
 
 type Filtro = 'todas' | 'completa' | 'incompleta';
 
-const ITEM_W = 50;
-const LOTE = 30;
-
-const SEMANA_CURTA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
+const CABECALHO_SEG_DOM = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM'];
+const CABECALHO_EXPANDIDO_SEG_DOM = [
+  'Segunda-feira',
+  'Terça-feira',
+  'Quarta-feira',
+  'Quinta-feira',
+  'Sexta-feira',
+  'Sábado',
+  'Domingo'
+];
+const DIAS_SEMANA_LONGO = [
+  'Domingo',
+  'Segunda-feira',
+  'Terça-feira',
+  'Quarta-feira',
+  'Quinta-feira',
+  'Sexta-feira',
+  'Sábado'
+];
 const MESES_CURTOS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const MESES_LONGOS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -60,9 +79,22 @@ function zerarHora(d: Date): Date {
 }
 
 function somarDias(base: Date, n: number): Date {
-  const d = new Date(base);
-  d.setDate(d.getDate() + n);
-  return d;
+  return new Date(base.getFullYear(), base.getMonth(), base.getDate() + n);
+}
+
+function inicioSemanaSeg(data: Date): Date {
+  const d = zerarHora(data);
+  const diaSemana = d.getDay();
+  const diffParaSegunda = diaSemana === 0 ? -6 : 1 - diaSemana;
+  return somarDias(d, diffParaSegunda);
+}
+
+function obterNumeroSemanaISO(data: Date): number {
+  const d = new Date(Date.UTC(data.getFullYear(), data.getMonth(), data.getDate()));
+  const diaNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - diaNum);
+  const inicioAno = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - inicioAno.getTime()) / 86400000) + 1) / 7);
 }
 
 function chaveDia(d: Date): string {
@@ -83,22 +115,29 @@ function isoDia(d: Date): string {
   standalone: true,
   imports: [IonicModule, CommonModule, FormsModule, BottomNavComponent]
 })
-export class HomeAlunoPage implements OnInit, AfterViewInit {
-  @ViewChild('calendario') calendario!: ElementRef<HTMLDivElement>;
-
+export class HomeAlunoPage implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly aulaService = inject(AulaService);
   private readonly toastService = inject(ToastService);
 
   nomeAluno = '';
+  emailAluno = '';
   fotoUrl = '';
   temFoto = false;
   temNotificacao = true;
 
+  perfilMenuAberto = false;
+
   hoje = zerarHora(new Date());
   selecionado = this.hoje;
-  dias: DiaCalendario[] = [];
-  mesAno = '';
+  inicioSemanaAtual = inicioSemanaSeg(this.hoje);
+  mesReferenciaExpandido = new Date(this.hoje.getFullYear(), this.hoje.getMonth(), 1);
+  expandido = false;
+
+  cabecalhoSemana = CABECALHO_SEG_DOM;
+  cabecalhoSemanaExpandido = CABECALHO_EXPANDIDO_SEG_DOM;
+  diasSemana: DiaCalendario[] = [];
+  diasMesExpandido: DiaCalendario[] = [];
 
   progresso = { categoria: 'Categoria B', realizadas: 0, total: 0 };
 
@@ -126,15 +165,20 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
       calendarOutline,
       chevronForwardOutline,
       chevronDownOutline,
+      chevronBackOutline,
+      expandOutline,
+      contractOutline,
       createOutline,
       trashOutline,
-      personOutline
+      personOutline,
+      timeOutline,
+      logOutOutline
     });
   }
 
   ngOnInit() {
     this.carregarUsuario();
-    this.dias = this.gerarFaixa(somarDias(this.hoje, -LOTE), LOTE + 60);
+    this.atualizarCalendario();
     this.carregarDadosAluno();
   }
 
@@ -150,16 +194,54 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
     });
   }
 
-  ngAfterViewInit() {
-    setTimeout(() => {
-      this.rolarParaDia(this.hoje, false);
-      this.atualizarMes();
-    });
+  get iniciaisAluno(): string {
+    const base = (this.nomeAluno || 'AL').trim();
+    const partes = base.split(/\s+/).filter(Boolean);
+    if (partes.length >= 2) {
+      return `${partes[0][0]}${partes[partes.length - 1][0]}`.toUpperCase();
+    }
+    return base.slice(0, 2).toUpperCase();
+  }
+
+  /* MENU DO PERFIL (CLIQUE) */
+
+  togglePerfilMenu(ev?: Event) {
+    ev?.stopPropagation();
+    this.fecharMenu();
+    this.perfilMenuAberto = !this.perfilMenuAberto;
+  }
+
+  fecharPerfilMenu() {
+    this.perfilMenuAberto = false;
+  }
+
+  irParaAgendaAulas() {
+    this.fecharPerfilMenu();
+    void this.router.navigateByUrl('/aluno/calendario');
+  }
+
+  irParaHistorico() {
+    this.fecharPerfilMenu();
+    void this.router.navigateByUrl('/aluno/historico-aula');
+  }
+
+  irParaMeuPerfil() {
+    this.fecharPerfilMenu();
+    void this.router.navigateByUrl('/perfil');
+  }
+
+  sairConta() {
+    this.fecharPerfilMenu();
+    if (typeof (this.auth as any).logout === 'function') {
+      (this.auth as any).logout();
+    }
+    void this.router.navigateByUrl('/login');
   }
 
   private carregarUsuario() {
     const u: any = this.auth.usuario();
     this.nomeAluno = u?.nome ?? u?.nomeCompleto ?? u?.name ?? '';
+    this.emailAluno = u?.email ?? u?.correo ?? '';
     if (u?.categoriaPretendida) {
       this.progresso.categoria = `Categoria ${u.categoriaPretendida}`;
     }
@@ -179,10 +261,10 @@ export class HomeAlunoPage implements OnInit, AfterViewInit {
     }
   }
 
-private carregarDadosAluno() {
+  private carregarDadosAluno() {
     const usuarioLogado: any = this.auth.usuario();
     const alunoId = Number(usuarioLogado?.id || usuarioLogado?.usuarioId);
-    
+
     if (!Number.isInteger(alunoId) || alunoId <= 0) return;
 
     // 1. Próximas 3 aulas para os cards
@@ -199,7 +281,7 @@ private carregarDadosAluno() {
       next: (todas) => {
         const listaValida = (todas || []).filter(item => item.status !== 'CANCELADA');
         const datas = new Set<string>();
-        
+
         for (const item of listaValida) {
           const iso = item.dataAula || (item.dataHora ? item.dataHora.slice(0, 10) : '');
           if (iso) datas.add(iso);
@@ -253,25 +335,6 @@ private carregarDadosAluno() {
 
   /* CALENDÁRIO */
 
-  private gerarFaixa(inicio: Date, quantidade: number): DiaCalendario[] {
-    const lista: DiaCalendario[] = [];
-    for (let i = 0; i < quantidade; i++) {
-      const data = somarDias(inicio, i);
-      lista.push({
-        data,
-        chave: chaveDia(data),
-        iso: isoDia(data),
-        nome: SEMANA_CURTA[data.getDay()],
-        numero: data.getDate()
-      });
-    }
-    return lista;
-  }
-
-  trackDia(_: number, d: DiaCalendario) {
-    return d.chave;
-  }
-
   get selecionadoChave(): string {
     return chaveDia(this.selecionado);
   }
@@ -280,55 +343,121 @@ private carregarDadosAluno() {
     return this.selecionadoChave === chaveDia(this.hoje);
   }
 
+  get diaSelecionadoNome(): string {
+    return DIAS_SEMANA_LONGO[this.selecionado.getDay()];
+  }
+
+  get numeroSemana(): number {
+    return obterNumeroSemanaISO(this.inicioSemanaAtual);
+  }
+
+  get mesAnoExibido(): string {
+    const ref = this.expandido ? this.mesReferenciaExpandido : this.inicioSemanaAtual;
+    return `${MESES_LONGOS[ref.getMonth()]} ${ref.getFullYear()}`;
+  }
+
+  private construirDia(data: Date, mesBase: number): DiaCalendario {
+    const d = zerarHora(data);
+    const idxSemana = d.getDay();
+    return {
+      data: d,
+      chave: chaveDia(d),
+      iso: isoDia(d),
+      nome: CABECALHO_SEG_DOM[idxSemana === 0 ? 6 : idxSemana - 1],
+      nomeMaiusculo: CABECALHO_SEG_DOM[idxSemana === 0 ? 6 : idxSemana - 1],
+      numero: d.getDate(),
+      noMesAtual: d.getMonth() === mesBase
+    };
+  }
+
+  private atualizarCalendario() {
+    const mesBase = this.inicioSemanaAtual.getMonth();
+    this.diasSemana = Array.from({ length: 7 }, (_, i) =>
+      this.construirDia(somarDias(this.inicioSemanaAtual, i), mesBase)
+    );
+
+    if (this.expandido) {
+      this.diasMesExpandido = this.gerarGradeMes(this.mesReferenciaExpandido);
+    }
+  }
+
+  private gerarGradeMes(mesRef: Date): DiaCalendario[] {
+    const ano = mesRef.getFullYear();
+    const mes = mesRef.getMonth();
+    const primeiroDiaMes = new Date(ano, mes, 1);
+    const inicioGrade = inicioSemanaSeg(primeiroDiaMes);
+
+    return Array.from({ length: 42 }, (_, i) =>
+      this.construirDia(somarDias(inicioGrade, i), mes)
+    );
+  }
+
+  trackDia(_: number, d: DiaCalendario) {
+    return d.chave;
+  }
+
   diaTemAula(dia: DiaCalendario): boolean {
     return this.diasComAula.has(dia.iso);
   }
 
-  onScroll() {
-    const el = this.calendario.nativeElement;
-    const margem = ITEM_W * 5;
+  semanaAnterior() {
+    this.inicioSemanaAtual = somarDias(this.inicioSemanaAtual, -7);
+    this.mesReferenciaExpandido = new Date(
+      this.inicioSemanaAtual.getFullYear(),
+      this.inicioSemanaAtual.getMonth(),
+      1
+    );
+    this.atualizarCalendario();
+  }
 
-    if (el.scrollLeft < margem) {
-      this.carregarAntes();
-    } else if (el.scrollLeft + el.clientWidth > el.scrollWidth - margem) {
-      this.carregarDepois();
+  proximaSemana() {
+    this.inicioSemanaAtual = somarDias(this.inicioSemanaAtual, 7);
+    this.mesReferenciaExpandido = new Date(
+      this.inicioSemanaAtual.getFullYear(),
+      this.inicioSemanaAtual.getMonth(),
+      1
+    );
+    this.atualizarCalendario();
+  }
+
+  mesAnterior() {
+    this.mesReferenciaExpandido = new Date(
+      this.mesReferenciaExpandido.getFullYear(),
+      this.mesReferenciaExpandido.getMonth() - 1,
+      1
+    );
+    this.diasMesExpandido = this.gerarGradeMes(this.mesReferenciaExpandido);
+  }
+
+  proximoMes() {
+    this.mesReferenciaExpandido = new Date(
+      this.mesReferenciaExpandido.getFullYear(),
+      this.mesReferenciaExpandido.getMonth() + 1,
+      1
+    );
+    this.diasMesExpandido = this.gerarGradeMes(this.mesReferenciaExpandido);
+  }
+
+  alternarExpandir() {
+    this.expandido = !this.expandido;
+    if (this.expandido) {
+      this.mesReferenciaExpandido = new Date(
+        this.selecionado.getFullYear(),
+        this.selecionado.getMonth(),
+        1
+      );
+      this.diasMesExpandido = this.gerarGradeMes(this.mesReferenciaExpandido);
+    } else {
+      this.inicioSemanaAtual = inicioSemanaSeg(this.selecionado);
+      this.atualizarCalendario();
     }
-    this.atualizarMes();
-  }
-
-  private carregarAntes() {
-    const el = this.calendario.nativeElement;
-    const inicio = somarDias(this.dias[0].data, -LOTE);
-    this.dias = [...this.gerarFaixa(inicio, LOTE), ...this.dias];
-    this.cdr.detectChanges();
-    el.scrollLeft += LOTE * ITEM_W;
-  }
-
-  private carregarDepois() {
-    const ultimo = this.dias[this.dias.length - 1].data;
-    this.dias = [...this.dias, ...this.gerarFaixa(somarDias(ultimo, 1), LOTE)];
-  }
-
-  private atualizarMes() {
-    const el = this.calendario?.nativeElement;
-    if (!el || !this.dias.length) return;
-    const meio = Math.round(el.scrollLeft / ITEM_W) + 3;
-    const idx = Math.min(this.dias.length - 1, Math.max(0, meio));
-    const d = this.dias[idx].data;
-    this.mesAno = `${MESES_LONGOS[d.getMonth()]} ${d.getFullYear()}`;
-  }
-
-  private rolarParaDia(data: Date, suave = true) {
-    const idx = this.dias.findIndex(d => d.chave === chaveDia(data));
-    if (idx < 0) return;
-    this.calendario.nativeElement.scrollTo({
-      left: idx * ITEM_W,
-      behavior: suave ? 'smooth' : 'auto'
-    });
   }
 
   selecionarDia(dia: DiaCalendario) {
     this.selecionado = dia.data;
+    this.inicioSemanaAtual = inicioSemanaSeg(dia.data);
+    this.mesReferenciaExpandido = new Date(dia.data.getFullYear(), dia.data.getMonth(), 1);
+    this.atualizarCalendario();
     if (this.diaTemAula(dia)) {
       void this.router.navigate(['/aluno/calendario'], {
         queryParams: { data: dia.iso }
@@ -338,7 +467,9 @@ private carregarDadosAluno() {
 
   irParaHoje() {
     this.selecionado = this.hoje;
-    this.rolarParaDia(this.hoje, true);
+    this.inicioSemanaAtual = inicioSemanaSeg(this.hoje);
+    this.mesReferenciaExpandido = new Date(this.hoje.getFullYear(), this.hoje.getMonth(), 1);
+    this.atualizarCalendario();
   }
 
   /* AULAS */
@@ -379,6 +510,7 @@ private carregarDadosAluno() {
 
   toggleFiltro() {
     this.menuAbertoId = null;
+    this.perfilMenuAberto = false;
     this.filtroAberto = !this.filtroAberto;
   }
 
@@ -392,6 +524,7 @@ private carregarDadosAluno() {
   toggleMenu(chave: string, ev?: Event) {
     ev?.stopPropagation();
     this.filtroAberto = false;
+    this.perfilMenuAberto = false;
     this.menuAbertoId = this.menuAbertoId === chave ? null : chave;
   }
 

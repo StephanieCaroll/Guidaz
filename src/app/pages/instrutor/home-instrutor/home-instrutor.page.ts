@@ -55,6 +55,24 @@ interface Aula {
 
 const SEMANA_CURTA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
 const CABECALHO_SEG_DOM = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM'];
+const CABECALHO_EXPANDIDO_SEG_DOM = [
+  'Segunda-feira',
+  'Terça-feira',
+  'Quarta-feira',
+  'Quinta-feira',
+  'Sexta-feira',
+  'Sábado',
+  'Domingo'
+];
+const DIAS_SEMANA_LONGO = [
+  'Domingo',
+  'Segunda-feira',
+  'Terça-feira',
+  'Quarta-feira',
+  'Quinta-feira',
+  'Sexta-feira',
+  'Sábado'
+];
 const MESES_CURTOS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const MESES_LONGOS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -122,6 +140,7 @@ export class HomeInstrutorPage implements OnInit {
   expandido = false;
 
   cabecalhoSemana = CABECALHO_SEG_DOM;
+  cabecalhoSemanaExpandido = CABECALHO_EXPANDIDO_SEG_DOM;
   diasSemana: DiaCalendario[] = [];
   diasMesExpandido: DiaCalendario[] = [];
 
@@ -203,6 +222,10 @@ export class HomeInstrutorPage implements OnInit {
 
   get hojeSelecionado(): boolean {
     return this.selecionadoChave === chaveDia(this.hoje);
+  }
+
+  get diaSelecionadoNome(): string {
+    return DIAS_SEMANA_LONGO[this.selecionado.getDay()];
   }
 
   get numeroSemana(): number {

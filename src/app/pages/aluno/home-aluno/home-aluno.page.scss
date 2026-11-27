@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Montserrat:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@500;600;700;800&display=swap');
 
 $azul: #1a6bff;
 $fundo: #f2f2f7;
@@ -30,13 +30,28 @@ button {
   --padding-start: 0;
   --padding-end: 0;
   padding-top: 8px;
+  overflow: visible;
 }
 
 .profile {
+  position: relative;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 14px;
   padding: 8px 22px 18px;
+  z-index: 20;
+  cursor: default;
+
+  .profile-trigger {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: fit-content;
+    max-width: calc(100% - 64px);
+    cursor: pointer;
+    outline: none;
+  }
 
   .avatar {
     width: 62px;
@@ -48,6 +63,7 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
 
     .profile-img {
       width: 100%;
@@ -67,11 +83,17 @@ button {
     flex-direction: column;
     flex: 1;
     line-height: 1.35;
+    cursor: pointer;
 
     .greeting {
       font-family: 'Inter', sans-serif;
       font-size: 13px;
       color: $cinza;
+    }
+    .name-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
     .name {
       font-family: 'Inter', sans-serif;
@@ -79,15 +101,21 @@ button {
       font-weight: 500;
       color: #000;
     }
+    .name-chevron {
+      font-size: 14px;
+      color: $cinza;
+    }
   }
 
   .bell {
     position: relative;
     width: 44px;
     height: 44px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
 
     ion-icon {
       font-size: 36px;
@@ -105,80 +133,459 @@ button {
   }
 }
 
-/* Calendário */
-.calendar-header {
+.profile-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  background: transparent;
+  cursor: default;
+}
+
+.profile-popover.profile-popover-fixed {
+  position: fixed;
+  top: 86px;
+  left: 22px;
+  width: 264px;
+  max-width: calc(100vw - 44px);
+  z-index: 9999;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: default;
+}
+
+.popover-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+  .popover-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: rgba(26, 107, 255, 0.14);
+    color: $azul;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .popover-user-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    .popover-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .popover-email {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      color: $cinza;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+}
+
+.popover-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-row-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: $fundo;
+
+  .stat-icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    ion-icon {
+      font-size: 16px;
+    }
+
+    &.calendar-box {
+      background: rgba(26, 107, 255, 0.14);
+      color: $azul;
+    }
+
+    &.lessons-box {
+      background: rgba(59, 224, 59, 0.16);
+      color: #169c16;
+    }
+  }
+
+  .stat-texts {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+
+    strong {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111;
+    }
+
+    span {
+      font-family: 'Inter', sans-serif;
+      font-size: 9px;
+      font-weight: 600;
+      color: $cinza;
+      letter-spacing: 0.2px;
+    }
+  }
+}
+
+.stat-btn {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: #e8e8f2;
+  }
+}
+
+.popover-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.06);
+  margin: 2px 0;
+}
+
+.popover-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #222;
+  text-align: left;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 16px;
+    color: $cinza;
+  }
+
+  &:hover {
+    background: $fundo;
+  }
+
+  &.danger {
+    color: #d93025;
+
+    ion-icon {
+      color: #d93025;
+    }
+  }
+}
+
+/* Calendário centralizado */
+.calendar-card {
+  margin: 14px 24px 0;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: $sombra;
+  padding: 16px 16px 18px;
+}
+
+.calendar-topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 24px 0;
-  min-height: 30px;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.calendar-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  .calendar-header-icon {
+    font-size: 18px;
+    color: $azul;
+  }
 
   .month-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+  }
+
+  .week-badge {
+    background: rgba(26, 107, 255, 0.12);
+    color: $azul;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.3px;
+  }
+}
+
+.calendar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .today-btn,
+  .selected-day-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: $azul;
+    background: rgba(26, 107, 255, 0.1);
+    padding: 5px 10px;
+    border-radius: 999px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .nav-arrow-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: $fundo;
+    color: #111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    ion-icon {
+      font-size: 15px;
+    }
+
+    &:active {
+      background: rgba(26, 107, 255, 0.16);
+    }
+  }
+}
+
+/* Botão de expandir/recolher */
+.expand-btn {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: $fundo;
+  color: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 16px;
+  }
+
+  &:active {
+    background: $azul;
+    color: #fff;
+  }
+}
+
+/* Vista semanal (SEG a DOM) */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  align-items: center;
+}
+
+.week-day-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 2px;
+  border-radius: 16px;
+  -webkit-tap-highlight-color: transparent;
+
+  .day-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: $cinza;
+  }
+
+  .day-number {
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: $fundo;
+    color: #111;
+    font-family: 'Inter', sans-serif;
     font-size: 13px;
     font-weight: 600;
-    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  .today-btn {
-    font-size: 12px;
-    font-weight: 600;
+
+  &.outside-month {
+    opacity: 0.45;
+  }
+
+  &.active {
+    .day-name {
+      color: $azul;
+    }
+
+    .day-number {
+      width: 100%;
+      max-width: 96px;
+      padding: 0 18px;
+      background: $azul;
+      color: #fff;
+      font-weight: 700;
+      outline: none;
+      box-shadow: none;
+    }
+  }
+
+  &.tem-aula .day-number {
+    background: $verde;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 4px 10px rgba(59, 224, 59, 0.35);
+  }
+
+  &.tem-aula.active .day-number {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px $azul;
+  }
+}
+
+/* Grade mensal expandida com setas laterais */
+.month-expanded-stage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.side-month-btn {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 16px;
+  }
+
+  &:active {
+    background: rgba(26, 107, 255, 0.12);
     color: $azul;
   }
 }
 
-.calendar-scroll {
-  display: flex;
-  overflow-x: auto;
-  padding: 8px 16px 6px;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
+.month-expanded-wrapper {
+  flex: 1;
+}
 
-  &::-webkit-scrollbar {
-    display: none;
+.month-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 10px;
+  gap: 2px;
+
+  span {
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    color: $cinza;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.month-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 8px;
+  column-gap: 4px;
+  justify-items: center;
+}
+
+.month-day-cell {
+  min-width: 34px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: transparent;
+  color: #111;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
   }
 
-  .day-item {
-    flex: 0 0 50px;
-    width: 50px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: pointer;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
+  &.outside-month {
+    color: #b5b5be;
+  }
 
-    .day-name {
-      font-family: 'Inter', sans-serif;
-      font-size: 13px;
-      color: #555;
-      margin-bottom: 8px;
-    }
+  &.tem-aula {
+    background: $verde;
+    color: #fff;
+    font-weight: 700;
+  }
 
-    .day-number {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      color: #111;
-      transition: background 0.2s, color 0.2s, transform 0.15s;
-    }
-
-    &.tem-aula .day-number {
-      background: $verde;
-      color: #fff;
-      font-weight: 700;
-      box-shadow: 0 4px 10px rgba(59, 224, 59, 0.38);
-    }
-
-    &.active .day-number {
-      background: $azul;
-      color: #fff;
-    }
+  &.active {
+    width: 100%;
+    max-width: 112px;
+    padding: 0 22px;
+    background: $azul;
+    color: #fff;
+    font-weight: 700;
+    border: 0;
+    box-shadow: none;
   }
 }
 
